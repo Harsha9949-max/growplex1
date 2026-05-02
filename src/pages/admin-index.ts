@@ -1,0 +1,12 @@
+export { default as AdminDashboard } from './AdminDashboard';
+export { default as AdminOrders } from './AdminOrders';
+export { default as AdminServices } from './AdminServices';
+export { default as AdminPayments } from './AdminPayments';
+export { default as AdminCustomers } from './AdminCustomers';
+export { default as AdminNotifications } from './AdminNotifications';
+export { default as AdminSettings } from './AdminSettings';
+export { default as AdminRoles } from './AdminRoles';
+export { default as AdminLogs } from './AdminLogs';
+export { default as AdminContent } from './AdminContent';
+export { default as AdminBackup } from './AdminBackup';
+export { default as AdminReports } from './AdminReports';

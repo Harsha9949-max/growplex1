@@ -1,0 +1,20 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/razorpay/order",
+      "destination": "/api/razorpay/order"
+    },
+    {
+      "source": "/api/razorpay/verify",
+      "destination": "/api/razorpay/verify"
+    },
+    {
+      "source": "/api/growwsmm",
+      "destination": "/api/growwsmm"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

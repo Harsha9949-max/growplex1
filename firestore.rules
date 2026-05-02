@@ -1,0 +1,18 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ⚠️ WARNING: These rules allow public read/write access so your app can work immediately.
+    // In a real production app, you MUST implement Firebase Authentication and restrict access 
+    // to only authenticated admin users.
+    
+    match /orders/{orderId} {
+      allow read, write: if true;
+    }
+    
+    // Add additional collections here if you add more to the DB later
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

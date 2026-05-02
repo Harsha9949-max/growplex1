@@ -1,0 +1,115 @@
+
+> react-example@0.0.0 lint
+> tsc --noEmit
+
+api/growwsmm.ts(1,52): error TS2307: Cannot find module '@vercel/node' or its corresponding type declarations.
+api/razorpay/order.ts(2,52): error TS2307: Cannot find module '@vercel/node' or its corresponding type declarations.
+api/razorpay/verify.ts(1,52): error TS2307: Cannot find module '@vercel/node' or its corresponding type declarations.
+src/components/AIChat.tsx(5,10): error TS2305: Module '"../lib/utils"' has no exported member 'cn'.
+src/components/dashboard/ActivityFeed.tsx(23,10): error TS2305: Module '"../../types"' has no exported member 'Submission'.
+src/components/dashboard/ActivityFeed.tsx(24,10): error TS2305: Module '"../../lib/utils"' has no exported member 'formatINR'.
+src/components/dashboard/ActivityFeed.tsx(24,21): error TS2305: Module '"../../lib/utils"' has no exported member 'cn'.
+src/components/dashboard/Leaderboard.tsx(23,10): error TS2305: Module '"../../types"' has no exported member 'UserProfile'.
+src/components/dashboard/Leaderboard.tsx(24,10): error TS2305: Module '"../../lib/utils"' has no exported member 'formatINR'.
+src/components/dashboard/Leaderboard.tsx(24,21): error TS2305: Module '"../../lib/utils"' has no exported member 'cn'.
+src/components/dashboard/VentureHeader.tsx(4,10): error TS2305: Module '"../../types"' has no exported member 'UserProfile'.
+src/components/dashboard/VentureSpecificTasks.tsx(5,10): error TS2305: Module '"../../lib/utils"' has no exported member 'formatINR'.
+src/components/dashboard/WalletOverview.tsx(4,10): error TS2305: Module '"../../types"' has no exported member 'UserProfile'.
+src/components/dashboard/WalletOverview.tsx(5,10): error TS2305: Module '"../../lib/utils"' has no exported member 'formatINR'.
+src/components/dashboard/WalletOverview.tsx(5,21): error TS2305: Module '"../../lib/utils"' has no exported member 'cn'.
+src/components/NotificationCenter.tsx(18,10): error TS2305: Module '"../lib/utils"' has no exported member 'cn'.
+src/components/NotificationCenter.tsx(18,14): error TS2305: Module '"../lib/utils"' has no exported member 'formatTimeAgo'.
+src/components/Sidebar.tsx(20,10): error TS2305: Module '"../lib/utils"' has no exported member 'cn'.
+src/hooks/useAuth.tsx(20,10): error TS2305: Module '"../lib/firebase"' has no exported member 'auth'.
+src/hooks/useAuth.tsx(21,10): error TS2305: Module '"../types"' has no exported member 'UserProfile'.
+src/hooks/useNotifications.ts(14,10): error TS2305: Module '"../types"' has no exported member 'AppNotification'.
+src/hooks/useNotifications.ts(15,23): error TS2307: Cannot find module 'react-hot-toast' or its corresponding type declarations.
+src/lib/push-manager.ts(2,10): error TS2305: Module '"./firebase"' has no exported member 'getFCM'.
+src/lib/push-manager.ts(4,23): error TS2307: Cannot find module 'react-hot-toast' or its corresponding type declarations.
+src/lib/security.ts(1,10): error TS2305: Module '"../types"' has no exported member 'Submission'.
+src/pages/admin/AdminDashboard.tsx(24,17): error TS2305: Module '"../../types"' has no exported member 'UserProfile'.
+src/pages/admin/AdminDashboard.tsx(25,10): error TS2305: Module '"../../lib/utils"' has no exported member 'formatINR'.
+src/pages/admin/AdminDashboard.tsx(25,21): error TS2305: Module '"../../lib/utils"' has no exported member 'OperationType'.
+src/pages/admin/AdminDashboard.tsx(25,36): error TS2305: Module '"../../lib/utils"' has no exported member 'cn'.
+src/pages/admin/AdminDashboard.tsx(25,40): error TS2305: Module '"../../lib/utils"' has no exported member 'handleFirestoreError'.
+src/pages/admin/AdminDashboard.tsx(54,20): error TS2339: Property 'status' does not exist on type 'Order'.
+src/pages/admin/AdminDashboard.tsx(55,34): error TS2339: Property 'chargeINR' does not exist on type 'Order'.
+src/pages/admin/AllOrders.tsx(27,10): error TS2305: Module '"../../lib/utils"' has no exported member 'formatINR'.
+src/pages/admin/AllOrders.tsx(27,21): error TS2305: Module '"../../lib/utils"' has no exported member 'OperationType'.
+src/pages/admin/AllOrders.tsx(28,10): error TS2305: Module '"../../lib/utils"' has no exported member 'handleFirestoreError'.
+src/pages/admin/AllOrders.tsx(30,23): error TS2307: Cannot find module 'react-hot-toast' or its corresponding type declarations.
+src/pages/admin/AllOrders.tsx(93,37): error TS2339: Property 'growwOrderId' does not exist on type 'Order'.
+src/pages/admin/AllUsers.tsx(30,10): error TS2305: Module '"../../types"' has no exported member 'UserProfile'.
+src/pages/admin/AllUsers.tsx(30,23): error TS2305: Module '"../../types"' has no exported member 'Transaction'.
+src/pages/admin/AllUsers.tsx(31,10): error TS2305: Module '"../../lib/utils"' has no exported member 'formatINR'.
+src/pages/admin/AllUsers.tsx(31,21): error TS2305: Module '"../../lib/utils"' has no exported member 'OperationType'.
+src/pages/admin/AllUsers.tsx(32,10): error TS2305: Module '"../../lib/utils"' has no exported member 'handleFirestoreError'.
+src/pages/admin/AllUsers.tsx(33,23): error TS2307: Cannot find module 'react-hot-toast' or its corresponding type declarations.
+src/pages/admin/ManageServices.tsx(28,10): error TS2305: Module '"../../lib/utils"' has no exported member 'formatINR'.
+src/pages/admin/ManageServices.tsx(28,21): error TS2305: Module '"../../lib/utils"' has no exported member 'OperationType'.
+src/pages/admin/ManageServices.tsx(29,10): error TS2305: Module '"../../lib/utils"' has no exported member 'handleFirestoreError'.
+src/pages/admin/ManageServices.tsx(31,23): error TS2307: Cannot find module 'react-hot-toast' or its corresponding type declarations.
+src/pages/admin/ManageServices.tsx(130,23): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(firestore: Firestore, path: string, ...pathSegments: string[]): DocumentReference<DocumentData, DocumentData>', gave the following error.
+    Argument of type 'string | number' is not assignable to parameter of type 'string'.
+      Type 'number' is not assignable to type 'string'.
+  Overload 2 of 3, '(reference: CollectionReference<unknown, DocumentData>, path?: string, ...pathSegments: string[]): DocumentReference<unknown, DocumentData>', gave the following error.
+    Argument of type 'Firestore' is not assignable to parameter of type 'CollectionReference<unknown, DocumentData>'.
+      Type 'Firestore' is missing the following properties from type 'CollectionReference<unknown, DocumentData>': id, path, parent, withConverter, and 2 more.
+  Overload 3 of 3, '(reference: DocumentReference<unknown, DocumentData>, path: string, ...pathSegments: string[]): DocumentReference<DocumentData, DocumentData>', gave the following error.
+    Argument of type 'Firestore' is not assignable to parameter of type 'DocumentReference<unknown, DocumentData>'.
+      Type 'Firestore' is missing the following properties from type 'DocumentReference<unknown, DocumentData>': converter, firestore, id, path, and 2 more.
+src/pages/admin/ManageServices.tsx(131,28): error TS2339: Property 'isActive' does not exist on type 'Service'.
+src/pages/admin/ManageServices.tsx(133,56): error TS2339: Property 'isActive' does not exist on type 'Service'.
+src/pages/admin/ManageServices.tsx(141,25): error TS2339: Property 'displayRate' does not exist on type 'Service'.
+src/pages/admin/ManageServices.tsx(149,23): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(firestore: Firestore, path: string, ...pathSegments: string[]): DocumentReference<DocumentData, DocumentData>', gave the following error.
+    Argument of type 'string | number' is not assignable to parameter of type 'string'.
+      Type 'number' is not assignable to type 'string'.
+  Overload 2 of 3, '(reference: CollectionReference<unknown, DocumentData>, path?: string, ...pathSegments: string[]): DocumentReference<unknown, DocumentData>', gave the following error.
+    Argument of type 'Firestore' is not assignable to parameter of type 'CollectionReference<unknown, DocumentData>'.
+      Type 'Firestore' is missing the following properties from type 'CollectionReference<unknown, DocumentData>': id, path, parent, withConverter, and 2 more.
+  Overload 3 of 3, '(reference: DocumentReference<unknown, DocumentData>, path: string, ...pathSegments: string[]): DocumentReference<DocumentData, DocumentData>', gave the following error.
+    Argument of type 'Firestore' is not assignable to parameter of type 'DocumentReference<unknown, DocumentData>'.
+      Type 'Firestore' is missing the following properties from type 'DocumentReference<unknown, DocumentData>': converter, firestore, id, path, and 2 more.
+src/pages/admin/VerifySubmissions.tsx(29,10): error TS2305: Module '"../../types"' has no exported member 'Submission'.
+src/pages/admin/VerifySubmissions.tsx(29,22): error TS2305: Module '"../../types"' has no exported member 'UserProfile'.
+src/pages/admin/VerifySubmissions.tsx(30,10): error TS2305: Module '"../../lib/utils"' has no exported member 'formatINR'.
+src/pages/admin/VerifySubmissions.tsx(30,21): error TS2305: Module '"../../lib/utils"' has no exported member 'cn'.
+src/pages/admin/VerifySubmissions.tsx(31,23): error TS2307: Cannot find module 'react-hot-toast' or its corresponding type declarations.
+src/pages/Dashboard.tsx(14,10): error TS2305: Module '"../lib/utils"' has no exported member 'formatINR'.
+src/pages/Dashboard.tsx(14,21): error TS2305: Module '"../lib/utils"' has no exported member 'cn'.
+src/pages/Login.tsx(5,23): error TS2307: Cannot find module 'react-hot-toast' or its corresponding type declarations.
+src/pages/MyOrders.tsx(26,10): error TS2305: Module '"../types"' has no exported member 'Submission'.
+src/pages/MyOrders.tsx(27,10): error TS2305: Module '"../lib/utils"' has no exported member 'formatINR'.
+src/pages/MyOrders.tsx(27,21): error TS2305: Module '"../lib/utils"' has no exported member 'OperationType'.
+src/pages/MyOrders.tsx(27,36): error TS2305: Module '"../lib/utils"' has no exported member 'handleFirestoreError'.
+src/pages/MyOrders.tsx(27,58): error TS2305: Module '"../lib/utils"' has no exported member 'cn'.
+src/pages/MyOrders.tsx(223,44): error TS2304: Cannot find name 'navigate'.
+src/pages/NewOrder.tsx(26,26): error TS2305: Module '"../types"' has no exported member 'Transaction'.
+src/pages/NewOrder.tsx(27,10): error TS2305: Module '"../lib/utils"' has no exported member 'formatINR'.
+src/pages/NewOrder.tsx(27,21): error TS2305: Module '"../lib/utils"' has no exported member 'OperationType'.
+src/pages/NewOrder.tsx(27,36): error TS2305: Module '"../lib/utils"' has no exported member 'handleFirestoreError'.
+src/pages/NewOrder.tsx(27,58): error TS2305: Module '"../lib/utils"' has no exported member 'cn'.
+src/pages/NewOrder.tsx(31,23): error TS2307: Cannot find module 'react-hot-toast' or its corresponding type declarations.
+src/pages/NewOrder.tsx(105,9): error TS2353: Object literal may only specify known properties, and 'userId' does not exist in type 'Order'.
+src/pages/Onboarding.tsx(26,23): error TS2307: Cannot find module 'react-hot-toast' or its corresponding type declarations.
+src/pages/Onboarding.tsx(29,10): error TS2305: Module '"../lib/firebase"' has no exported member 'storage'.
+src/pages/Register.tsx(5,23): error TS2307: Cannot find module 'react-hot-toast' or its corresponding type declarations.
+src/pages/Support.tsx(16,23): error TS2307: Cannot find module 'react-hot-toast' or its corresponding type declarations.
+src/pages/TaskDetail.tsx(24,14): error TS2305: Module '"../lib/firebase"' has no exported member 'storage'.
+src/pages/TaskDetail.tsx(25,10): error TS2305: Module '"../types"' has no exported member 'Task'.
+src/pages/TaskDetail.tsx(25,16): error TS2305: Module '"../types"' has no exported member 'Submission'.
+src/pages/TaskDetail.tsx(27,10): error TS2305: Module '"../lib/utils"' has no exported member 'formatINR'.
+src/pages/TaskDetail.tsx(27,21): error TS2305: Module '"../lib/utils"' has no exported member 'OperationType'.
+src/pages/TaskDetail.tsx(27,36): error TS2305: Module '"../lib/utils"' has no exported member 'handleFirestoreError'.
+src/pages/TaskDetail.tsx(28,23): error TS2307: Cannot find module 'react-hot-toast' or its corresponding type declarations.
+src/pages/TaskDetail.tsx(30,10): error TS2305: Module '"../lib/utils"' has no exported member 'cn'.
+src/pages/Wallet.tsx(34,10): error TS2305: Module '"../types"' has no exported member 'Transaction'.
+src/pages/Wallet.tsx(35,10): error TS2305: Module '"../lib/utils"' has no exported member 'formatINR'.
+src/pages/Wallet.tsx(35,21): error TS2305: Module '"../lib/utils"' has no exported member 'OperationType'.
+src/pages/Wallet.tsx(35,36): error TS2305: Module '"../lib/utils"' has no exported member 'handleFirestoreError'.
+src/pages/Wallet.tsx(37,23): error TS2307: Cannot find module 'react-hot-toast' or its corresponding type declarations.
+src/pages/Wallet.tsx(39,10): error TS2305: Module '"../lib/utils"' has no exported member 'cn'.
+src/pages/Wallet.tsx(395,19): error TS2304: Cannot find name 'Link'.
+src/pages/Wallet.tsx(395,154): error TS2304: Cannot find name 'Link'.
