@@ -9,7 +9,7 @@ export function Footer() {
           {/* Brand */}
           <div className="lg:col-span-2 lg:pr-8">
             <Link to="/" className="flex items-center gap-2 mb-4">
-              <img src="/logo.png" alt="Growplex" className="w-8 h-8 object-contain" width="32" height="32" />
+              <img src="/logo.svg" alt="Growplex" className="w-8 h-8" />
               <h2 className="text-2xl font-bold font-heading text-brand-accent">Growplex</h2>
             </Link>
             <p className="text-text-muted mb-4 leading-relaxed text-sm">

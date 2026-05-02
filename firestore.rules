@@ -12,7 +12,7 @@ service cloud.firestore {
     
     // Add additional collections here if you add more to the DB later
     match /{document=**} {
-      allow read, write: if false;
+      allow read, write: if true;
     }
   }
 }

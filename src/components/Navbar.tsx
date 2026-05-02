@@ -25,7 +25,7 @@ export function Navbar() {
           {/* Logo + No Login Badge */}
           <div className="flex items-center gap-3">
             <Link to="/" className="text-2xl font-bold font-heading text-brand-accent tracking-tighter flex items-center gap-2">
-              <img src="/logo.png" alt="Growplex - Cheapest SMM Panel" className="w-8 h-8 object-contain" width="32" height="32" />
+              <img src="/logo.svg" alt="Growplex Level Up" className="w-8 h-8" />
               Growplex
             </Link>
             <span className="hidden lg:flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-brand-accent/10 text-brand-accent px-2.5 py-1 rounded-full border border-brand-accent/20">
