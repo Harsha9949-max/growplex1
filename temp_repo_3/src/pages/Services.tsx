@@ -14,7 +14,7 @@ import { Service, Package } from "../types";
 import { collection, query, onSnapshot, where } from "firebase/firestore";
 import { db } from "../lib/firebase";
 
-export const MOCK_SERVICES: Service[] = [
+const MOCK_SERVICES: Service[] = [
   {
     id: "s1",
     category: "Instagram Followers",
@@ -286,21 +286,18 @@ export default function Services() {
 
     // Sort by checking the minimum package price for each service
     result = [...result].sort((a, b) => {
-      const aPkgs = a.packages || [];
-      const bPkgs = b.packages || [];
-      const aMinPrice = aPkgs.length > 0 ? Math.min(...aPkgs.map(p => p.price || 0)) : 0;
-      const bMinPrice = bPkgs.length > 0 ? Math.min(...bPkgs.map(p => p.price || 0)) : 0;
+      const aMinPrice = Math.min(...a.packages.map(p => p.price));
+      const bMinPrice = Math.min(...b.packages.map(p => p.price));
       
       const parseQty = (q: string) => {
-         if (!q) return 0;
-         let num = parseFloat(q.replace(/[^0-9.]/g, '')) || 0;
+         let num = parseFloat(q.replace(/[^0-9.]/g, ''));
          if (q.toLowerCase().includes('k')) num *= 1000;
          if (q.toLowerCase().includes('m')) num *= 1000000;
          return num;
       };
       
-      const aMaxQty = aPkgs.length > 0 ? Math.max(...aPkgs.map(p => parseQty(p.quantity))) : 0;
-      const bMaxQty = bPkgs.length > 0 ? Math.max(...bPkgs.map(p => parseQty(p.quantity))) : 0;
+      const aMaxQty = Math.max(...a.packages.map(p => parseQty(p.quantity)));
+      const bMaxQty = Math.max(...b.packages.map(p => parseQty(p.quantity)));
       
       if (sortBy === "price-asc") return aMinPrice - bMinPrice;
       if (sortBy === "price-desc") return bMinPrice - aMinPrice;

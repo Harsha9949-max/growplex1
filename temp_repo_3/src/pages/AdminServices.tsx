@@ -2,10 +2,9 @@ import React, { useState, useEffect, useMemo } from "react";
 import { 
   Search, Edit2, Trash2, Plus, 
   Filter, X, MoreVertical, CheckCircle, Percent,
-  AlertCircle, TrendingUp, TrendingDown
+  AlertCircle
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import toast from "react-hot-toast";
 import { AdminLayout } from "../components/AdminLayout";
 import { db } from "../lib/firebase";
 import { 
@@ -28,8 +27,6 @@ interface ServiceDocument {
 }
 
 const CATEGORY_OPTIONS = ["Instagram", "YouTube", "Telegram", "Facebook"];
-
-import { MOCK_SERVICES } from "./Services";
 
 export default function AdminServices() {
   const [services, setServices] = useState<ServiceDocument[]>([]);
@@ -54,7 +51,6 @@ export default function AdminServices() {
     packages: [{ id: `pkg_${Date.now()}`, quantity: "", price: 0 }] as Package[]
   });
   const [bulkPercentage, setBulkPercentage] = useState("");
-  const [bulkAction, setBulkAction] = useState<"increase" | "decrease">("increase");
 
   useEffect(() => {
     const q = query(collection(db, "services"));
@@ -67,8 +63,8 @@ export default function AdminServices() {
       
       // Sort manually by createdAt descending
       fetched.sort((a, b) => {
-        const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt?.seconds ? a.createdAt.seconds * 1000 : 0);
-        const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt?.seconds ? b.createdAt.seconds * 1000 : 0);
+        const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+        const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
         return timeB - timeA;
       });
       
@@ -127,31 +123,20 @@ export default function AdminServices() {
 
   const handleSaveService = async () => {
 
-    if (!formData.serviceName || formData.packages.length === 0) {
-      toast.error("Service Name and at least 1 package are required.");
-      return;
-    }
+    if (!formData.serviceName || formData.packages.length === 0) return alert("Service Name and at least 1 package are required.");
 
     try {
-      const payload = {
-        ...formData,
-        packages: formData.packages.map(pkg => ({
-          ...pkg,
-          basePrice: Number(pkg.price) // Reset baseline to whatever admin manually typed
-        })),
-      };
-
       if (editingService) {
         const docRef = doc(db, "services", editingService.id);
         await updateDoc(docRef, {
-          ...payload,
+          ...formData,
           updatedAt: serverTimestamp()
         });
       } else {
         const randomNum = Math.floor(1000 + Math.random() * 9000);
         await addDoc(collection(db, "services"), {
           serviceId: `SRV-${randomNum}`,
-          ...payload,
+          ...formData,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         });
@@ -159,19 +144,19 @@ export default function AdminServices() {
       setIsFormOpen(false);
     } catch (error) {
       console.error("Error saving service:", error);
-      toast.error("Failed to save service");
+      alert("Failed to save service");
     }
   };
 
   const handleDeleteService = async (id: string) => {
 
+    if (confirm("Are you sure you want to delete this service?")) {
       try {
         await deleteDoc(doc(db, "services", id));
-        toast.success("Service deleted");
       } catch (error) {
         console.error("Error deleting service:", error);
-        toast.error("Error deleting service");
       }
+    }
   };
 
   const handleToggleStatus = async (service: ServiceDocument) => {
@@ -189,15 +174,10 @@ export default function AdminServices() {
 
   const handleBulkUpdate = async () => {
 
-    let percentage = parseFloat(bulkPercentage);
-    if (isNaN(percentage)) {
-      toast.error("Please enter a valid percentage.");
-      return;
-    }
+    const percentage = parseFloat(bulkPercentage);
+    if (isNaN(percentage) || percentage === 0) return alert("Please enter a valid percentage.");
 
-    if (bulkAction === "decrease") {
-      percentage = -percentage;
-    }
+    if (!confirm(`Are you sure you want to update ALL prices by ${percentage > 0 ? '+' : ''}${percentage}%?`)) return;
 
     try {
       const batch = writeBatch(db);
@@ -206,23 +186,10 @@ export default function AdminServices() {
       let count = 0;
       snapshot.forEach((document) => {
         const data = document.data() as ServiceDocument;
-        if (!data.packages) return; // Skip if it has no packages
-        
-        const newPackages = data.packages.map(pkg => {
-          // If we are applying a percentage update, we should calculate from the basePrice to prevent compounding errors.
-          // e.g. +40% then -40% should return exactly to the original price.
-          const basePriceVal = pkg.basePrice !== undefined ? pkg.basePrice : pkg.price;
-          const basePriceNum = typeof basePriceVal === "string" ? parseFloat((basePriceVal as string).replace(/[^0-9.-]/g, '')) : Number(basePriceVal);
-          
-          let newPrice = basePriceNum * (1 + percentage / 100);
-          newPrice = Math.max(0, Math.round(newPrice));
-          
-          return {
-            ...pkg,
-            basePrice: basePriceNum,
-            price: newPrice
-          };
-        });
+        const newPackages = data.packages.map(pkg => ({
+          ...pkg,
+          price: Math.round(Number(pkg.price) * (1 + percentage / 100))
+        }));
         
         batch.update(document.ref, {
           packages: newPackages,
@@ -233,48 +200,13 @@ export default function AdminServices() {
       
       if (count > 0) {
         await batch.commit();
-        toast.success(`Successfully applied percentage update to ${count} services.`);
+        alert(`Successfully updated prices for ${count} services.`);
       }
       setIsBulkUpdateOpen(false);
       setBulkPercentage("");
     } catch (error) {
       console.error("Bulk update failed:", error);
-      toast.error("Bulk update failed.");
-    }
-  };
-
-  const handleImportDefaults = async () => {
-    toast.loading("Importing services...", { id: "import" });
-    try {
-      const batch = writeBatch(db);
-      let count = 0;
-      
-      MOCK_SERVICES.forEach((mockService) => {
-        const docRef = doc(collection(db, "services"));
-        batch.set(docRef, {
-          serviceId: `SRV-${Math.floor(1000 + Math.random() * 9000)}-${count}`,
-          category: mockService.category,
-          serviceName: mockService.name,
-          deliveryTime: mockService.deliveryTime,
-          description: mockService.description,
-          status: "active",
-          packages: mockService.packages.map(p => ({
-             id: `pkg_${Date.now()}_${Math.random()}`,
-             quantity: p.quantity,
-             price: Number(p.price),
-             basePrice: Number(p.price)
-          })),
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        });
-        count++;
-      });
-      
-      await batch.commit();
-      toast.success(`Successfully imported ${count} services!`, { id: "import" });
-    } catch (error) {
-      console.error("Import failed:", error);
-      toast.error("Failed to import services.", { id: "import" });
+      alert("Bulk update failed.");
     }
   };
 
@@ -318,14 +250,6 @@ export default function AdminServices() {
           </div>
           
           <div className="flex items-center gap-3 w-full md:w-auto">
-            {services.length === 0 && !loading && (
-              <button
-                onClick={handleImportDefaults}
-                className="bg-brand-surface border border-brand-accent text-brand-accent hover:bg-brand-accent/10 py-2 px-4 rounded-xl font-medium transition-all"
-              >
-                Import Default Services
-              </button>
-            )}
             <button
                onClick={() => setIsBulkUpdateOpen(true)}
                className="bg-brand-surface border border-brand-border hover:border-brand-accent/50 text-text-main py-2 px-4 rounded-xl font-medium flex items-center gap-2 transition-all"
@@ -415,8 +339,8 @@ export default function AdminServices() {
                         {service.serviceName}
                       </td>
                       <td className="px-6 py-4 text-xs text-text-muted">
-                        {service.packages?.length || 0} Packages<br/>
-                        <span className="text-brand-accent">Starting ₹{service.packages && service.packages.length > 0 ? Math.min(...service.packages.map(p => Number(p.price))) : 0}</span>
+                        {service.packages.length} Packages<br/>
+                        <span className="text-brand-accent">Starting ₹{Math.min(...service.packages.map(p => Number(p.price)))}</span>
                       </td>
                       <td className="px-6 py-4 text-text-muted">{service.deliveryTime}</td>
                       <td className="px-6 py-4">
@@ -517,19 +441,15 @@ export default function AdminServices() {
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div className="space-y-1.5">
                        <label className="text-sm font-medium text-text-muted">Category</label>
-                       <input 
-                         type="text"
-                         list="categories-list"
+                       <select 
                          value={formData.category}
                          onChange={(e) => setFormData({...formData, category: e.target.value})}
-                         placeholder="e.g. Instagram Followers"
-                         className="w-full bg-brand-primary border border-brand-border rounded-xl px-4 py-2.5 text-text-main focus:outline-none focus:border-brand-accent/50"
-                       />
-                       <datalist id="categories-list">
-                         {Array.from(new Set([...CATEGORY_OPTIONS, ...services.map(s => s.category)])).map(cat => (
-                            <option key={cat} value={cat} />
+                         className="w-full bg-brand-primary border border-brand-border rounded-xl px-4 py-2.5 text-text-main focus:outline-none focus:border-brand-accent/50 appearance-none"
+                       >
+                         {CATEGORY_OPTIONS.map(cat => (
+                            <option key={cat} value={cat}>{cat}</option>
                          ))}
-                       </datalist>
+                       </select>
                     </div>
                     
                     <div className="space-y-1.5">
@@ -673,60 +593,24 @@ export default function AdminServices() {
               </div>
               
               <div className="p-6">
-                 <div className="mb-5 text-sm text-text-muted flex items-start gap-2 bg-brand-primary p-3 rounded-xl border border-brand-border">
+                 <div className="mb-4 text-sm text-text-muted flex items-start gap-2 bg-brand-primary p-3 rounded-xl border border-brand-border">
                     <AlertCircle size={16} className="text-yellow-500 shrink-0 mt-0.5" />
-                    <p>This will {bulkAction} the prices of <strong>ALL</strong> packages across <strong>ALL</strong> services by the percentage you specify.</p>
+                    <p>This will increase or decrease the prices of <strong>ALL</strong> packages across <strong>ALL</strong> services by the percentage you specify.</p>
                  </div>
                  
-                 <div className="space-y-4">
-                    <div className="space-y-2">
-                       <label className="text-sm font-medium text-text-main flex items-center justify-between">
-                         Action
-                       </label>
-                       <div className="grid grid-cols-2 gap-3">
-                         <button
-                           onClick={() => setBulkAction("increase")}
-                           className={`py-3 px-4 rounded-xl border text-sm font-bold flex justify-center items-center gap-2 transition-all ${
-                             bulkAction === "increase" 
-                               ? "bg-green-500/10 border-green-500/50 text-green-500 shadow-[0_0_15px_rgba(34,197,94,0.15)]" 
-                               : "bg-brand-primary border-brand-border text-text-muted hover:border-text-muted hover:text-text-main"
-                           }`}
-                         >
-                           <TrendingUp size={16} />
-                           Increase
-                         </button>
-                         <button
-                           onClick={() => setBulkAction("decrease")}
-                           className={`py-3 px-4 rounded-xl border text-sm font-bold flex justify-center items-center gap-2 transition-all ${
-                             bulkAction === "decrease" 
-                               ? "bg-red-500/10 border-red-500/50 text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.15)]" 
-                               : "bg-brand-primary border-brand-border text-text-muted hover:border-text-muted hover:text-text-main"
-                           }`}
-                         >
-                           <TrendingDown size={16} />
-                           Decrease
-                         </button>
-                       </div>
+                 <div className="space-y-2">
+                    <label className="text-sm font-medium text-text-main">Percentage Value (%)</label>
+                    <div className="relative">
+                       <input 
+                         type="number"
+                         placeholder="e.g. 40"
+                         value={bulkPercentage}
+                         onChange={(e) => setBulkPercentage(e.target.value)}
+                         className="w-full bg-brand-primary border border-brand-border rounded-xl px-4 py-3 text-lg font-medium text-text-main focus:outline-none focus:border-brand-accent/50"
+                       />
+                       <span className="absolute right-4 top-3 text-text-muted font-medium">%</span>
                     </div>
-
-                    <div className="space-y-2">
-                       <label className="text-sm font-medium text-text-main">Percentage Value (%)</label>
-                       <div className="relative">
-                          <input 
-                            type="number"
-                            min="0.1"
-                            step="any"
-                            placeholder="e.g. 40"
-                            value={bulkPercentage}
-                            onChange={(e) => setBulkPercentage(e.target.value)}
-                            className="w-full bg-brand-primary border border-brand-border rounded-xl px-4 py-3 text-lg font-medium text-text-main focus:outline-none focus:border-brand-accent/50"
-                          />
-                          <span className="absolute right-4 top-3 text-text-muted font-medium">%</span>
-                       </div>
-                       <p className="text-xs text-text-muted">
-                         Example: 40% {bulkAction} will make a ₹100 package cost {bulkAction === "increase" ? "₹140" : "₹60"}.
-                       </p>
-                    </div>
+                    <p className="text-xs text-text-muted">Enter a positive number to increase, negative to decrease. Example: 40 will make a ₹100 package cost ₹140.</p>
                  </div>
               </div>
 
