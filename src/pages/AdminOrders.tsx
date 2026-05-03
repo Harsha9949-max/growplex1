@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { 
-  Search, Eye, Edit2, CheckCircle, XCircle, 
-  Clock, Package, Filter, MoreVertical, X, Calendar
+  Search, Eye, CheckCircle, XCircle, 
+  Clock, Package, Filter, X, Camera, Image, Trash2, ShieldCheck
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { AdminLayout } from "../components/AdminLayout";
-import { db } from "../lib/firebase";
-import { collection, query, orderBy, onSnapshot, doc, updateDoc } from "firebase/firestore";
+import { db, storage } from "../lib/firebase";
+import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteField } from "firebase/firestore";
+import { ref, deleteObject } from "firebase/storage";
 
 interface GrowplexOrder {
   id?: string;
@@ -19,6 +20,8 @@ interface GrowplexOrder {
   price: number;
   paymentId: string;
   paymentStatus: string;
+  paymentScreenshotUrl?: string;
+  paymentScreenshotPath?: string;
   orderStatus: string;
   createdAt: any;
 }
@@ -31,6 +34,8 @@ export default function AdminOrders() {
   const [sortBy, setSortBy] = useState("Date");
   const [selectedOrder, setSelectedOrder] = useState<GrowplexOrder | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [screenshotModal, setScreenshotModal] = useState<string | null>(null);
+  const [approving, setApproving] = useState(false);
   const ITEMS_PER_PAGE = 10;
 
   useEffect(() => {
@@ -68,6 +73,59 @@ export default function AdminOrders() {
     } catch (err) {
       console.error(err);
       alert("Failed to update status");
+    }
+  };
+
+  /**
+   * Approve payment: 
+   * 1. Set paymentStatus to "paid"
+   * 2. Delete screenshot from Firebase Storage
+   * 3. Remove screenshot fields from Firestore document
+   */
+  const handleApprovePayment = async (order: GrowplexOrder) => {
+    if (!order.id) return;
+    setApproving(true);
+
+    try {
+      // 1. Delete screenshot from Storage if path exists
+      if (order.paymentScreenshotPath) {
+        try {
+          const screenshotRef = ref(storage, order.paymentScreenshotPath);
+          await deleteObject(screenshotRef);
+        } catch (storageErr) {
+          console.warn("Screenshot deletion from storage failed (may already be deleted):", storageErr);
+        }
+      }
+
+      // 2. Update Firestore: set paid, remove screenshot fields
+      await updateDoc(doc(db, "orders", order.id), {
+        paymentStatus: "paid",
+        paymentScreenshotUrl: deleteField(),
+        paymentScreenshotPath: deleteField(),
+      });
+
+      // 3. Update local state
+      setOrders(prev => prev.map(o => 
+        o.orderId === order.orderId 
+          ? { ...o, paymentStatus: "paid", paymentScreenshotUrl: undefined, paymentScreenshotPath: undefined } 
+          : o
+      ));
+
+      if (selectedOrder?.orderId === order.orderId) {
+        setSelectedOrder(prev => prev ? { 
+          ...prev, 
+          paymentStatus: "paid", 
+          paymentScreenshotUrl: undefined, 
+          paymentScreenshotPath: undefined 
+        } : null);
+      }
+
+      alert("Payment approved successfully! Screenshot has been removed.");
+    } catch (err) {
+      console.error("Failed to approve payment:", err);
+      alert("Failed to approve payment. Please try again.");
+    } finally {
+      setApproving(false);
     }
   };
 
@@ -121,6 +179,22 @@ export default function AdminOrders() {
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
+
+  const getPaymentBadge = (status: string, hasScreenshot: boolean) => {
+    if (status === "paid") {
+      return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-500">
+        <CheckCircle size={12} /> PAID
+      </span>;
+    }
+    if (status === "pending_verification") {
+      return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-500">
+        {hasScreenshot && <Camera size={12} />} VERIFY
+      </span>;
+    }
+    return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-500/10 text-red-500">
+      {status.toUpperCase()}
+    </span>;
+  };
 
   return (
     <AdminLayout>
@@ -226,11 +300,7 @@ export default function AdminOrders() {
                       </td>
                       <td className="px-6 py-4 font-medium">₹{order.price}</td>
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          order.paymentStatus === 'paid' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'
-                        }`}>
-                          {order.paymentStatus.toUpperCase()}
-                        </span>
+                        {getPaymentBadge(order.paymentStatus, !!order.paymentScreenshotUrl)}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center">
@@ -310,16 +380,16 @@ export default function AdminOrders() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-lg bg-brand-surface border border-brand-border rounded-2xl shadow-2xl overflow-hidden z-10"
+              className="relative w-full max-w-lg bg-brand-surface border border-brand-border rounded-2xl shadow-2xl overflow-hidden z-10 max-h-[90vh] flex flex-col"
             >
-              <div className="p-6 border-b border-brand-border flex justify-between items-center bg-brand-primary/50">
+              <div className="p-6 border-b border-brand-border flex justify-between items-center bg-brand-primary/50 shrink-0">
                 <h3 className="font-heading font-bold text-xl text-text-main">Order Details</h3>
                 <button onClick={() => setSelectedOrder(null)} className="text-text-muted hover:text-white transition-colors">
                   <X size={20} />
                 </button>
               </div>
               
-              <div className="p-6 space-y-4">
+              <div className="p-6 space-y-4 overflow-y-auto flex-1">
                  
                  <div className="grid grid-cols-2 gap-4">
                     <div className="bg-brand-primary p-4 rounded-xl border border-brand-border">
@@ -366,36 +436,121 @@ export default function AdminOrders() {
                     </div>
                  </div>
 
-                 <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-brand-primary p-4 rounded-xl border border-brand-border">
-                       <p className="text-xs text-text-muted mb-1 uppercase tracking-wider">Payment ID</p>
-                       <p className="text-xs font-mono text-text-main break-all">{selectedOrder.paymentId}</p>
+                 {/* Payment Status & Screenshot Section */}
+                 <div className="bg-brand-primary p-4 rounded-xl border border-brand-border space-y-3">
+                    <div className="flex justify-between items-center">
+                       <span className="text-sm text-text-muted">Payment Status</span>
+                       {getPaymentBadge(selectedOrder.paymentStatus, !!selectedOrder.paymentScreenshotUrl)}
                     </div>
-                    <div className="bg-brand-primary p-4 rounded-xl border border-brand-border">
-                       <p className="text-xs text-text-muted mb-1 uppercase tracking-wider">Order Status</p>
-                       <p className="text-sm font-medium uppercase text-text-main">{selectedOrder.orderStatus}</p>
+                    <div className="flex justify-between">
+                       <span className="text-sm text-text-muted">Payment ID</span>
+                       <span className="text-xs font-mono text-text-main break-all">{selectedOrder.paymentId}</span>
+                    </div>
+                    <div className="flex justify-between">
+                       <span className="text-sm text-text-muted">Order Status</span>
+                       <span className="text-sm font-medium uppercase text-text-main">{selectedOrder.orderStatus}</span>
                     </div>
                  </div>
 
-              </div>
-
-              <div className="p-6 border-t border-brand-border bg-brand-primary/50 flex gap-3">
-                 {selectedOrder.orderStatus !== 'completed' && (
-                    <button 
-                      onClick={() => handleStatusUpdate(selectedOrder.orderId, "completed")}
-                      className="flex-1 bg-green-500/20 text-green-500 border border-green-500/30 hover:bg-green-500/30 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all"
-                    >
-                      <CheckCircle size={18} /> Mark Completed
-                    </button>
+                 {/* Payment Screenshot */}
+                 {selectedOrder.paymentScreenshotUrl && (
+                   <div className="bg-brand-primary p-4 rounded-xl border border-yellow-500/30 space-y-3">
+                     <p className="text-sm font-medium text-yellow-500 flex items-center gap-2">
+                       <Camera size={16} /> Payment Screenshot
+                     </p>
+                     <div 
+                       className="cursor-pointer rounded-lg overflow-hidden border border-brand-border hover:border-brand-accent/50 transition-colors"
+                       onClick={() => setScreenshotModal(selectedOrder.paymentScreenshotUrl!)}
+                     >
+                       <img 
+                         src={selectedOrder.paymentScreenshotUrl} 
+                         alt="Payment screenshot" 
+                         className="w-full max-h-48 object-contain bg-black/20"
+                       />
+                     </div>
+                     <p className="text-xs text-text-muted text-center">Click to view full screenshot</p>
+                   </div>
                  )}
-                 <button 
-                   onClick={() => setSelectedOrder(null)}
-                   className="flex-1 bg-brand-surface border border-brand-border text-text-main hover:bg-brand-border py-2.5 rounded-xl font-medium transition-all"
-                 >
-                   Close Card
-                 </button>
+
               </div>
 
+              <div className="p-6 border-t border-brand-border bg-brand-primary/50 flex flex-col gap-3 shrink-0">
+                 {/* Approve Payment Button — only if pending verification */}
+                 {selectedOrder.paymentStatus === "pending_verification" && selectedOrder.paymentScreenshotUrl && (
+                   <button 
+                     onClick={() => handleApprovePayment(selectedOrder)}
+                     disabled={approving}
+                     className="w-full bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 hover:bg-yellow-500/30 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                   >
+                     {approving ? (
+                       <><div className="w-4 h-4 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin" /> Approving...</>
+                     ) : (
+                       <><ShieldCheck size={18} /> Approve Payment</>
+                     )}
+                   </button>
+                 )}
+
+                 <div className="flex gap-3">
+                   {selectedOrder.orderStatus !== 'completed' && (
+                      <button 
+                        onClick={() => handleStatusUpdate(selectedOrder.orderId, "completed")}
+                        className="flex-1 bg-green-500/20 text-green-500 border border-green-500/30 hover:bg-green-500/30 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all"
+                      >
+                        <CheckCircle size={18} /> Mark Completed
+                      </button>
+                   )}
+                   <button 
+                     onClick={() => setSelectedOrder(null)}
+                     className="flex-1 bg-brand-surface border border-brand-border text-text-main hover:bg-brand-border py-2.5 rounded-xl font-medium transition-all"
+                   >
+                     Close Card
+                   </button>
+                 </div>
+              </div>
+
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Full Screenshot Modal */}
+      <AnimatePresence>
+        {screenshotModal && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setScreenshotModal(null)}
+              className="absolute inset-0 bg-black/90"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="relative z-10 max-w-3xl w-full max-h-[85vh]"
+            >
+              <button
+                onClick={() => setScreenshotModal(null)}
+                className="absolute -top-10 right-0 text-white/70 hover:text-white transition-colors"
+              >
+                <X size={24} />
+              </button>
+              <img
+                src={screenshotModal}
+                alt="Payment screenshot — full view"
+                className="w-full h-full object-contain rounded-xl"
+              />
+              <div className="flex justify-center mt-4 gap-3">
+                <a
+                  href={screenshotModal}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 bg-brand-accent text-brand-primary font-medium rounded-lg text-sm hover:bg-brand-accent-hover transition-colors"
+                >
+                  Open in New Tab
+                </a>
+              </div>
             </motion.div>
           </div>
         )}

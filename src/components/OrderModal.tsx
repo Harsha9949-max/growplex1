@@ -1,11 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Clock, Info, CheckCircle, Loader2 } from "lucide-react";
+import { X, Clock, Info, CheckCircle, Loader2, Upload, QrCode, Camera, ArrowLeft, Copy, Check, IndianRupee } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { Service, Package } from "../types";
 import { generateOrderId } from "../lib/utils";
 import { useNavigate } from "react-router-dom";
-import { db } from "../lib/firebase";
+import { db, storage } from "../lib/firebase";
 import { collection, addDoc, doc, getDoc, serverTimestamp } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 interface OrderModalProps {
   service: Service;
@@ -13,6 +15,10 @@ interface OrderModalProps {
   onClose: () => void;
   getCategoryIcon: (cat: string) => React.ReactNode;
 }
+
+// UPI Payment destination
+const UPI_ID = "harshahvr@fam";
+const UPI_NAME = "Growplex";
 
 /**
  * Sends a Telegram notification for a new order.
@@ -52,7 +58,7 @@ async function sendTelegramNotification(order: {
       `📊 *Package:* ${order.packageQuantity}`,
       `💰 *Amount:* ₹${order.price}`,
       ``,
-      `✅ *Status:* New Order`,
+      `📸 *Payment:* Screenshot uploaded — pending verification`,
     ].join("\n");
 
     await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
@@ -71,7 +77,7 @@ async function sendTelegramNotification(order: {
 }
 
 export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon }: OrderModalProps) {
-  const [step, setStep] = useState<"details" | "checkout">("details");
+  const [step, setStep] = useState<"details" | "checkout" | "payment">("details");
   const [formData, setFormData] = useState({
     customerName: "",
     phone: "",
@@ -79,52 +85,55 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
+  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
+  const [upiCopied, setUpiCopied] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string>("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+
+  // Generate the UPI deep link for QR code
+  const orderId = useRef(generateOrderId()).current;
+  const upiLink = `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(UPI_NAME)}&am=${selectedPackage.price}&cu=INR&tn=${encodeURIComponent(`Growplex Order ${orderId}`)}`;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  /**
-   * Saves the order directly to Firestore and sends a Telegram notification.
-   * This is the core function — works with or without Razorpay.
-   */
-  const saveOrderToFirestore = async (paymentId: string, paymentStatus: string) => {
-    const orderId = generateOrderId();
+  const handleScreenshotSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    const orderData = {
-      orderId,
-      customerName: formData.customerName,
-      phone: formData.phone,
-      serviceLink: formData.serviceLink,
-      serviceName: service.name,
-      serviceCategory: service.category,
-      packageQuantity: selectedPackage.quantity,
-      price: selectedPackage.price,
-      paymentId,
-      paymentStatus,
-      orderStatus: "new",
-      createdAt: serverTimestamp(),
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      setError("Please upload an image file (PNG, JPG, etc.)");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Screenshot must be less than 5MB");
+      return;
+    }
+
+    setError(null);
+    setScreenshotFile(file);
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setScreenshotPreview(ev.target?.result as string);
     };
+    reader.readAsDataURL(file);
+  }, []);
 
-    // Write to Firestore — this shows up immediately in Admin Panel (real-time listener)
-    await addDoc(collection(db, "orders"), orderData);
+  const copyUpiId = useCallback(() => {
+    navigator.clipboard.writeText(UPI_ID);
+    setUpiCopied(true);
+    setTimeout(() => setUpiCopied(false), 2000);
+  }, []);
 
-    // Send Telegram notification (fire-and-forget, non-blocking)
-    sendTelegramNotification({
-      orderId,
-      customerName: formData.customerName,
-      phone: formData.phone,
-      serviceName: service.name,
-      packageQuantity: selectedPackage.quantity,
-      price: selectedPackage.price,
-      serviceLink: formData.serviceLink,
-    });
-
-    return orderId;
-  };
-
-  const initPayment = async () => {
+  const proceedToPayment = () => {
     setError(null);
 
     // Easter Egg Backdoor to Admin Panel
@@ -146,76 +155,66 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
       return;
     }
 
+    setStep("payment");
+  };
+
+  const submitOrder = async () => {
+    if (!screenshotFile) {
+      setError("Please upload your payment screenshot");
+      return;
+    }
+
+    setError(null);
     setLoading(true);
+
     try {
-      // Fetch Razorpay key from Firestore settings, with hardcoded fallback
-      const FALLBACK_RAZORPAY_KEY = "rzp_live_SiPzHxYveDEFbd";
-      let razorpayKeyId = FALLBACK_RAZORPAY_KEY;
+      // 1. Upload screenshot to Firebase Storage
+      setUploadProgress("Uploading screenshot...");
+      const screenshotRef = ref(storage, `payment-screenshots/${orderId}_${Date.now()}.${screenshotFile.name.split('.').pop()}`);
+      await uploadBytes(screenshotRef, screenshotFile);
+      const screenshotUrl = await getDownloadURL(screenshotRef);
 
-      try {
-        const settingsDoc = await getDoc(doc(db, "system", "settings"));
-        if (settingsDoc.exists()) {
-          const settings = settingsDoc.data();
-          if (settings?.razorpayKey) {
-            razorpayKeyId = settings.razorpayKey;
-          }
-        }
-      } catch {
-        // Settings fetch failed — use fallback key
-      }
-
-      // Ensure Razorpay SDK is loaded
-      const windowWithRazorpay = window as any;
-      if (!windowWithRazorpay.Razorpay) {
-        throw new Error("Payment gateway is loading. Please try again in a moment.");
-      }
-
-      // Always open Razorpay checkout
-      const options = {
-        key: razorpayKeyId,
-        amount: selectedPackage.price * 100, // Razorpay uses paise
-        currency: "INR",
-        name: "Growplex",
-        description: `Payment for ${service.name} (${selectedPackage.quantity})`,
-        handler: async function (response: any) {
-          // Payment successful — save order to Firestore + send Telegram
-          try {
-            const orderId = await saveOrderToFirestore(
-              response.razorpay_payment_id,
-              "paid"
-            );
-            navigate("/success", { state: { orderId } });
-          } catch (err: any) {
-            console.error("Save order after payment error:", err);
-            // Payment was successful but save failed — still navigate to success
-            navigate("/success", { state: { orderId: "PENDING-CONFIRMATION" } });
-          }
-        },
-        prefill: {
-          name: formData.customerName,
-          contact: formData.phone,
-        },
-        modal: {
-          ondismiss: function () {
-            // User closed Razorpay without paying — just reset loading
-            setLoading(false);
-          }
-        },
-        theme: {
-          color: "#E8B84B"
-        }
+      // 2. Save order to Firestore
+      setUploadProgress("Creating order...");
+      const orderData = {
+        orderId,
+        customerName: formData.customerName,
+        phone: formData.phone,
+        serviceLink: formData.serviceLink,
+        serviceName: service.name,
+        serviceCategory: service.category,
+        packageQuantity: selectedPackage.quantity,
+        price: selectedPackage.price,
+        paymentId: `upi_${orderId}`,
+        paymentStatus: "pending_verification",
+        paymentScreenshotUrl: screenshotUrl,
+        paymentScreenshotPath: screenshotRef.fullPath,
+        orderStatus: "new",
+        upiId: UPI_ID,
+        createdAt: serverTimestamp(),
       };
 
-      const rzp1 = new windowWithRazorpay.Razorpay(options);
-      rzp1.on('payment.failed', function () {
-        setLoading(false);
-        navigate("/failed");
+      await addDoc(collection(db, "orders"), orderData);
+
+      // 3. Send Telegram notification (fire-and-forget)
+      sendTelegramNotification({
+        orderId,
+        customerName: formData.customerName,
+        phone: formData.phone,
+        serviceName: service.name,
+        packageQuantity: selectedPackage.quantity,
+        price: selectedPackage.price,
+        serviceLink: formData.serviceLink,
       });
-      rzp1.open();
+
+      // 4. Navigate to success
+      navigate("/success", { state: { orderId } });
     } catch (err: any) {
-      console.error("Order creation error:", err);
-      setError(err.message || "An error occurred. Please try again.");
+      console.error("Order submission error:", err);
+      setError(err.message || "Failed to submit order. Please try again.");
+    } finally {
       setLoading(false);
+      setUploadProgress("");
     }
   };
 
@@ -241,6 +240,14 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
           >
             <X size={20} />
           </button>
+          {step === "payment" && (
+            <button
+              onClick={() => { setStep("checkout"); setError(null); }}
+              className="absolute top-4 left-4 text-text-muted hover:text-text-main hover:bg-brand-border p-1.5 rounded-lg transition-colors"
+            >
+              <ArrowLeft size={20} />
+            </button>
+          )}
           <div className="inline-flex items-center px-2.5 py-1 rounded-md bg-brand-surface border border-brand-border text-xs font-medium text-text-muted mb-4 uppercase tracking-wider">
             {getCategoryIcon(service.category)}
             {service.category}
@@ -250,8 +257,15 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
         </div>
 
         <div className="p-6 flex-1 overflow-y-auto">
-          {step === "details" ? (
-             <div className="flex flex-col gap-6 h-full">
+          <AnimatePresence mode="wait">
+            {step === "details" && (
+              <motion.div
+                key="details"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="flex flex-col gap-6 h-full"
+              >
                 <div>
                   <h4 className="text-sm font-bold text-text-main mb-2 uppercase tracking-wide opacity-80 flex items-center gap-2">
                     <Info size={16} className="text-brand-accent"/> About this package
@@ -278,9 +292,17 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
                 >
                   Proceed to Checkout
                 </button>
-             </div>
-          ) : (
-             <div className="flex flex-col gap-4 h-full">
+              </motion.div>
+            )}
+
+            {step === "checkout" && (
+              <motion.div
+                key="checkout"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="flex flex-col gap-4 h-full"
+              >
                 {error && (
                   <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/50 text-red-500 text-sm">
                     {error}
@@ -336,18 +358,126 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
                 </div>
 
                 <button 
-                  onClick={initPayment}
-                  disabled={loading}
-                  className="w-full mt-auto bg-brand-accent text-brand-primary font-bold py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-brand-accent-hover hover:shadow-[0_0_20px_rgba(232,184,75,0.4)] transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed"
+                  onClick={proceedToPayment}
+                  className="w-full mt-auto bg-brand-accent text-brand-primary font-bold py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-brand-accent-hover hover:shadow-[0_0_20px_rgba(232,184,75,0.4)] transition-all duration-300"
+                >
+                  <IndianRupee size={20} /> Pay ₹{selectedPackage.price}
+                </button>
+              </motion.div>
+            )}
+
+            {step === "payment" && (
+              <motion.div
+                key="payment"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="flex flex-col gap-5 h-full"
+              >
+                {error && (
+                  <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/50 text-red-500 text-sm">
+                    {error}
+                  </div>
+                )}
+
+                {/* QR Code Section */}
+                <div className="flex flex-col items-center gap-3">
+                  <div className="bg-white p-4 rounded-2xl shadow-lg">
+                    <QRCodeSVG
+                      value={upiLink}
+                      size={180}
+                      level="H"
+                      includeMargin={false}
+                      bgColor="#ffffff"
+                      fgColor="#000000"
+                    />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-text-muted text-xs mb-1">Scan with any UPI app</p>
+                    <p className="text-brand-accent font-bold text-2xl">₹{selectedPackage.price}</p>
+                  </div>
+                </div>
+
+                {/* UPI ID Display */}
+                <div className="bg-brand-primary border border-brand-border rounded-xl p-3">
+                  <p className="text-xs text-text-muted mb-2 text-center">Or pay manually to UPI ID</p>
+                  <div className="flex items-center justify-between bg-brand-surface rounded-lg px-3 py-2 border border-brand-border">
+                    <span className="font-mono text-sm text-text-main font-medium">{UPI_ID}</span>
+                    <button
+                      onClick={copyUpiId}
+                      className="text-text-muted hover:text-brand-accent transition-colors p-1"
+                      title="Copy UPI ID"
+                    >
+                      {upiCopied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Screenshot Upload */}
+                <div className="border-t border-brand-border pt-4">
+                  <p className="text-sm font-medium text-text-main mb-3 flex items-center gap-2">
+                    <Camera size={16} className="text-brand-accent" />
+                    Upload Payment Screenshot
+                  </p>
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleScreenshotSelect}
+                    className="hidden"
+                  />
+
+                  {screenshotPreview ? (
+                    <div className="relative group">
+                      <img
+                        src={screenshotPreview}
+                        alt="Payment screenshot"
+                        className="w-full max-h-40 object-contain rounded-xl border border-brand-border bg-brand-primary"
+                      />
+                      <button
+                        onClick={() => {
+                          setScreenshotFile(null);
+                          setScreenshotPreview(null);
+                          if (fileInputRef.current) fileInputRef.current.value = "";
+                        }}
+                        className="absolute top-2 right-2 bg-red-500/80 hover:bg-red-500 text-white p-1 rounded-full transition-colors"
+                      >
+                        <X size={14} />
+                      </button>
+                      <p className="text-xs text-green-500 mt-2 flex items-center gap-1">
+                        <CheckCircle size={12} /> Screenshot attached — {screenshotFile?.name}
+                      </p>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full border-2 border-dashed border-brand-border hover:border-brand-accent/50 rounded-xl p-6 flex flex-col items-center gap-2 transition-colors group"
+                    >
+                      <Upload size={28} className="text-text-muted group-hover:text-brand-accent transition-colors" />
+                      <span className="text-sm text-text-muted group-hover:text-text-main transition-colors">
+                        Tap to upload screenshot
+                      </span>
+                      <span className="text-xs text-text-muted">PNG, JPG up to 5MB</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Submit Button */}
+                <button
+                  onClick={submitOrder}
+                  disabled={loading || !screenshotFile}
+                  className="w-full bg-brand-accent text-brand-primary font-bold py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-brand-accent-hover hover:shadow-[0_0_20px_rgba(232,184,75,0.4)] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? (
-                    <><Loader2 className="animate-spin" size={20} /> Processing...</>
+                    <><Loader2 className="animate-spin" size={20} /> {uploadProgress || "Processing..."}</>
                   ) : (
-                    <><CheckCircle size={20} /> Pay Now</>
+                    <><CheckCircle size={20} /> Confirm Payment</>
                   )}
                 </button>
-             </div>
-          )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </motion.div>
     </div>
