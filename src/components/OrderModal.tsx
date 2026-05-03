@@ -4,12 +4,70 @@ import { X, Clock, Info, CheckCircle, Loader2 } from "lucide-react";
 import { Service, Package } from "../types";
 import { generateOrderId } from "../lib/utils";
 import { useNavigate } from "react-router-dom";
+import { db } from "../lib/firebase";
+import { collection, addDoc, doc, getDoc, serverTimestamp } from "firebase/firestore";
 
 interface OrderModalProps {
   service: Service;
   selectedPackage: Package;
   onClose: () => void;
   getCategoryIcon: (cat: string) => React.ReactNode;
+}
+
+/**
+ * Sends a Telegram notification for a new order.
+ * Uses the Telegram Bot API directly (no server needed).
+ */
+async function sendTelegramNotification(order: {
+  orderId: string;
+  customerName: string;
+  phone: string;
+  serviceName: string;
+  packageQuantity: string;
+  price: number;
+  serviceLink: string;
+}) {
+  try {
+    // Fetch Telegram config from Firestore system/settings
+    const settingsDoc = await getDoc(doc(db, "system", "settings"));
+    const settings = settingsDoc.exists() ? settingsDoc.data() : null;
+
+    const botToken = settings?.telegramBotToken;
+    const chatId = settings?.telegramChatId;
+
+    if (!botToken || !chatId) {
+      console.warn("Telegram bot not configured in system/settings. Skipping notification.");
+      return;
+    }
+
+    const message = [
+      `🆕 *New Growplex Order*`,
+      ``,
+      `📋 *Order ID:* \`${order.orderId}\``,
+      `👤 *Customer:* ${order.customerName}`,
+      `📞 *Phone:* ${order.phone}`,
+      `🔗 *Link:* ${order.serviceLink}`,
+      ``,
+      `📦 *Service:* ${order.serviceName}`,
+      `📊 *Package:* ${order.packageQuantity}`,
+      `💰 *Amount:* ₹${order.price}`,
+      ``,
+      `✅ *Status:* New Order`,
+    ].join("\n");
+
+    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: message,
+        parse_mode: "Markdown",
+      }),
+    });
+  } catch (err) {
+    console.error("Telegram notification failed:", err);
+    // Don't throw — notification failure shouldn't block the order
+  }
 }
 
 export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon }: OrderModalProps) {
@@ -25,6 +83,45 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  /**
+   * Saves the order directly to Firestore and sends a Telegram notification.
+   * This is the core function — works with or without Razorpay.
+   */
+  const saveOrderToFirestore = async (paymentId: string, paymentStatus: string) => {
+    const orderId = generateOrderId();
+
+    const orderData = {
+      orderId,
+      customerName: formData.customerName,
+      phone: formData.phone,
+      serviceLink: formData.serviceLink,
+      serviceName: service.name,
+      serviceCategory: service.category,
+      packageQuantity: selectedPackage.quantity,
+      price: selectedPackage.price,
+      paymentId,
+      paymentStatus,
+      orderStatus: "new",
+      createdAt: serverTimestamp(),
+    };
+
+    // Write to Firestore — this shows up immediately in Admin Panel (real-time listener)
+    await addDoc(collection(db, "orders"), orderData);
+
+    // Send Telegram notification (fire-and-forget, non-blocking)
+    sendTelegramNotification({
+      orderId,
+      customerName: formData.customerName,
+      phone: formData.phone,
+      serviceName: service.name,
+      packageQuantity: selectedPackage.quantity,
+      price: selectedPackage.price,
+      serviceLink: formData.serviceLink,
+    });
+
+    return orderId;
   };
 
   const initPayment = async () => {
@@ -51,96 +148,73 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
 
     setLoading(true);
     try {
-      // 1. Create order on backend (mocked API call)
-      const orderId = generateOrderId();
-      const amount = selectedPackage.price;
-      
-      const response = await fetch("/api/create-order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount: amount,
-          currency: "INR",
-          receipt: orderId
-        })
-      });
+      // Fetch Razorpay key from Firestore settings, with hardcoded fallback
+      const FALLBACK_RAZORPAY_KEY = "rzp_live_SiPzHxYveDEFbd";
+      let razorpayKeyId = FALLBACK_RAZORPAY_KEY;
 
-      if (!response.ok) {
-        throw new Error("Failed to create order");
-      }
-
-      const orderData = await response.json();
-
-      const handlePaymentSuccess = async (paymentId: string) => {
-        try {
-          const res = await fetch("/api/save-order", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              paymentId,
-              customerName: formData.customerName,
-              phone: formData.phone,
-              serviceName: service.name,
-              packageQuantity: selectedPackage.quantity,
-              price: selectedPackage.price,
-              paymentStatus: "paid"
-            })
-          });
-          const data = await res.json();
-          if (data.id) {
-             navigate("/success", { state: { orderId: data.id } });
-          } else {
-             throw new Error("Failed to save order");
+      try {
+        const settingsDoc = await getDoc(doc(db, "system", "settings"));
+        if (settingsDoc.exists()) {
+          const settings = settingsDoc.data();
+          if (settings?.razorpayKey) {
+            razorpayKeyId = settings.razorpayKey;
           }
-        } catch (err: any) {
-          console.error("Save order error:", err);
-          // If server fails after payment, still send to success but without ID or with a fallback ID
-          navigate("/success", { state: { orderId: "PENDING-CONFIRMATION" } });
         }
-      };
-
-      // 2. Initialize Razorpay
-      if (orderData.key_id === "rzp_test_mockkey") {
-         setTimeout(() => {
-            handlePaymentSuccess("pay_mock_123456");
-         }, 1500);
-         return;
+      } catch {
+        // Settings fetch failed — use fallback key
       }
 
+      // Ensure Razorpay SDK is loaded
+      const windowWithRazorpay = window as any;
+      if (!windowWithRazorpay.Razorpay) {
+        throw new Error("Payment gateway is loading. Please try again in a moment.");
+      }
+
+      // Always open Razorpay checkout
       const options = {
-        key: orderData.key_id, // Fetched from backend
-        amount: orderData.amount, 
-        currency: orderData.currency,
+        key: razorpayKeyId,
+        amount: selectedPackage.price * 100, // Razorpay uses paise
+        currency: "INR",
         name: "Growplex",
         description: `Payment for ${service.name} (${selectedPackage.quantity})`,
-        order_id: orderData.id, 
         handler: async function (response: any) {
-          // Verify payment, generate order ID, redirect
-          await handlePaymentSuccess(response.razorpay_payment_id);
+          // Payment successful — save order to Firestore + send Telegram
+          try {
+            const orderId = await saveOrderToFirestore(
+              response.razorpay_payment_id,
+              "paid"
+            );
+            navigate("/success", { state: { orderId } });
+          } catch (err: any) {
+            console.error("Save order after payment error:", err);
+            // Payment was successful but save failed — still navigate to success
+            navigate("/success", { state: { orderId: "PENDING-CONFIRMATION" } });
+          }
         },
         prefill: {
           name: formData.customerName,
           contact: formData.phone,
+        },
+        modal: {
+          ondismiss: function () {
+            // User closed Razorpay without paying — just reset loading
+            setLoading(false);
+          }
         },
         theme: {
           color: "#E8B84B"
         }
       };
 
-      const windowWithRazorpay = window as any;
-      if (windowWithRazorpay.Razorpay) {
-        const rzp1 = new windowWithRazorpay.Razorpay(options);
-        rzp1.on('payment.failed', function (response: any){
-          navigate("/failed");
-        });
-        rzp1.open();
-      } else {
-        throw new Error("Razorpay SDK failed to load");
-      }
+      const rzp1 = new windowWithRazorpay.Razorpay(options);
+      rzp1.on('payment.failed', function () {
+        setLoading(false);
+        navigate("/failed");
+      });
+      rzp1.open();
     } catch (err: any) {
-      console.error(err);
-      setError(err.message || "An error occurred");
-    } finally {
+      console.error("Order creation error:", err);
+      setError(err.message || "An error occurred. Please try again.");
       setLoading(false);
     }
   };

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { AdminLayout } from "../components/AdminLayout";
-import { Settings, Save, Key, Shield, Smartphone, Globe, Wrench, Database } from "lucide-react";
+import { Settings, Save, Key, Shield, Smartphone, Globe, Wrench, Database, Send } from "lucide-react";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
 
@@ -30,6 +30,8 @@ export default function AdminSettings() {
     maintenanceMode: false,
     maintenanceMessage: "We are currently performing maintenance. Please check back later.",
     disableRegistrations: false,
+    telegramBotToken: "",
+    telegramChatId: "",
   });
 
   useEffect(() => {
@@ -124,6 +126,22 @@ export default function AdminSettings() {
                         <label className="text-sm font-medium text-text-muted mb-1 block">Support Phone</label>
                         <input type="text" value={settings.supportPhone} onChange={e => handleChange('supportPhone', e.target.value)} className="w-full bg-brand-primary border border-brand-border rounded-lg px-4 py-2 text-text-main focus:outline-none focus:border-brand-accent/50" />
                       </div>
+                    </div>
+                  </div>
+
+                  <h3 className="text-lg font-bold font-heading mb-4 mt-6 border-b border-brand-border pb-3 flex items-center gap-2">
+                    <Send size={18} className="text-brand-accent"/> Telegram Notifications
+                  </h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium text-text-muted mb-1 block">Telegram Bot Token</label>
+                      <input type="password" value={settings.telegramBotToken} onChange={e => handleChange('telegramBotToken', e.target.value)} placeholder="e.g., 123456:ABCdefGhIJKlmNOpqrSTUvwxYZ" className="w-full bg-brand-primary border border-brand-border rounded-lg px-4 py-2 text-text-main focus:outline-none focus:border-brand-accent/50" />
+                      <p className="text-xs text-text-muted mt-1">Get this from @BotFather on Telegram</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-text-muted mb-1 block">Telegram Chat ID</label>
+                      <input type="text" value={settings.telegramChatId} onChange={e => handleChange('telegramChatId', e.target.value)} placeholder="e.g., 6376644545" className="w-full bg-brand-primary border border-brand-border rounded-lg px-4 py-2 text-text-main focus:outline-none focus:border-brand-accent/50" />
+                      <p className="text-xs text-text-muted mt-1">Your personal or group chat ID for receiving order alerts</p>
                     </div>
                   </div>
                 </div>

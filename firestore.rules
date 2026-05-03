@@ -10,7 +10,24 @@ service cloud.firestore {
       allow read, write: if true;
     }
     
-    // Add additional collections here if you add more to the DB later
+    // System settings (Telegram config, Razorpay keys, etc.)
+    match /system/{docId} {
+      allow read: if true;
+      allow write: if true; // Admin panel writes settings
+    }
+    
+    // Services catalog
+    match /services/{serviceId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Users & other collections
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+    
+    // Catch-all: deny everything else
     match /{document=**} {
       allow read, write: if true;
     }

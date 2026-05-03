@@ -13,6 +13,7 @@ interface GrowplexOrder {
   orderId: string;
   customerName: string;
   phone: string;
+  serviceLink?: string;
   serviceName: string;
   packageQuantity: string;
   price: number;
@@ -331,16 +332,24 @@ export default function AdminOrders() {
                     </div>
                  </div>
 
-                 <div className="bg-brand-primary p-4 rounded-xl border border-brand-border space-y-3">
-                    <div className="flex justify-between">
-                       <span className="text-sm text-text-muted">Customer Name</span>
-                       <span className="text-sm font-medium">{selectedOrder.customerName}</span>
-                    </div>
-                    <div className="flex justify-between">
-                       <span className="text-sm text-text-muted">Phone Number</span>
-                       <span className="text-sm font-medium">{selectedOrder.phone}</span>
-                    </div>
-                 </div>
+                  <div className="bg-brand-primary p-4 rounded-xl border border-brand-border space-y-3">
+                     <div className="flex justify-between">
+                        <span className="text-sm text-text-muted">Customer Name</span>
+                        <span className="text-sm font-medium">{selectedOrder.customerName}</span>
+                     </div>
+                     <div className="flex justify-between">
+                        <span className="text-sm text-text-muted">Phone Number</span>
+                        <span className="text-sm font-medium">{selectedOrder.phone}</span>
+                     </div>
+                     {selectedOrder.serviceLink && (
+                       <div className="flex justify-between items-start">
+                          <span className="text-sm text-text-muted">Service Link</span>
+                          <a href={selectedOrder.serviceLink} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-brand-accent hover:underline max-w-[200px] truncate">
+                            {selectedOrder.serviceLink}
+                          </a>
+                       </div>
+                     )}
+                  </div>
 
                  <div className="bg-brand-primary p-4 rounded-xl border border-brand-border space-y-3">
                     <div className="flex justify-between">
