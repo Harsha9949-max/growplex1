@@ -1,38 +1,38 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { AdminProtectedRoute } from "./components/AdminProtectedRoute";
 import { FloatingBadge } from "./components/FloatingBadge";
-import Home from "./pages/Home";
-import Services from "./pages/Services";
-import Pricing from "./pages/Pricing";
-import Support from "./pages/Support";
-import HowItWorks from "./pages/HowItWorks";
-import FAQ from "./pages/FAQ";
-import Blog from "./pages/Blog";
-import BlogPost from "./pages/BlogPost";
 import About from "./pages/About";
-import Contact from "./pages/Contact";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import TermsOfService from "./pages/TermsOfService";
-import RefundPolicy from "./pages/RefundPolicy";
-import OrderSuccess from "./pages/OrderSuccess";
-import OrderFailed from "./pages/OrderFailed";
-import ReceiptViewer from "./pages/ReceiptViewer";
+import {
+  AdminBackup,
+  AdminContent,
+  AdminCustomers,
+  AdminLogs,
+  AdminNotifications,
+  AdminPayments,
+  AdminReports,
+  AdminRoles,
+  AdminSettings
+} from "./pages/admin-index";
+import AdminDashboard from "./pages/AdminDashboard";
 import AdminLogin from "./pages/AdminLogin";
 import AdminOrders from "./pages/AdminOrders";
-import AdminDashboard from "./pages/AdminDashboard";
 import AdminServices from "./pages/AdminServices";
-import { AdminProtectedRoute } from "./components/AdminProtectedRoute";
-import { 
-  AdminPayments, 
-  AdminCustomers, 
-  AdminNotifications, 
-  AdminReports, 
-  AdminSettings, 
-  AdminRoles, 
-  AdminLogs, 
-  AdminContent, 
-  AdminBackup 
-} from "./pages/admin-index";
+import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
+import Contact from "./pages/Contact";
+import FAQ from "./pages/FAQ";
+import Home from "./pages/Home";
+import HowItWorks from "./pages/HowItWorks";
+import OrderFailed from "./pages/OrderFailed";
+import OrderSuccess from "./pages/OrderSuccess";
+import Pricing from "./pages/Pricing";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import ReceiptViewer from "./pages/ReceiptViewer";
+import RefundPolicy from "./pages/RefundPolicy";
+import Services from "./pages/Services";
+import Support from "./pages/Support";
+import TermsOfService from "./pages/TermsOfService";
 
 export default function App() {
   return (

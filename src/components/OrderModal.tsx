@@ -1,13 +1,13 @@
-import React, { useState, useRef, useCallback } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { X, Clock, Info, CheckCircle, Loader2, Upload, QrCode, Camera, ArrowLeft, Copy, Check, IndianRupee } from "lucide-react";
+import { addDoc, collection, doc, getDoc, serverTimestamp } from "firebase/firestore";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { ArrowLeft, Camera, Check, CheckCircle, Clock, Copy, IndianRupee, Info, Loader2, Upload, X } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { QRCodeSVG } from "qrcode.react";
-import { Service, Package } from "../types";
-import { generateOrderId } from "../lib/utils";
+import React, { useCallback, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { db, storage } from "../lib/firebase";
-import { collection, addDoc, doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { generateOrderId } from "../lib/utils";
+import { Package, Service } from "../types";
 
 interface OrderModalProps {
   service: Service;
@@ -76,13 +76,8 @@ async function sendTelegramNotification(order: {
   }
 }
 
-import Confetti from 'react-confetti';
-import { useWindowSize } from 'react-use';
-import imageCompression from 'browser-image-compression';
-
 export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon }: OrderModalProps) {
-  const { width, height } = useWindowSize();
-  const [step, setStep] = useState<"details" | "checkout" | "payment" | "success">("details");
+  const [step, setStep] = useState<"details" | "checkout" | "payment">("details");
   const [formData, setFormData] = useState({
     customerName: "",
     phone: "",
@@ -97,14 +92,6 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
-  React.useEffect(() => {
-    return () => {
-      if (screenshotPreview) {
-        URL.revokeObjectURL(screenshotPreview);
-      }
-    };
-  }, [screenshotPreview]);
-
   // Generate the UPI deep link for QR code
   const orderId = useRef(generateOrderId()).current;
   const upiLink = `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(UPI_NAME)}&am=${selectedPackage.price}&cu=INR&tn=${encodeURIComponent(`Growplex Order ${orderId}`)}`;
@@ -113,7 +100,7 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleScreenshotSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleScreenshotSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -123,37 +110,65 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
       return;
     }
 
-    // Validate file size (max 10MB)
+    // Validate file size (max 10MB initial)
     if (file.size > 10 * 1024 * 1024) {
       setError("Screenshot must be less than 10MB");
       return;
     }
 
     setError(null);
-    setUploadProgress("Compressing image...");
-    
-    // Compress image
-    try {
-       const options = {
-         maxSizeMB: 0.2, // Max 200KB
-         maxWidthOrHeight: 800,
-         useWebWorker: true,
-         fileType: 'image/jpeg'
-       };
-       const compressedFile = await imageCompression(file, options);
-       setScreenshotFile(compressedFile);
-       
-       // Create preview
-       const previewUrl = URL.createObjectURL(compressedFile);
-       setScreenshotPreview(previewUrl);
-    } catch (err) {
-       console.error("Compression failed:", err);
-       // Fallback
-       setScreenshotFile(file);
-       setScreenshotPreview(URL.createObjectURL(file));
-    } finally {
-       setUploadProgress("");
-    }
+
+    // Create preview and compress
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const result = ev.target?.result as string;
+      setScreenshotPreview(result); // Show immediate preview
+      
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 800;
+        let width = img.width;
+        let height = img.height;
+
+        // Calculate new dimensions
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          // Compress to JPEG with 0.6 quality (highly optimized for fast upload)
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                const compressedFile = new File([blob], file.name.replace(/\.[^/.]+$/, ".jpg"), {
+                  type: "image/jpeg",
+                  lastModified: Date.now(),
+                });
+                setScreenshotFile(compressedFile);
+              }
+            },
+            "image/jpeg",
+            0.6
+          );
+        }
+      };
+      img.src = result;
+    };
+    reader.readAsDataURL(file);
   }, []);
 
   const copyUpiId = useCallback(() => {
@@ -197,77 +212,53 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
     setLoading(true);
 
     try {
-      // Create a copy of values so we can safely use them async
-      const currentScreenshotFile = screenshotFile;
-      const currentFormData = { ...formData };
-      const currentSelectedPackage = { ...selectedPackage };
-      const currentService = { ...service };
-      const currentOrderId = orderId;
+      // 1. Upload screenshot to Firebase Storage
+      setUploadProgress("Uploading screenshot...");
+      const screenshotRef = ref(storage, `payment-screenshots/${orderId}_${Date.now()}.${screenshotFile.name.split('.').pop()}`);
+      await uploadBytes(screenshotRef, screenshotFile);
+      const screenshotUrl = await getDownloadURL(screenshotRef);
 
-      // 1. Show success step IMMEDIATELY (optimistic UI)
-      setStep("success");
-      
-      // 2. Start slow operations asynchronously in the background
-      (async () => {
-        try {
-          // Save order to Firestore FIRST so it appears in Admin instantly
-          const orderRef = await addDoc(collection(db, "orders"), {
-            orderId: currentOrderId,
-            customerName: currentFormData.customerName,
-            phone: currentFormData.phone,
-            serviceLink: currentFormData.serviceLink,
-            serviceName: currentService.name,
-            serviceCategory: currentService.category,
-            packageQuantity: currentSelectedPackage.quantity,
-            price: currentSelectedPackage.price,
-            paymentId: `upi_${currentOrderId}`,
-            paymentStatus: "uploading_screenshot",
-            orderStatus: "new",
-            upiId: UPI_ID,
-            createdAt: serverTimestamp(),
-          });
+      // 2. Save order to Firestore
+      setUploadProgress("Creating order...");
+      const orderData = {
+        orderId,
+        customerName: formData.customerName,
+        phone: formData.phone,
+        serviceLink: formData.serviceLink,
+        serviceName: service.name,
+        serviceCategory: service.category,
+        packageQuantity: selectedPackage.quantity,
+        price: selectedPackage.price,
+        paymentId: `upi_${orderId}`,
+        paymentStatus: "pending_verification",
+        paymentScreenshotUrl: screenshotUrl,
+        paymentScreenshotPath: screenshotRef.fullPath,
+        orderStatus: "new",
+        upiId: UPI_ID,
+        createdAt: serverTimestamp(),
+      };
 
-          // Convert screenshot to Base64
-          const toBase64 = (file: File) => new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = error => reject(error);
-          });
-          const base64Data = await toBase64(currentScreenshotFile);
+      await addDoc(collection(db, "orders"), orderData);
 
-          // Update order with screenshot URL
-          await updateDoc(orderRef, {
-            paymentStatus: "pending_verification",
-            paymentScreenshotUrl: base64Data,
-            paymentScreenshotPath: "base64_upload", // Marker flag
-          });
+      // 3. Send Telegram notification (fire-and-forget)
+      sendTelegramNotification({
+        orderId,
+        customerName: formData.customerName,
+        phone: formData.phone,
+        serviceName: service.name,
+        packageQuantity: selectedPackage.quantity,
+        price: selectedPackage.price,
+        serviceLink: formData.serviceLink,
+      });
 
-          // Send Telegram notification
-          sendTelegramNotification({
-            orderId: currentOrderId,
-            customerName: currentFormData.customerName,
-            phone: currentFormData.phone,
-            serviceName: currentService.name,
-            packageQuantity: currentSelectedPackage.quantity,
-            price: currentSelectedPackage.price,
-            serviceLink: currentFormData.serviceLink,
-          });
-        } catch (bgError) {
-          console.error("Background order submission failed:", bgError);
-        }
-      })();
-
-      // 4. Navigate to success page after animation
-      setTimeout(() => {
-        navigate("/success", { state: { orderId } });
-        onClose();
-      }, 2500);
-
+      // 4. Navigate to success
+      navigate("/success", { state: { orderId } });
     } catch (err: any) {
-      console.error("Order UI transition error:", err);
-      setError(err.message || "Failed to process order. Please try again.");
+      console.error("Order submission error:", err);
+      setError(err.message || "Failed to submit order. Please try again.");
+    } finally {
       setLoading(false);
+      setUploadProgress("");
     }
   };
 
@@ -287,25 +278,19 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
         className="relative w-full max-w-md bg-brand-surface border border-brand-border shadow-2xl rounded-2xl overflow-hidden z-10 flex flex-col max-h-[90vh]"
       >
         <div className="bg-brand-primary p-6 border-b border-brand-border relative shrink-0">
-          {step !== "success" && (
-            <>
-              <button 
-                onClick={onClose}
-                className="absolute top-4 right-4 text-text-muted hover:text-text-main hover:bg-brand-border p-1.5 rounded-lg transition-colors"
-                disabled={loading}
-              >
-                <X size={20} />
-              </button>
-              {step === "payment" && (
-                <button
-                  onClick={() => { setStep("checkout"); setError(null); }}
-                  className="absolute top-4 left-4 text-text-muted hover:text-text-main hover:bg-brand-border p-1.5 rounded-lg transition-colors"
-                  disabled={loading}
-                >
-                  <ArrowLeft size={20} />
-                </button>
-              )}
-            </>
+          <button 
+            onClick={onClose}
+            className="absolute top-4 right-4 text-text-muted hover:text-text-main hover:bg-brand-border p-1.5 rounded-lg transition-colors"
+          >
+            <X size={20} />
+          </button>
+          {step === "payment" && (
+            <button
+              onClick={() => { setStep("checkout"); setError(null); }}
+              className="absolute top-4 left-4 text-text-muted hover:text-text-main hover:bg-brand-border p-1.5 rounded-lg transition-colors"
+            >
+              <ArrowLeft size={20} />
+            </button>
           )}
           <div className="inline-flex items-center px-2.5 py-1 rounded-md bg-brand-surface border border-brand-border text-xs font-medium text-text-muted mb-4 uppercase tracking-wider">
             {getCategoryIcon(service.category)}
@@ -497,7 +482,6 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
                       <button
                         onClick={() => {
                           setScreenshotFile(null);
-                          if (screenshotPreview) URL.revokeObjectURL(screenshotPreview);
                           setScreenshotPreview(null);
                           if (fileInputRef.current) fileInputRef.current.value = "";
                         }}
@@ -518,7 +502,7 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
                       <span className="text-sm text-text-muted group-hover:text-text-main transition-colors">
                         Tap to upload screenshot
                       </span>
-                      <span className="text-xs text-text-muted">PNG, JPG up to 5MB</span>
+                      <span className="text-xs text-text-muted">Any image up to 10MB (auto-compressed for fast upload)</span>
                     </button>
                   )}
                 </div>
@@ -535,49 +519,6 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
                     <><CheckCircle size={20} /> Confirm Payment</>
                   )}
                 </button>
-              </motion.div>
-            )}
-
-            {step === "success" && (
-              <motion.div
-                key="success"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex flex-col items-center justify-center py-12 text-center"
-              >
-                <Confetti
-                  width={width}
-                  height={height}
-                  recycle={false}
-                  numberOfPieces={500}
-                  colors={['#E8B84B', '#FFFFFF', '#D4A33B', '#111111']}
-                  style={{ position: 'fixed', top: 0, left: 0, zIndex: 100 }}
-                />
-                <motion.div 
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1, rotate: 360 }}
-                  transition={{ type: "spring", stiffness: 200, damping: 20 }}
-                  className="w-24 h-24 bg-brand-accent/20 rounded-full flex items-center justify-center mb-6 text-brand-accent mx-auto"
-                >
-                  <CheckCircle size={50} />
-                </motion.div>
-                <motion.h3 
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="text-2xl font-bold font-heading text-text-main mb-2"
-                >
-                  Payment Submitted!
-                </motion.h3>
-                <motion.p 
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 }}
-                  className="text-text-muted"
-                >
-                  Redirecting to your order details...
-                </motion.p>
               </motion.div>
             )}
           </AnimatePresence>

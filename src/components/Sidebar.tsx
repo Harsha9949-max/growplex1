@@ -1,24 +1,23 @@
+import {
+  ChevronRight,
+  LayoutDashboard,
+  ListOrdered,
+  LogOut,
+  Menu,
+  MessageSquare,
+  Package,
+  PlusCircle,
+  Settings,
+  ShieldCheck,
+  Users,
+  Wallet,
+  X
+} from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  PlusCircle, 
-  ListOrdered, 
-  Package, 
-  Wallet, 
-  Settings, 
-  Users, 
-  ShieldCheck,
-  Menu,
-  X,
-  Zap,
-  MessageSquare,
-  LogOut,
-  ChevronRight
-} from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { cn } from '../lib/utils';
-import { motion, AnimatePresence } from 'motion/react';
 
 const Sidebar: React.FC = () => {
   const { isAdmin, logout, userProfile } = useAuth();

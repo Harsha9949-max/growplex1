@@ -1,6 +1,6 @@
 import express from 'express';
 import path from 'path';
-import fs from 'fs';
+
 import { createServer as createViteServer } from 'vite';
 
 async function startServer() {
@@ -23,7 +23,7 @@ async function startServer() {
       index: false,
     }));
     
-    app.get('*', (req, res) => {
+    app.get('*', (_req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }

@@ -1,22 +1,22 @@
-import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
-import { 
-  onAuthStateChanged, 
-  signOut, 
-  User,
+import {
+  ConfirmationResult,
   GoogleAuthProvider,
-  signInWithPopup,
+  onAuthStateChanged,
   RecaptchaVerifier,
   signInWithPhoneNumber,
-  ConfirmationResult
+  signInWithPopup,
+  signOut,
+  User
 } from 'firebase/auth';
-import { 
-  doc, 
-  getDoc, 
-  setDoc, 
-  updateDoc,
-  Timestamp, 
-  onSnapshot 
+import {
+  doc,
+  getDoc,
+  onSnapshot,
+  setDoc,
+  Timestamp,
+  updateDoc
 } from 'firebase/firestore';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { auth, db } from '../lib/firebase';
 import { UserProfile } from '../types';
 

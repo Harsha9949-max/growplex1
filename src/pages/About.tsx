@@ -1,9 +1,9 @@
-import { Link } from "react-router-dom";
+import { Heart, Lock, ShieldCheck, Target } from "lucide-react";
 import { Helmet } from "react-helmet-async";
-import { Navbar } from "../components/Navbar";
-import { Footer } from "../components/Footer";
+import { Link } from "react-router-dom";
 import { Breadcrumbs } from "../components/Breadcrumbs";
-import { ShieldCheck, Heart, Target, Lock } from "lucide-react";
+import { Footer } from "../components/Footer";
+import { Navbar } from "../components/Navbar";
 
 export default function About() {
   return (

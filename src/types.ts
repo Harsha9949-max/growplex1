@@ -2,6 +2,7 @@ export interface Package {
   id: string;
   quantity: string;
   price: number;
+  basePrice?: number;
 }
 
 export interface Service {

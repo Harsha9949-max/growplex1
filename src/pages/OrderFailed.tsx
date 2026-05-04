@@ -1,8 +1,8 @@
-import { Link } from "react-router-dom";
+import { RefreshCcw, XCircle } from "lucide-react";
 import { motion } from "motion/react";
-import { XCircle, RefreshCcw } from "lucide-react";
-import { Navbar } from "../components/Navbar";
+import { Link } from "react-router-dom";
 import { Footer } from "../components/Footer";
+import { Navbar } from "../components/Navbar";
 
 export default function OrderFailed() {
   return (

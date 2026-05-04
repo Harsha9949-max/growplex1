@@ -1,21 +1,17 @@
-import React, { useState } from 'react';
-import { 
-  User, 
-  Settings as SettingsIcon, 
-  ShieldCheck, 
-  Bell, 
-  CreditCard, 
-  Camera, 
-  Mail, 
-  Phone,
-  FileText,
-  ChevronRight,
+import {
+  Bell,
+  Camera,
+  CreditCard,
+  Globe,
   LogOut,
-  Moon,
-  Globe
+  Mail,
+  Phone,
+  ShieldCheck,
+  User
 } from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
 import { motion } from 'motion/react';
+import React, { useState } from 'react';
+import { useAuth } from '../hooks/useAuth';
 
 const Settings: React.FC = () => {
   const { userProfile, signOut } = useAuth();

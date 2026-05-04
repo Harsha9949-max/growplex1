@@ -1,8 +1,8 @@
-import React from 'react';
+import { ArrowUpRight, Award, CheckCircle2, Clock, TrendingUp } from 'lucide-react';
 import { motion } from 'motion/react';
-import { Wallet, Clock, CheckCircle2, Award, ArrowUpRight, TrendingUp } from 'lucide-react';
+import React from 'react';
+import { cn, formatINR } from '../../lib/utils';
 import { UserProfile } from '../../types';
-import { formatINR, cn } from '../../lib/utils';
 
 interface WalletOverviewProps {
   userProfile: UserProfile | null;

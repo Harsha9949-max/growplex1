@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, Send, X, Bot, User } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { Bot, MessageSquare, Send, User, X } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import React, { useEffect, useRef, useState } from 'react';
 import { getChatResponse } from '../lib/gemini';
 import { cn } from '../lib/utils';
 

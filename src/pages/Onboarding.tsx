@@ -1,34 +1,31 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { 
-  User, 
-  Briefcase, 
-  CreditCard, 
-  FileCheck, 
-  ArrowRight, 
-  ArrowLeft, 
-  CheckCircle2, 
-  ShieldCheck, 
-  Zap,
-  TrendingUp,
-  Megaphone,
-  Lock,
-  PenTool,
-  Globe,
-  Sparkles,
-  Clock,
-  Camera,
-  Fingerprint,
-  Upload,
-  UserCheck
-} from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
-import { toast } from 'react-hot-toast';
 import { Timestamp } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Briefcase,
+  Camera,
+  CreditCard,
+  FileCheck,
+  Fingerprint,
+  Globe,
+  Lock,
+  Megaphone,
+  PenTool,
+  ShieldCheck,
+  Sparkles,
+  TrendingUp,
+  Upload,
+  User,
+  Zap
+} from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import React, { useRef, useState } from 'react';
+import { toast } from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 import { storage } from '../lib/firebase';
 import { encryptData, generateDeviceFingerprint } from '../lib/security';
-import { motion, AnimatePresence } from 'motion/react';
 
 const ventures = [
   { id: 'BuyRix', name: 'BuyRix', desc: 'Social Media Growth & Influencer Marketing', icon: Zap, color: '#E8B84B', bg: 'bg-[#E8B84B]/10', border: 'border-[#E8B84B]/20' },

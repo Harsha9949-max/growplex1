@@ -1,6 +1,5 @@
-import React from "react";
+import { FileText } from "lucide-react";
 import { AdminLayout } from "../components/AdminLayout";
-import { List, FileText } from "lucide-react";
 
 export default function AdminLogs() {
   return (

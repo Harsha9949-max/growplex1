@@ -1,6 +1,6 @@
-import React from 'react';
+import { PenTool, ShieldCheck, Sparkles, TrendingUp, Zap } from 'lucide-react';
 import { motion } from 'motion/react';
-import { Award, ShieldCheck, Zap, PenTool, Sparkles, TrendingUp } from 'lucide-react';
+import React from 'react';
 import { UserProfile } from '../../types';
 
 interface VentureHeaderProps {

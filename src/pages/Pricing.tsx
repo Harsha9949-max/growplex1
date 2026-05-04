@@ -1,11 +1,10 @@
+import { ArrowRight, Check, Instagram, Lock, Send, Youtube } from "lucide-react";
 import { motion } from "motion/react";
-import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { Clock, Instagram, Youtube, Send, Facebook, Check, X as XIcon, ArrowRight, Lock, Shield, RefreshCw, Zap } from "lucide-react";
-import { Navbar } from "../components/Navbar";
-import { Footer } from "../components/Footer";
+import { Link } from "react-router-dom";
 import { Breadcrumbs } from "../components/Breadcrumbs";
-import { BreadcrumbSchema } from "../components/SchemaMarkup";
+import { Footer } from "../components/Footer";
+import { Navbar } from "../components/Navbar";
 
 const FEATURED_SERVICES = [
   { id: 1, name: "Instagram Followers", qty: "1000 Followers", price: "₹69", time: "1–24 hours", icon: Instagram, popular: true },

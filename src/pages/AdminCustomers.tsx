@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
+import { useEffect, useState } from "react";
 import { AdminLayout } from "../components/AdminLayout";
 import { db } from "../lib/firebase";
-import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
 
 export default function AdminCustomers() {
   const [customers, setCustomers] = useState<any[]>([]);

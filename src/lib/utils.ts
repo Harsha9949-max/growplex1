@@ -1,7 +1,7 @@
 import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
 import { formatDistanceToNow } from 'date-fns';
 import toast from 'react-hot-toast';
+import { twMerge } from 'tailwind-merge';
 
 export function generateOrderId() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';

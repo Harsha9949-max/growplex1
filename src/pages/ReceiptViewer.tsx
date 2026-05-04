@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from "react";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { AlertCircle, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "../lib/firebase";
-import { Loader2, AlertCircle } from "lucide-react";
 
 export default function ReceiptViewer() {
   const { orderId } = useParams();

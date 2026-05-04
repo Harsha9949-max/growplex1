@@ -1,18 +1,18 @@
-import { useState, useEffect } from 'react';
-import { 
-  collection, 
-  query, 
-  where, 
-  orderBy, 
-  onSnapshot, 
-  doc, 
-  updateDoc, 
-  writeBatch 
+import {
+  collection,
+  doc,
+  onSnapshot,
+  orderBy,
+  query,
+  updateDoc,
+  where,
+  writeBatch
 } from 'firebase/firestore';
-import { db } from '../lib/firebase';
-import { useAuth } from './useAuth';
-import { AppNotification } from '../types';
+import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
+import { db } from '../lib/firebase';
+import { AppNotification } from '../types';
+import { useAuth } from './useAuth';
 
 export const useNotifications = () => {
   const { userProfile } = useAuth();

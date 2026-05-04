@@ -1,25 +1,24 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { 
-  PlusCircle,
+import {
+  ChevronRight,
   CreditCard,
   HelpCircle,
-  Trophy,
-  LineChart,
-  ChevronRight,
+  PlusCircle,
+  Target,
   TrendingUp,
-  Target
+  Trophy
 } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import React from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { formatINR, cn } from '../lib/utils';
-import { motion, AnimatePresence } from 'motion/react';
+import { cn, formatINR } from '../lib/utils';
 
 // New Modular Components
-import VentureHeader from '../components/dashboard/VentureHeader';
-import WalletOverview from '../components/dashboard/WalletOverview';
-import VentureSpecificTasks from '../components/dashboard/VentureSpecificTasks';
-import Leaderboard from '../components/dashboard/Leaderboard';
 import ActivityFeed from '../components/dashboard/ActivityFeed';
+import Leaderboard from '../components/dashboard/Leaderboard';
+import VentureHeader from '../components/dashboard/VentureHeader';
+import VentureSpecificTasks from '../components/dashboard/VentureSpecificTasks';
+import WalletOverview from '../components/dashboard/WalletOverview';
 
 const Dashboard: React.FC = () => {
   const { userProfile } = useAuth();

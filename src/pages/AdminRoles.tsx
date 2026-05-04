@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import { collection, deleteDoc, doc, onSnapshot, query, serverTimestamp, setDoc, where } from "firebase/firestore";
+import { Edit2, Plus, Shield, ShieldAlert, Trash2, Users, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { AdminLayout } from "../components/AdminLayout";
-import { Shield, ShieldAlert, KeyRound, Users, Plus, X, Trash2, Edit2 } from "lucide-react";
-import { collection, query, onSnapshot, doc, setDoc, deleteDoc, serverTimestamp, getDocs, where } from "firebase/firestore";
 import { db } from "../lib/firebase";
 
 interface AdminUser {

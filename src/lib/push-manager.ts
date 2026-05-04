@@ -1,7 +1,7 @@
-import { getToken, onMessage } from 'firebase/messaging';
-import { getFCM, db } from './firebase';
 import { doc, updateDoc } from 'firebase/firestore';
+import { getToken, onMessage } from 'firebase/messaging';
 import { toast } from 'react-hot-toast';
+import { db, getFCM } from './firebase';
 
 export const requestNotificationPermission = async (userId: string) => {
   try {

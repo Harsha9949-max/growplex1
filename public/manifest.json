@@ -1,9 +1,13 @@
 {
-  "short_name": "WorkPlex",
-  "name": "WorkPlex Gig Mission Control",
+  "short_name": "Growplex",
+  "name": "Growplex — Cheapest SMM Panel Without Login",
+  "description": "The cheapest SMM panel with no login required. Get instant Instagram followers, YouTube subscribers, and more.",
   "icons": [],
-  "start_url": ".",
+  "start_url": "/",
   "display": "standalone",
   "theme_color": "#E8B84B",
-  "background_color": "#0A0A0A"
+  "background_color": "#0A0A0A",
+  "categories": ["social", "business", "marketing"],
+  "lang": "en",
+  "dir": "ltr"
 }

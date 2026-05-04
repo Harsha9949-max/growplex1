@@ -1,11 +1,11 @@
+import { ArrowRight, ChevronDown, ChevronUp } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { motion, AnimatePresence } from "motion/react";
 import { Helmet } from "react-helmet-async";
-import { ChevronDown, ChevronUp, ArrowRight } from "lucide-react";
-import { Navbar } from "../components/Navbar";
-import { Footer } from "../components/Footer";
+import { Link } from "react-router-dom";
 import { Breadcrumbs } from "../components/Breadcrumbs";
+import { Footer } from "../components/Footer";
+import { Navbar } from "../components/Navbar";
 import { FAQSchema } from "../components/SchemaMarkup";
 
 const FAQ_CATEGORIES = [

@@ -1,28 +1,25 @@
-import React, { useEffect, useState } from 'react';
-import { 
-  Zap, 
-  Sparkles, 
-  CheckCircle2, 
-  TrendingUp, 
-  Clock,
-  ArrowUpRight,
-  ShieldCheck,
-  Flame,
-  Award,
-  DollarSign
-} from 'lucide-react';
-import { 
-  collection, 
-  query, 
-  where, 
-  orderBy, 
-  limit, 
-  onSnapshot 
+import {
+  collection,
+  limit,
+  onSnapshot,
+  orderBy,
+  query,
+  where
 } from 'firebase/firestore';
+import {
+  ArrowUpRight,
+  CheckCircle2,
+  Clock,
+  DollarSign,
+  ShieldCheck,
+  Sparkles,
+  Zap
+} from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import React, { useEffect, useState } from 'react';
 import { db } from '../../lib/firebase';
+import { formatINR } from '../../lib/utils';
 import { Submission } from '../../types';
-import { formatINR, cn } from '../../lib/utils';
-import { motion, AnimatePresence } from 'motion/react';
 
 const ActivityFeed: React.FC = () => {
   const [activities, setActivities] = useState<Submission[]>([]);

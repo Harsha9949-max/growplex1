@@ -1,8 +1,8 @@
+import { Facebook, Instagram, Mail, MessageCircle, Youtube } from "lucide-react";
 import { Helmet } from "react-helmet-async";
-import { Mail, MessageCircle, Send, Instagram, Facebook, Youtube } from "lucide-react";
-import { Navbar } from "../components/Navbar";
-import { Footer } from "../components/Footer";
 import { Breadcrumbs } from "../components/Breadcrumbs";
+import { Footer } from "../components/Footer";
+import { Navbar } from "../components/Navbar";
 
 export default function Contact() {
   return (

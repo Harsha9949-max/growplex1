@@ -1,33 +1,25 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  ArrowLeft, 
-  Zap, 
-  Clock, 
-  ShieldCheck, 
-  AlertCircle, 
-  CheckCircle2, 
-  Camera, 
-  Send, 
-  Info,
-  ExternalLink,
-  ChevronRight,
-  TrendingUp,
-  Sparkles,
+import { collection, doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import {
+  AlertCircle,
+  ArrowLeft,
   Award,
-  Lock,
+  Camera,
+  ExternalLink,
+  FileText,
+  Info,
   Loader2,
-  FileText
+  Send,
+  ShieldCheck,
+  Zap
 } from 'lucide-react';
-import { doc, getDoc, setDoc, Timestamp, collection } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '../lib/firebase';
-import { Task, Submission } from '../types';
-import { useAuth } from '../hooks/useAuth';
-import { formatINR, OperationType, handleFirestoreError } from '../lib/utils';
+import React, { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { motion, AnimatePresence } from 'motion/react';
-import { cn } from '../lib/utils';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
+import { db, storage } from '../lib/firebase';
+import { cn, formatINR, handleFirestoreError, OperationType } from '../lib/utils';
+import { Submission, Task } from '../types';
 
 const TaskDetail: React.FC = () => {
   const { taskId } = useParams<{ taskId: string }>();

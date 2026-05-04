@@ -1,7 +1,7 @@
+import { Lock, Menu, X } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { motion, AnimatePresence } from "motion/react";
-import { Menu, X, Lock, ChevronDown } from "lucide-react";
 
 const NAV_LINKS = [
   { to: "/", label: "Home" },

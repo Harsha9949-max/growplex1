@@ -1,19 +1,189 @@
-import React, { useState, useMemo, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { motion, AnimatePresence } from "motion/react";
-import { Helmet } from "react-helmet-async";
-import { 
-  Search, X, Clock, TrendingUp, Instagram, Youtube, Send,
-  CheckCircle, Info, ChevronDown
+import { collection, doc, getDoc, onSnapshot, query, where } from "firebase/firestore";
+import {
+  ChevronDown,
+  Clock,
+  Instagram,
+  Search,
+  Send,
+  X,
+  Youtube
 } from "lucide-react";
-import { Navbar } from "../components/Navbar";
-import { Footer } from "../components/Footer";
+import { AnimatePresence, motion } from "motion/react";
+import React, { useEffect, useMemo, useState } from "react";
+import { Helmet } from "react-helmet-async";
 import { Breadcrumbs } from "../components/Breadcrumbs";
+import { Footer } from "../components/Footer";
+import { Navbar } from "../components/Navbar";
 import { OrderModal } from "../components/OrderModal";
-import { Service, Package } from "../types";
-import { MOCK_SERVICES } from "../data/mockServices";
-import { collection, query, onSnapshot } from "firebase/firestore";
 import { db } from "../lib/firebase";
+import { Package, Service } from "../types";
+
+export const BASE_SERVICES: Service[] = [
+  {
+    id: "s1", category: "Instagram Followers", name: "Instagram Followers", deliveryTime: "1-24 hours",
+    description: "Grow your Instagram followers quickly with high-quality, stable accounts.",
+    packages: [
+      { id: "pkg_1_1", quantity: "50", price: 8, basePrice: 8 },
+      { id: "pkg_1_2", quantity: "100", price: 13, basePrice: 13 },
+      { id: "pkg_1_3", quantity: "1000", price: 49, basePrice: 49 },
+      { id: "pkg_1_4", quantity: "2000", price: 79, basePrice: 79 },
+      { id: "pkg_1_5", quantity: "5000", price: 99, basePrice: 99 },
+      { id: "pkg_1_6", quantity: "10000", price: 150, basePrice: 150 },
+      { id: "pkg_1_7", quantity: "15000", price: 199, basePrice: 199 },
+      { id: "pkg_1_8", quantity: "25000", price: 299, basePrice: 299 },
+      { id: "pkg_1_9", quantity: "50000", price: 449, basePrice: 449 },
+      { id: "pkg_1_10", quantity: "100K", price: 649, basePrice: 649 },
+      { id: "pkg_1_11", quantity: "1M", price: 499, basePrice: 499 }
+    ]
+  },
+  {
+    id: "s2", category: "Instagram Likes", name: "Instagram Likes", deliveryTime: "Instant",
+    description: "Instant likes on your latest Instagram post to boost engagement.",
+    packages: [
+      { id: "pkg_2_1", quantity: "1000", price: 30, basePrice: 30 },
+      { id: "pkg_2_2", quantity: "2000", price: 48, basePrice: 48 },
+      { id: "pkg_2_3", quantity: "5000", price: 69, basePrice: 69 },
+      { id: "pkg_2_4", quantity: "10000", price: 99, basePrice: 99 },
+      { id: "pkg_2_5", quantity: "20000", price: 149, basePrice: 149 }
+    ]
+  },
+  {
+    id: "s3", category: "Instagram Comments", name: "Instagram Comments", deliveryTime: "1-6 hours",
+    description: "Customizable comments to spark conversation on your posts.",
+    packages: [
+      { id: "pkg_3_1", quantity: "100", price: 35, basePrice: 35 },
+      { id: "pkg_3_2", quantity: "200", price: 65, basePrice: 65 },
+      { id: "pkg_3_3", quantity: "500", price: 150, basePrice: 150 },
+      { id: "pkg_3_4", quantity: "1000", price: 280, basePrice: 280 }
+    ]
+  },
+  {
+    id: "s4", category: "Instagram Reel Views", name: "Instagram Reel Views", deliveryTime: "Instant",
+    description: "High retention Instagram Reel views to help your video rank higher in algorithms.",
+    packages: [
+      { id: "pkg_4_1", quantity: "5000", price: 7, basePrice: 7 },
+      { id: "pkg_4_2", quantity: "10000", price: 12, basePrice: 12 },
+      { id: "pkg_4_3", quantity: "25000", price: 25, basePrice: 25 },
+      { id: "pkg_4_4", quantity: "50000", price: 45, basePrice: 45 },
+      { id: "pkg_4_5", quantity: "100000", price: 75, basePrice: 75 },
+      { id: "pkg_4_6", quantity: "200000", price: 90, basePrice: 90 },
+      { id: "pkg_4_7", quantity: "300000", price: 109, basePrice: 109 },
+      { id: "pkg_4_8", quantity: "500000", price: 125, basePrice: 125 },
+      { id: "pkg_4_9", quantity: "1000000", price: 219, basePrice: 219 }
+    ]
+  },
+  {
+    id: "s5", category: "Instagram Story Views", name: "Instagram Story Views", deliveryTime: "Instant",
+    description: "Increase story views quickly.",
+    packages: [
+      { id: "pkg_5_1", quantity: "1000", price: 24, basePrice: 24 },
+      { id: "pkg_5_2", quantity: "2000", price: 35, basePrice: 35 },
+      { id: "pkg_5_3", quantity: "5000", price: 45, basePrice: 45 },
+      { id: "pkg_5_4", quantity: "10000", price: 85, basePrice: 85 }
+    ]
+  },
+  {
+    id: "s6", category: "YouTube Subscribers", name: "YouTube Subscribers", deliveryTime: "24-48 hours",
+    description: "Real and active subscribers for your YouTube channel.",
+    packages: [
+      { id: "pkg_6_1", quantity: "1000 Subscribers", price: 59, basePrice: 59 },
+      { id: "pkg_6_2", quantity: "2000 Subscribers", price: 79, basePrice: 79 },
+      { id: "pkg_6_3", quantity: "5000 Subscribers", price: 119, basePrice: 119 },
+      { id: "pkg_6_4", quantity: "10000 Subscribers", price: 199, basePrice: 199 },
+      { id: "pkg_6_5", quantity: "25000 Subscribers", price: 249, basePrice: 249 },
+      { id: "pkg_6_6", quantity: "50000 Subscribers", price: 399, basePrice: 399 },
+      { id: "pkg_6_7", quantity: "100K Subscribers (Special Offer)", price: 299, basePrice: 299 },
+      { id: "pkg_6_8", quantity: "4K Watchtime + 2K Subscribers", price: 499, basePrice: 499 }
+    ]
+  },
+  {
+    id: "s7", category: "YouTube Views", name: "YouTube Views", deliveryTime: "24-48 hours",
+    description: "High retention YouTube views to help your video rank higher in search.",
+    packages: [
+      { id: "pkg_7_1", quantity: "1000 Views", price: 24, basePrice: 24 },
+      { id: "pkg_7_2", quantity: "2000 Views", price: 39, basePrice: 39 },
+      { id: "pkg_7_3", quantity: "5000 Views", price: 60, basePrice: 60 },
+      { id: "pkg_7_4", quantity: "10000 Views", price: 99, basePrice: 99 },
+      { id: "pkg_7_5", quantity: "50000 Views", price: 199, basePrice: 199 },
+      { id: "pkg_7_6", quantity: "100000 Views", price: 239, basePrice: 239 },
+      { id: "pkg_7_7", quantity: "10 Million Views", price: 499, basePrice: 499 }
+    ]
+  },
+  {
+    id: "s8", category: "YouTube Likes", name: "YouTube Likes", deliveryTime: "12-24 hours",
+    description: "Real YouTube likes to boost your video engagement and credibility.",
+    packages: [
+      { id: "pkg_8_1", quantity: "1000 Likes", price: 24, basePrice: 24 },
+      { id: "pkg_8_2", quantity: "2000 Likes", price: 35, basePrice: 35 },
+      { id: "pkg_8_3", quantity: "5000 Likes", price: 49, basePrice: 49 },
+      { id: "pkg_8_4", quantity: "10000 Likes", price: 89, basePrice: 89 }
+    ]
+  },
+  {
+    id: "s9", category: "YouTube Comments", name: "YouTube Comments", deliveryTime: "24-48 hours",
+    description: "Custom, relevant comments on your YouTube videos.",
+    packages: [
+      { id: "pkg_9_1", quantity: "100 Comments", price: 35, basePrice: 35 },
+      { id: "pkg_9_2", quantity: "200 Comments", price: 65, basePrice: 65 },
+      { id: "pkg_9_3", quantity: "500 Comments", price: 150, basePrice: 150 },
+      { id: "pkg_9_4", quantity: "1000 Comments", price: 280, basePrice: 280 }
+    ]
+  },
+  {
+    id: "s10", category: "Telegram Premium", name: "Telegram Premium", deliveryTime: "1-24 hours",
+    description: "Premium Telegram subscription for your account.",
+    packages: [
+      { id: "pkg_10_1", quantity: "1 Month", price: 199, basePrice: 199 },
+      { id: "pkg_10_2", quantity: "3 Months", price: 249, basePrice: 249 },
+      { id: "pkg_10_3", quantity: "6 Months", price: 449, basePrice: 449 },
+      { id: "pkg_10_4", quantity: "12 Months", price: 799, basePrice: 799 }
+    ]
+  },
+  {
+    id: "s11", category: "Telegram Group Members", name: "Telegram Group Members", deliveryTime: "24-48 hours",
+    description: "Real and active members for your Telegram group.",
+    packages: [
+      { id: "pkg_11_1", quantity: "500 Members", price: 49, basePrice: 49 },
+      { id: "pkg_11_2", quantity: "1000 Members", price: 79, basePrice: 79 },
+      { id: "pkg_11_3", quantity: "2000 Members", price: 139, basePrice: 139 },
+      { id: "pkg_11_4", quantity: "5000 Members", price: 299, basePrice: 299 },
+      { id: "pkg_11_5", quantity: "10000 Members", price: 549, basePrice: 549 }
+    ]
+  },
+  {
+    id: "s12", category: "Telegram Channel Subscribers", name: "Telegram Channel Subscribers", deliveryTime: "24-48 hours",
+    description: "Real subscribers for your Telegram channel.",
+    packages: [
+      { id: "pkg_12_1", quantity: "500 Subscribers", price: 45, basePrice: 45 },
+      { id: "pkg_12_2", quantity: "1000 Subscribers", price: 79, basePrice: 79 },
+      { id: "pkg_12_3", quantity: "2000 Subscribers", price: 139, basePrice: 139 },
+      { id: "pkg_12_4", quantity: "5000 Subscribers", price: 289, basePrice: 289 },
+      { id: "pkg_12_5", quantity: "10000 Subscribers", price: 529, basePrice: 529 }
+    ]
+  },
+  {
+    id: "s13", category: "Telegram Post Views", name: "Telegram Post Views", deliveryTime: "Instant",
+    description: "Views for your Telegram channel posts.",
+    packages: [
+      { id: "pkg_13_1", quantity: "1000 Views", price: 19, basePrice: 19 },
+      { id: "pkg_13_2", quantity: "5000 Views", price: 49, basePrice: 49 },
+      { id: "pkg_13_3", quantity: "10000 Views", price: 89, basePrice: 89 },
+      { id: "pkg_13_4", quantity: "50000 Views", price: 199, basePrice: 199 },
+      { id: "pkg_13_5", quantity: "100000 Views", price: 349, basePrice: 349 },
+      { id: "pkg_13_6", quantity: "500000 Views", price: 999, basePrice: 999 },
+      { id: "pkg_13_7", quantity: "1000000 Views", price: 1799, basePrice: 1799 }
+    ]
+  },
+  {
+    id: "s14", category: "Telegram Reactions", name: "Telegram Reactions", deliveryTime: "Instant",
+    description: "Positive reactions for your Telegram posts.",
+    packages: [
+      { id: "pkg_14_1", quantity: "100 Reactions", price: 19, basePrice: 19 },
+      { id: "pkg_14_2", quantity: "500 Reactions", price: 59, basePrice: 59 },
+      { id: "pkg_14_3", quantity: "1000 Reactions", price: 89, basePrice: 89 }
+    ]
+  }
+];
 
 const CATEGORIES = ["All", "Followers", "Likes", "Comments", "Views", "YouTube", "Telegram"];
 const SORT_OPTIONS = [
@@ -24,32 +194,76 @@ const SORT_OPTIONS = [
   { id: "qty-desc", label: "Package Sizes: High to Low" },
 ];
 
+// Helper: apply margin to base services safely, preventing NaN or calculation errors
+function applyMargin(services: Service[], marginPercent: number): Service[] {
+  return services.map(s => ({
+    ...s,
+    packages: s.packages.map(pkg => {
+      // 1. Get the best base value
+      let base: any = pkg.basePrice !== undefined && pkg.basePrice !== null ? pkg.basePrice : pkg.price;
+      
+      // 2. Strip any non-numeric characters if it's stored as a string like "₹8" or "8"
+      if (typeof base === "string") {
+        base = parseFloat(base.replace(/[^0-9.-]/g, "")) || 0;
+      }
+      
+      // 3. Fallback to 0 if still invalid
+      base = Number(base) || 0;
+
+      // 4. Ensure margin is a valid number
+      const margin = typeof marginPercent === "number" ? marginPercent : Number(marginPercent) || 40;
+
+      return {
+        ...pkg,
+        basePrice: base,
+        price: Math.max(0, Math.ceil(base * (1 + margin / 100)))
+      };
+    })
+  }));
+}
+
 export default function Services() {
   const [dbServices, setDbServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
+  const [marginPercent, setMarginPercent] = useState(40); // default 40%
   
+  // Fetch admin margin setting
   useEffect(() => {
-    // Fetch all services that are not archived or inactive, or just all services
-    const q = query(collection(db, "services"));
+    const fetchMargin = async () => {
+      try {
+        const settingsDoc = await getDoc(doc(db, "system", "settings"));
+        if (settingsDoc.exists()) {
+          const data = settingsDoc.data();
+          if (typeof data.defaultMarkupMargin === "number") {
+            setMarginPercent(data.defaultMarkupMargin);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch margin setting:", err);
+      }
+    };
+    fetchMargin();
+  }, []);
+
+  // Fetch services from Firestore, fallback to BASE_SERVICES
+  useEffect(() => {
+    const q = query(collection(db, "services"), where("status", "==", "active"));
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const fetched: Service[] = [];
       snapshot.forEach((docSnap) => {
         const data = docSnap.data();
-        
         fetched.push({
           id: docSnap.id,
           ...data,
-          packages: data.packages || [],
-          // map "serviceName" to "name" for the frontend if needed
           name: data.serviceName || data.name
         } as Service);
       });
-      setDbServices(fetched.length > 0 ? fetched : MOCK_SERVICES);
+      setDbServices(fetched.length > 0 ? fetched : BASE_SERVICES);
       setLoading(false);
     }, (err) => {
       console.error("Failed to fetch services:", err);
-      setDbServices(MOCK_SERVICES);
+      setDbServices(BASE_SERVICES);
       setLoading(false);
     });
 
@@ -63,7 +277,8 @@ export default function Services() {
   const [selectedOrder, setSelectedOrder] = useState<{service: Service, pkg: Package} | null>(null);
 
   const filteredServices = useMemo(() => {
-    let result = dbServices;
+    // Apply margin to all base prices
+    let result = applyMargin(dbServices, marginPercent);
 
     if (selectedCategory !== "All") {
       result = result.filter(s => s.category.toLowerCase().includes(selectedCategory.toLowerCase()));
@@ -104,7 +319,7 @@ export default function Services() {
     });
 
     return result;
-  }, [searchQuery, selectedCategory, sortBy, dbServices]);
+  }, [searchQuery, selectedCategory, sortBy, dbServices, marginPercent]);
 
   const getCategoryIcon = (category: string) => {
     if (category.toLowerCase().includes("youtube")) {
@@ -131,13 +346,13 @@ export default function Services() {
       <Breadcrumbs />
 
       {/* Header */}
-      <header className="py-20 md:py-32 px-4 text-center border-b border-brand-border bg-brand-surface/30 relative overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-brand-accent/5 rounded-full blur-[100px] pointer-events-none" />
+      <header className="py-12 sm:py-20 md:py-28 px-4 text-center border-b border-brand-border bg-brand-surface/30 relative overflow-hidden">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[400px] sm:w-[600px] h-[400px] sm:h-[600px] bg-brand-accent/5 rounded-full blur-[100px] pointer-events-none" />
         <div className="max-w-3xl mx-auto relative z-10">
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="font-heading text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tight"
+            className="font-heading text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-3 sm:mb-6 tracking-tight"
           >
             Buy Social Media <span className="text-brand-accent">Services</span>
           </motion.h1>
@@ -145,25 +360,25 @@ export default function Services() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-lg md:text-xl text-text-muted"
+            className="text-sm sm:text-lg md:text-xl text-text-muted px-2"
           >
             The cheapest SMM services online. No login required — just paste your link, pay, and grow instantly.
           </motion.p>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-16">
         
         {/* Filter & Search Bar */}
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-12">
+        <div className="flex flex-col gap-4 sm:gap-6 mb-8 sm:mb-12">
           
-          {/* Categories */}
-          <div className="flex overflow-x-auto pb-2 w-full lg:w-auto scrollbar-hide gap-2">
+          {/* Categories — horizontal scroll on mobile */}
+          <div className="flex overflow-x-auto pb-1 w-full scrollbar-hide gap-1.5 sm:gap-2 -mx-1 px-1">
             {CATEGORIES.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-5 py-2.5 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-300 ${
+                className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition-all duration-300 ${
                   selectedCategory === cat 
                     ? "bg-brand-accent text-brand-primary shadow-[0_0_15px_rgba(232,184,75,0.3)]" 
                     : "bg-brand-surface border border-brand-border text-text-muted hover:text-text-main hover:border-text-muted/30"
@@ -174,18 +389,18 @@ export default function Services() {
             ))}
           </div>
 
-          <div className="flex flex-col sm:flex-row w-full lg:w-auto gap-4">
+          <div className="flex flex-col sm:flex-row w-full gap-3 sm:gap-4">
             {/* Search Input */}
-            <div className="relative w-full sm:w-64">
+            <div className="relative flex-1">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-muted">
-                <Search size={18} />
+                <Search size={16} />
               </div>
               <input
                 type="text"
                 placeholder="Search services..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-brand-surface border border-brand-border rounded-xl text-text-main placeholder-text-muted/50 focus:outline-none focus:border-brand-accent/50 focus:ring-1 focus:ring-brand-accent/50 transition-all font-medium"
+                className="w-full pl-9 pr-4 py-2.5 bg-brand-surface border border-brand-border rounded-xl text-sm text-text-main placeholder-text-muted/50 focus:outline-none focus:border-brand-accent/50 transition-all font-medium"
               />
               {searchQuery && (
                 <button 
@@ -201,7 +416,7 @@ export default function Services() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="px-4 py-2.5 bg-brand-surface border border-brand-border rounded-xl font-medium text-text-muted focus:outline-none focus:border-brand-accent/50 appearance-none w-full sm:w-48 cursor-pointer"
+              className="px-4 py-2.5 bg-brand-surface border border-brand-border rounded-xl font-medium text-xs sm:text-sm text-text-muted focus:outline-none focus:border-brand-accent/50 appearance-none w-full sm:w-48 cursor-pointer"
               style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239CA3AF'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundPosition: `right 12px center`, backgroundRepeat: `no-repeat`, backgroundSize: `16px` }}
             >
               {SORT_OPTIONS.map(opt => (
@@ -213,12 +428,12 @@ export default function Services() {
 
         {/* Service Grid */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="flex flex-col items-center justify-center py-20">
              <div className="w-12 h-12 border-4 border-brand-accent border-t-transparent rounded-full animate-spin mb-4" />
              <p className="text-text-muted">Loading services...</p>
           </div>
         ) : filteredServices.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-start">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 items-start">
             <AnimatePresence>
               {filteredServices.map((service) => (
                 <ExpandableServiceCard 
@@ -293,7 +508,7 @@ function ExpandableServiceCard({ service, onBuy, getCategoryIcon }: { service: S
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9 }}
-      className="bg-brand-surface border border-brand-border p-6 rounded-2xl shadow-lg flex flex-col transition-all hover:shadow-[0_10px_30px_rgba(0,0,0,0.5)] hover:border-brand-accent/50 group relative overflow-hidden"
+      className="bg-brand-surface border border-brand-border p-4 sm:p-6 rounded-2xl shadow-lg flex flex-col transition-all hover:shadow-[0_10px_30px_rgba(0,0,0,0.5)] hover:border-brand-accent/50 group relative overflow-hidden"
     >
       <div className="flex justify-between items-start mb-4">
         <div className="inline-flex items-center px-2 py-1 rounded bg-brand-primary border border-brand-border text-xs font-medium text-text-muted uppercase tracking-wider group-hover:border-brand-accent/30 transition-colors">
@@ -316,11 +531,11 @@ function ExpandableServiceCard({ service, onBuy, getCategoryIcon }: { service: S
         </AnimatePresence>
       </div>
       
-      <h3 className="font-heading font-bold text-xl mb-4 group-hover:text-brand-accent transition-colors">{service.name}</h3>
+      <h3 className="font-heading font-bold text-lg sm:text-xl mb-3 sm:mb-4 group-hover:text-brand-accent transition-colors">{service.name}</h3>
       
       {/* Package Selector */}
-      <div className="mb-6 flex-grow flex flex-col">
-        <label className="text-xs text-text-muted mb-2 font-medium">Select Package</label>
+      <div className="mb-4 sm:mb-6 flex-grow flex flex-col">
+        <label className="text-[11px] sm:text-xs text-text-muted mb-1.5 sm:mb-2 font-medium">Select Package</label>
         <div className="relative">
           <select 
             value={selectedPkgId}
@@ -344,10 +559,10 @@ function ExpandableServiceCard({ service, onBuy, getCategoryIcon }: { service: S
         </div>
       </div>
       
-      <div className="flex items-center justify-between mb-6 pt-4 border-t border-brand-border/50 w-full overflow-hidden">
+      <div className="flex items-center justify-between mb-4 sm:mb-6 pt-3 sm:pt-4 border-t border-brand-border/50 w-full overflow-hidden">
         <div className="pr-2">
-          <p className="text-xs text-text-muted mb-1">Total Price</p>
-          <p className="text-2xl font-bold text-text-main group-hover:text-brand-accent transition-colors">
+          <p className="text-[11px] sm:text-xs text-text-muted mb-0.5 sm:mb-1">Total Price</p>
+          <p className="text-xl sm:text-2xl font-bold text-text-main group-hover:text-brand-accent transition-colors">
             ₹{selectedPkg.price}
           </p>
         </div>
@@ -359,7 +574,7 @@ function ExpandableServiceCard({ service, onBuy, getCategoryIcon }: { service: S
       
       <button 
         onClick={() => onBuy(selectedPkg)}
-        className="w-full bg-brand-primary border border-brand-border text-text-main py-3 rounded-xl font-bold group-hover:bg-brand-accent group-hover:text-brand-primary group-hover:border-brand-accent transition-all duration-300"
+        className="w-full bg-brand-primary border border-brand-border text-text-main py-2.5 sm:py-3 rounded-xl font-bold text-sm sm:text-base group-hover:bg-brand-accent group-hover:text-brand-primary group-hover:border-brand-accent transition-all duration-300 min-h-[44px]"
       >
         Buy Now
       </button>

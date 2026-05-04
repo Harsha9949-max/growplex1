@@ -1,6 +1,5 @@
-import React from "react";
+import { BarChart } from "lucide-react";
 import { AdminLayout } from "../components/AdminLayout";
-import { BarChart, Search } from "lucide-react";
 
 export default function AdminReports() {
   return (

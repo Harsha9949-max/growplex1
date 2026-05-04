@@ -1,13 +1,18 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { 
-  Search, Eye, CheckCircle, XCircle, 
-  Clock, Package, Filter, X, Camera, Image, Trash2, ShieldCheck, Send
+import { collection, deleteField, doc, onSnapshot, orderBy, query, updateDoc } from "firebase/firestore";
+import { deleteObject, ref } from "firebase/storage";
+import {
+  Camera,
+  CheckCircle,
+  Eye,
+  Filter,
+  Search,
+  ShieldCheck,
+  X
 } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
+import { useEffect, useMemo, useState } from "react";
 import { AdminLayout } from "../components/AdminLayout";
 import { db, storage } from "../lib/firebase";
-import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteField } from "firebase/firestore";
-import { ref, deleteObject } from "firebase/storage";
 
 interface GrowplexOrder {
   id?: string;
@@ -180,33 +185,10 @@ export default function AdminOrders() {
     currentPage * ITEMS_PER_PAGE
   );
 
-  const handleForwardOrder = (order: GrowplexOrder) => {
-    const screenshotLink = order.paymentScreenshotUrl ? `${window.location.origin}/receipt/${order.orderId}` : "Not Provided";
-    const text = `*New Order Info*
-Order ID: ${order.orderId}
-Customer: ${order.customerName}
-Phone: ${order.phone}
-Service: ${order.serviceName}
-Package: ${order.packageQuantity}
-Amount: ₹${order.price}
-Service Link: ${order.serviceLink}
-Payment Status: ${order.paymentStatus}
-Order Status: ${order.orderStatus}
-Screenshot: ${screenshotLink}`;
-
-    const whatsappUrl = `https://wa.me/919949175029?text=${encodeURIComponent(text)}`;
-    window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
-  };
-
   const getPaymentBadge = (status: string, hasScreenshot: boolean) => {
     if (status === "paid") {
       return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-500">
         <CheckCircle size={12} /> PAID
-      </span>;
-    }
-    if (status === "uploading_screenshot") {
-      return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500/10 text-blue-500">
-        <Clock size={12} /> UPLOADING
       </span>;
     }
     if (status === "pending_verification") {
@@ -221,51 +203,53 @@ Screenshot: ${screenshotLink}`;
 
   return (
     <AdminLayout>
-      <main className="flex-grow max-w-7xl mx-auto w-full mb-12">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-          <div>
-            <h1 className="text-3xl font-bold font-heading">Growplex Orders</h1>
-            <p className="text-text-muted mt-1">Manage and track your customer orders</p>
-          </div>
-          
-          <div className="flex items-center gap-3 w-full md:w-auto">
-            <div className="relative flex-grow md:flex-grow-0">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={18} />
-              <input
-                type="text"
-                placeholder="Search by ID, name, phone..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full md:w-64 pl-10 pr-4 py-2 bg-brand-surface border border-brand-border rounded-lg text-sm text-text-main focus:outline-none focus:border-brand-accent/50"
-              />
+      <main className="flex-grow max-w-7xl mx-auto w-full mb-8 sm:mb-12">
+        <div className="flex flex-col gap-3 sm:gap-4 mb-6 sm:mb-8">
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold font-heading">Orders</h1>
+              <p className="text-text-muted mt-0.5 text-xs sm:text-sm">Manage and track orders</p>
             </div>
+          </div>
+          <div className="relative w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={16} />
+            <input
+              type="text"
+              placeholder="Search by ID, name, phone..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-4 py-2.5 bg-brand-surface border border-brand-border rounded-xl text-sm text-text-main focus:outline-none focus:border-brand-accent/50"
+            />
           </div>
         </div>
 
         {/* Filters and Sorting */}
-        <div className="flex flex-col lg:flex-row justify-between gap-4 mb-6">
-          <div className="flex overflow-x-auto pb-2 scrollbar-hide gap-2">
-            {["All Orders", "New Orders", "Processing", "Completed", "Failed"].map((filter) => (
-              <button
-                key={filter}
-                onClick={() => { setStatusFilter(filter); setCurrentPage(1); }}
-                className={`whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  statusFilter === filter
-                    ? "bg-brand-accent text-brand-primary"
-                    : "bg-brand-surface border border-brand-border text-text-muted hover:text-text-main"
-                }`}
-              >
-                {filter}
-              </button>
-            ))}
+        <div className="flex flex-col gap-3 mb-4 sm:mb-6">
+          <div className="flex overflow-x-auto pb-1 scrollbar-hide gap-1.5 sm:gap-2 -mx-1 px-1">
+            {["All", "New", "Processing", "Completed", "Failed"].map((filter) => {
+              const filterMap: Record<string, string> = { "All": "All Orders", "New": "New Orders", "Processing": "Processing", "Completed": "Completed", "Failed": "Failed" };
+              const filterValue = filterMap[filter];
+              return (
+                <button
+                  key={filter}
+                  onClick={() => { setStatusFilter(filterValue); setCurrentPage(1); }}
+                  className={`whitespace-nowrap px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
+                    statusFilter === filterValue
+                      ? "bg-brand-accent text-brand-primary"
+                      : "bg-brand-surface border border-brand-border text-text-muted hover:text-text-main"
+                  }`}
+                >
+                  {filter}
+                </button>
+              );
+            })}
           </div>
-
-          <div className="flex items-center gap-2 text-sm text-text-muted shrink-0">
-            <Filter size={16} />
+          <div className="flex items-center gap-2 text-sm text-text-muted">
+            <Filter size={14} />
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="bg-brand-surface border border-brand-border rounded-md px-3 py-1.5 focus:outline-none focus:border-brand-accent/50 cursor-pointer"
+              className="bg-brand-surface border border-brand-border rounded-lg px-3 py-1.5 text-xs sm:text-sm focus:outline-none focus:border-brand-accent/50 cursor-pointer flex-1 sm:flex-initial sm:w-40"
             >
               <option value="Date">Sort by Date</option>
               <option value="Price">Sort by Price</option>
@@ -274,112 +258,114 @@ Screenshot: ${screenshotLink}`;
           </div>
         </div>
 
-        {/* Orders Table */}
+        {/* Orders — Desktop Table + Mobile Cards */}
         <div className="bg-brand-surface border border-brand-border rounded-xl overflow-hidden shadow-xl">
-          <div className="overflow-x-auto w-full">
-            <table className="w-full text-left text-sm whitespace-nowrap min-w-[900px]">
-              <thead className="bg-brand-primary/50 text-text-muted text-xs uppercase font-semibold">
-                <tr>
-                  <th className="px-6 py-4">Order ID</th>
-                  <th className="px-6 py-4">Date</th>
-                  <th className="px-6 py-4">Customer</th>
-                  <th className="px-6 py-4">Service</th>
-                  <th className="px-6 py-4">Amount</th>
-                  <th className="px-6 py-4">Payment</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4 text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-brand-border">
-                {loading ? (
-                  <tr>
-                    <td colSpan={8} className="px-6 py-12 text-center text-text-muted">
-                      <div className="flex flex-col items-center justify-center">
-                        <div className="w-8 h-8 border-2 border-brand-accent border-t-transparent rounded-full animate-spin mb-4" />
-                        <p>Loading orders...</p>
-                      </div>
-                    </td>
-                  </tr>
-                ) : paginatedOrders.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="px-6 py-12 text-center text-text-muted">
-                      No orders found matching your criteria.
-                    </td>
-                  </tr>
-                ) : (
-                  paginatedOrders.map((order) => (
-                    <tr key={order.orderId} className="hover:bg-brand-primary/30 transition-colors">
-                      <td className="px-6 py-4 font-medium font-mono text-brand-accent pr-10">{order.orderId}</td>
-                      <td className="px-6 py-4 text-text-muted">
-                        {order.createdAt ? new Date(order.createdAt.seconds * 1000).toLocaleDateString() : "Just now"}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="font-medium text-text-main">{order.customerName}</div>
-                        <div className="text-xs text-text-muted">{order.phone}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-text-main">{order.serviceName}</div>
-                        <div className="text-xs text-brand-accent">{order.packageQuantity}</div>
-                      </td>
-                      <td className="px-6 py-4 font-medium">₹{order.price}</td>
-                      <td className="px-6 py-4">
-                        {getPaymentBadge(order.paymentStatus, !!order.paymentScreenshotUrl)}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center">
-                          <select
-                            value={order.orderStatus}
-                            onChange={(e) => handleStatusUpdate(order.orderId, e.target.value)}
-                            className={`text-xs font-semibold px-2 py-1 rounded-md cursor-pointer border focus:outline-none outline-none ${
-                                order.orderStatus === 'completed' ? 'bg-green-500/10 text-green-500 border-green-500/20' : 
-                                order.orderStatus === 'processing' ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' :
-                                order.orderStatus === 'failed' ? 'bg-red-500/10 text-red-500 border-red-500/20' :
-                                'bg-brand-accent/10 text-brand-accent border-brand-accent/20'
-                            }`}
-                          >
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-16">
+              <div className="w-8 h-8 border-2 border-brand-accent border-t-transparent rounded-full animate-spin mb-4" />
+              <p className="text-text-muted text-sm">Loading orders...</p>
+            </div>
+          ) : paginatedOrders.length === 0 ? (
+            <div className="py-16 text-center text-text-muted text-sm">No orders found.</div>
+          ) : (
+            <>
+              {/* Desktop table */}
+              <div className="hidden lg:block overflow-x-auto">
+                <table className="w-full text-left text-sm whitespace-nowrap">
+                  <thead className="bg-brand-primary/50 text-text-muted text-xs uppercase font-semibold">
+                    <tr>
+                      <th className="px-5 py-3">Order ID</th>
+                      <th className="px-5 py-3">Customer</th>
+                      <th className="px-5 py-3">Service</th>
+                      <th className="px-5 py-3">Amount</th>
+                      <th className="px-5 py-3">Payment</th>
+                      <th className="px-5 py-3">Status</th>
+                      <th className="px-5 py-3 text-center">View</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-brand-border">
+                    {paginatedOrders.map((order) => (
+                      <tr key={order.orderId} className="hover:bg-brand-primary/30 transition-colors">
+                        <td className="px-5 py-3 font-mono text-brand-accent text-xs">{order.orderId}</td>
+                        <td className="px-5 py-3">
+                          <div className="font-medium text-text-main text-sm">{order.customerName}</div>
+                          <div className="text-xs text-text-muted">{order.phone}</div>
+                        </td>
+                        <td className="px-5 py-3">
+                          <div className="text-text-main text-sm">{order.serviceName}</div>
+                          <div className="text-xs text-brand-accent">{order.packageQuantity}</div>
+                        </td>
+                        <td className="px-5 py-3 font-medium">₹{order.price}</td>
+                        <td className="px-5 py-3">{getPaymentBadge(order.paymentStatus, !!order.paymentScreenshotUrl)}</td>
+                        <td className="px-5 py-3">
+                          <select value={order.orderStatus} onChange={(e) => handleStatusUpdate(order.orderId, e.target.value)}
+                            className={`text-xs font-semibold px-2 py-1 rounded-md cursor-pointer border focus:outline-none ${
+                              order.orderStatus === 'completed' ? 'bg-green-500/10 text-green-500 border-green-500/20' : 
+                              order.orderStatus === 'processing' ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' :
+                              order.orderStatus === 'failed' ? 'bg-red-500/10 text-red-500 border-red-500/20' :
+                              'bg-brand-accent/10 text-brand-accent border-brand-accent/20'
+                            }`}>
                             <option className="bg-brand-surface text-text-main" value="new">NEW</option>
                             <option className="bg-brand-surface text-text-main" value="processing">PROCESSING</option>
                             <option className="bg-brand-surface text-text-main" value="completed">COMPLETED</option>
                             <option className="bg-brand-surface text-text-main" value="failed">FAILED</option>
                           </select>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <button 
-                          onClick={() => setSelectedOrder(order)}
-                          className="text-text-muted hover:text-brand-accent transition-colors p-2"
-                        >
-                          <Eye size={18} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                        </td>
+                        <td className="px-5 py-3 text-center">
+                          <button onClick={() => setSelectedOrder(order)} className="text-text-muted hover:text-brand-accent p-1.5"><Eye size={16} /></button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile card view */}
+              <div className="lg:hidden divide-y divide-brand-border">
+                {paginatedOrders.map((order) => (
+                  <div key={order.orderId} className="p-3 sm:p-4 space-y-2" onClick={() => setSelectedOrder(order)}>
+                    <div className="flex justify-between items-start gap-2">
+                      <div className="min-w-0">
+                        <p className="font-mono text-brand-accent text-[11px]">{order.orderId}</p>
+                        <p className="font-medium text-sm truncate">{order.customerName}</p>
+                      </div>
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        {getPaymentBadge(order.paymentStatus, !!order.paymentScreenshotUrl)}
+                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
+                          order.orderStatus === 'completed' ? 'bg-green-500/10 text-green-500' :
+                          order.orderStatus === 'processing' ? 'bg-blue-500/10 text-blue-500' :
+                          order.orderStatus === 'failed' ? 'bg-red-500/10 text-red-500' :
+                          'bg-yellow-500/10 text-yellow-500'
+                        }`}>{order.orderStatus}</span>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-end text-xs">
+                      <div className="text-text-muted">
+                        <p>{order.serviceName}</p>
+                        <p className="text-brand-accent">{order.packageQuantity}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-base text-text-main">₹{order.price}</p>
+                        <p className="text-text-muted">{order.createdAt ? new Date(order.createdAt.seconds * 1000).toLocaleDateString() : 'Now'}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
           
           {/* Pagination */}
           {!loading && filteredAndSortedOrders.length > 0 && (
-            <div className="flex items-center justify-between px-6 py-4 border-t border-brand-border bg-brand-primary/50">
-              <span className="text-sm text-text-muted">
-                Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to {Math.min(currentPage * ITEMS_PER_PAGE, filteredAndSortedOrders.length)} of {filteredAndSortedOrders.length} entries
+            <div className="flex items-center justify-between px-3 sm:px-6 py-3 border-t border-brand-border bg-brand-primary/50">
+              <span className="text-xs sm:text-sm text-text-muted">
+                {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredAndSortedOrders.length)} of {filteredAndSortedOrders.length}
               </span>
               <div className="flex gap-2">
-                <button 
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage(prev => prev - 1)}
-                  className="px-3 py-1 bg-brand-surface border border-brand-border rounded-md text-sm disabled:opacity-50"
-                >
-                  Prev
-                </button>
-                <button 
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage(prev => prev + 1)}
-                  className="px-3 py-1 bg-brand-surface border border-brand-border rounded-md text-sm disabled:opacity-50"
-                >
-                  Next
-                </button>
+                <button disabled={currentPage === 1} onClick={() => setCurrentPage(prev => prev - 1)}
+                  className="px-3 py-1 bg-brand-surface border border-brand-border rounded-md text-xs sm:text-sm disabled:opacity-50">Prev</button>
+                <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(prev => prev + 1)}
+                  className="px-3 py-1 bg-brand-surface border border-brand-border rounded-md text-xs sm:text-sm disabled:opacity-50">Next</button>
               </div>
             </div>
           )}
@@ -403,7 +389,7 @@ Screenshot: ${screenshotLink}`;
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-lg bg-brand-surface border border-brand-border rounded-2xl shadow-2xl overflow-hidden z-10 max-h-[90vh] flex flex-col"
+              className="relative w-full max-w-lg bg-brand-surface border border-brand-border rounded-2xl shadow-2xl overflow-hidden z-10 max-h-[85vh] sm:max-h-[90vh] flex flex-col mx-2"
             >
               <div className="p-6 border-b border-brand-border flex justify-between items-center bg-brand-primary/50 shrink-0">
                 <h3 className="font-heading font-bold text-xl text-text-main">Order Details</h3>
@@ -497,7 +483,7 @@ Screenshot: ${screenshotLink}`;
 
               </div>
 
-              <div className="p-6 border-t border-brand-border bg-brand-primary/50 flex flex-col gap-3 shrink-0">
+              <div className="p-4 sm:p-6 border-t border-brand-border bg-brand-primary/50 flex flex-col gap-2 sm:gap-3 shrink-0">
                  {/* Approve Payment Button — only if pending verification */}
                  {selectedOrder.paymentStatus === "pending_verification" && selectedOrder.paymentScreenshotUrl && (
                    <button 
@@ -522,12 +508,6 @@ Screenshot: ${screenshotLink}`;
                         <CheckCircle size={18} /> Mark Completed
                       </button>
                    )}
-                   <button 
-                     onClick={() => handleForwardOrder(selectedOrder)}
-                     className="flex-1 bg-brand-accent/20 text-brand-accent border border-brand-accent/30 hover:bg-brand-accent/30 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all"
-                   >
-                     <Send size={18} /> Forward
-                   </button>
                    <button 
                      onClick={() => setSelectedOrder(null)}
                      className="flex-1 bg-brand-surface border border-brand-border text-text-main hover:bg-brand-border py-2.5 rounded-xl font-medium transition-all"

@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "motion/react";
 import { ShoppingCart } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { useEffect, useState } from "react";
 
 const ACTIVITIES = [
   { name: "Arjun from Mumbai", action: "ordered 5000 Instagram Followers", time: "2 min ago" },

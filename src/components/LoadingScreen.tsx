@@ -1,5 +1,5 @@
-import React from 'react';
 import { ShieldCheck } from 'lucide-react';
+import React from 'react';
 
 const LoadingScreen: React.FC = () => {
   return (

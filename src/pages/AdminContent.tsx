@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
-import { AdminLayout } from "../components/AdminLayout";
-import { FileEdit, Save, Plus, X, Trash2 } from "lucide-react";
 import { doc, getDoc, setDoc } from "firebase/firestore";
+import { FileEdit, Plus, Save, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { AdminLayout } from "../components/AdminLayout";
 import { db } from "../lib/firebase";
 
 interface FAQ {

@@ -1,28 +1,23 @@
-import React, { useEffect, useState } from 'react';
-import { 
-  Trophy, 
-  Medal, 
-  Crown, 
-  TrendingUp, 
-  User, 
-  Zap, 
-  Star,
-  Sparkles,
-  ChevronRight,
-  ShieldCheck,
-  Flame
-} from 'lucide-react';
-import { 
-  collection, 
-  query, 
-  orderBy, 
-  limit, 
-  onSnapshot 
+import {
+  collection,
+  limit,
+  onSnapshot,
+  orderBy,
+  query
 } from 'firebase/firestore';
+import {
+  ChevronRight,
+  Crown,
+  Flame,
+  Medal,
+  TrendingUp,
+  User
+} from 'lucide-react';
+import { motion } from 'motion/react';
+import React, { useEffect, useState } from 'react';
 import { db } from '../../lib/firebase';
+import { formatINR } from '../../lib/utils';
 import { UserProfile } from '../../types';
-import { formatINR, cn } from '../../lib/utils';
-import { motion, AnimatePresence } from 'motion/react';
 
 const Leaderboard: React.FC = () => {
   const [topUsers, setTopUsers] = useState<UserProfile[]>([]);

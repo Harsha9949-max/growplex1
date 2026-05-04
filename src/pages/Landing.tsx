@@ -1,24 +1,21 @@
+import {
+  ArrowRight,
+  Briefcase,
+  CheckCircle2,
+  ChevronRight,
+  Menu,
+  ShieldCheck,
+  Sparkles,
+  TrendingUp,
+  Trophy,
+  Users,
+  Wallet,
+  X,
+  Zap
+} from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'motion/react';
-import { 
-  Zap, 
-  Shield, 
-  TrendingUp, 
-  Users, 
-  ArrowRight, 
-  CheckCircle2,
-  Rocket,
-  ShieldCheck,
-  Menu,
-  X,
-  Wallet,
-  Briefcase,
-  Gift,
-  Trophy,
-  Sparkles,
-  ChevronRight
-} from 'lucide-react';
 
 const Landing: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);

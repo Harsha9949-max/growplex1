@@ -1,9 +1,9 @@
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { ArrowRight, Loader2, ShieldCheck } from "lucide-react";
+import { motion } from "motion/react";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "../lib/firebase";
-import { ShieldCheck, ArrowRight, Loader2 } from "lucide-react";
-import { motion } from "motion/react";
 
 export default function AdminLogin() {
   const [p1, setP1] = useState("");

@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+import { collection, doc, onSnapshot, orderBy, query, updateDoc } from "firebase/firestore";
+import { Camera, Check, CheckCircle, Copy, ExternalLink, Filter, RefreshCw, Search, X, XCircle } from "lucide-react";
+import { useEffect, useState } from "react";
 import { AdminLayout } from "../components/AdminLayout";
 import { db } from "../lib/firebase";
-import { collection, query, orderBy, onSnapshot, doc, updateDoc } from "firebase/firestore";
-import { Search, Filter, RefreshCw, X, CheckCircle, XCircle, ExternalLink, Camera, Copy, Check } from "lucide-react";
 
 export default function AdminPayments() {
   const [payments, setPayments] = useState<any[]>([]);

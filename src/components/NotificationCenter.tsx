@@ -1,22 +1,18 @@
-import React from 'react';
-import { 
-  Bell, 
-  X, 
-  CheckCircle2, 
-  AlertCircle, 
-  Info, 
-  Clock, 
-  Trash2, 
-  ArrowRight,
+import {
+  AlertCircle,
+  Bell,
+  CheckCircle2,
+  ChevronRight,
+  Info,
   Sparkles,
-  Zap,
-  TrendingUp,
-  ChevronRight
+  X,
+  Zap
 } from 'lucide-react';
-import { useNotifications } from '../hooks/useNotifications';
-import { motion, AnimatePresence } from 'motion/react';
-import { cn, formatTimeAgo } from '../lib/utils';
+import { AnimatePresence, motion } from 'motion/react';
+import React from 'react';
 import { Link } from 'react-router-dom';
+import { useNotifications } from '../hooks/useNotifications';
+import { cn, formatTimeAgo } from '../lib/utils';
 
 interface NotificationCenterProps {
   isOpen: boolean;

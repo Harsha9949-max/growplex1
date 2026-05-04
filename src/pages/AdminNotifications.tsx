@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from "react";
-import { AdminLayout } from "../components/AdminLayout";
-import { Bell, Mail, Smartphone, Send, Save } from "lucide-react";
 import { doc, getDoc, setDoc } from "firebase/firestore";
+import { Bell, Mail, Send, Smartphone } from "lucide-react";
+import { useEffect, useState } from "react";
+import { AdminLayout } from "../components/AdminLayout";
 import { db } from "../lib/firebase";
 
 export default function AdminNotifications() {
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+
   const [notifications, setNotifications] = useState({
     telegram: { active: true, title: "Telegram Bot", desc: "Send order updates to a Telegram channel", icon: "Send" },
     email: { active: false, title: "Email Alerts", desc: "Send summary emails for new orders", icon: "Mail" },

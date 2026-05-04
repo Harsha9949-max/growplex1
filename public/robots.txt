@@ -5,5 +5,9 @@ Disallow: /admin/*
 Disallow: /api/
 Disallow: /success
 Disallow: /failed
+Disallow: /receipt/
 
-Sitemap: https://www.growplex.sbs/sitemap.xml
+# Crawl-delay for politeness
+Crawl-delay: 1
+
+Sitemap: https://growplex.sbs/sitemap.xml

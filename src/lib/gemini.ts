@@ -18,7 +18,7 @@ export async function analyzeLink(link: string, serviceName: string) {
   }
 }
 
-export async function getChatResponse(message: string, history: { role: string, parts: { text: string }[] }[]) {
+export async function getChatResponse(message: string, _history: { role: string, parts: { text: string }[] }[]) {
   try {
     const chat = ai.chats.create({
       model: "gemini-1.5-flash",

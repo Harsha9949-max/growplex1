@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Phone, Lock, LogIn, ArrowRight, CheckCircle2, ShieldCheck } from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
+import { ArrowRight, CheckCircle2, Lock, ShieldCheck } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import React, { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { motion, AnimatePresence } from 'motion/react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
 const Login: React.FC = () => {
   const [phoneNumber, setPhoneNumber] = useState('');

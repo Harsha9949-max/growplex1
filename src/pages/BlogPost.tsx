@@ -1,9 +1,10 @@
-import { useParams, Link } from "react-router-dom";
+import { ArrowLeft, ArrowRight, Clock } from "lucide-react";
 import { Helmet } from "react-helmet-async";
-import { ArrowLeft, Clock, ArrowRight } from "lucide-react";
-import { Navbar } from "../components/Navbar";
-import { Footer } from "../components/Footer";
+import { Link, useParams } from "react-router-dom";
 import { Breadcrumbs } from "../components/Breadcrumbs";
+import { Footer } from "../components/Footer";
+import { Navbar } from "../components/Navbar";
+import { ArticleSchema } from "../components/SchemaMarkup";
 import { BLOG_POSTS } from "./Blog";
 
 const BLOG_CONTENT: Record<string, string> = {
@@ -245,7 +246,17 @@ export default function BlogPost() {
         <meta property="og:description" content={post.excerpt} />
         <meta property="og:url" content={`https://growplex.sbs/blog/${post.slug}`} />
         <meta property="og:type" content="article" />
+        <meta property="og:image" content="https://growplex.sbs/og-image.png" />
+        <meta property="article:published_time" content={post.date} />
+        <meta property="article:author" content="Growplex" />
       </Helmet>
+
+      <ArticleSchema
+        title={post.title}
+        description={post.excerpt}
+        datePublished={post.date}
+        slug={post.slug}
+      />
 
       <Navbar />
       <Breadcrumbs />

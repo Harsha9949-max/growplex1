@@ -1,6 +1,5 @@
+import { Flame, Star } from 'lucide-react';
 import React from 'react';
-import { motion } from 'motion/react';
-import { Flame, Star, Zap, Clock, TrendingUp, Sparkles, PenTool } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { formatINR } from '../../lib/utils';
 
@@ -12,7 +11,7 @@ interface TaskCardProps {
   venture: string;
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({ title, reward, expiry, difficulty, venture }) => {
+const TaskCard: React.FC<TaskCardProps> = ({ title, reward, expiry, difficulty, venture: _venture }) => {
   const diffColors = {
     Easy: 'text-brand-teal',
     Mid: 'text-brand-gold',

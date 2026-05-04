@@ -1,9 +1,10 @@
-import { Link } from "react-router-dom";
+import { ArrowRight, CreditCard, Link as LinkIcon, Lock, Rocket, ShieldCheck } from "lucide-react";
 import { Helmet } from "react-helmet-async";
-import { Lock, ArrowRight, Link as LinkIcon, CreditCard, Rocket, ShieldCheck } from "lucide-react";
-import { Navbar } from "../components/Navbar";
-import { Footer } from "../components/Footer";
+import { Link } from "react-router-dom";
 import { Breadcrumbs } from "../components/Breadcrumbs";
+import { Footer } from "../components/Footer";
+import { Navbar } from "../components/Navbar";
+import { HowToSchema } from "../components/SchemaMarkup";
 
 const STEPS = [
   {
@@ -39,6 +40,8 @@ export default function HowItWorks() {
         <meta property="og:title" content="How Growplex Works – 3 Steps, No Login" />
         <meta property="og:url" content="https://growplex.sbs/how-it-works" />
       </Helmet>
+
+      <HowToSchema />
 
       <Navbar />
       <Breadcrumbs />

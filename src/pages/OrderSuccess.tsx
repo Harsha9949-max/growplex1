@@ -1,10 +1,10 @@
-import { Link, useLocation } from "react-router-dom";
-import { motion } from "motion/react";
 import { CheckCircle } from "lucide-react";
+import { motion } from "motion/react";
 import Confetti from "react-confetti";
+import { Link, useLocation } from "react-router-dom";
 import { useWindowSize } from "react-use";
-import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
+import { Navbar } from "../components/Navbar";
 
 export default function OrderSuccess() {
   const location = useLocation();
