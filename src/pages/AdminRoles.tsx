@@ -6,8 +6,10 @@ import { db } from "../lib/firebase";
 
 interface AdminUser {
   id: string;
-  email: string;
   name: string;
+  passwordPart1: string;
+  passwordPart2: string;
+  passwordPart3: string;
   role: "Super Admin" | "Sub-Admin" | "Support";
   createdAt?: any;
 }
@@ -21,8 +23,10 @@ export default function AdminRoles() {
   
   const [formData, setFormData] = useState({
     id: "",
-    email: "",
     name: "",
+    passwordPart1: "",
+    passwordPart2: "",
+    passwordPart3: "",
     role: "Support" as "Super Admin" | "Sub-Admin" | "Support"
   });
 
@@ -49,15 +53,19 @@ export default function AdminRoles() {
     if (user) {
       setFormData({
         id: user.id,
-        email: user.email,
         name: user.name || "",
+        passwordPart1: user.passwordPart1 || "",
+        passwordPart2: user.passwordPart2 || "",
+        passwordPart3: user.passwordPart3 || "",
         role: user.role
       });
     } else {
       setFormData({
         id: "",
-        email: "",
         name: "",
+        passwordPart1: "",
+        passwordPart2: "",
+        passwordPart3: "",
         role: "Support"
       });
     }
@@ -65,17 +73,19 @@ export default function AdminRoles() {
   };
 
   const handleSaveUser = async () => {
-    if (!formData.email) return alert("Email is required");
+    if (!formData.passwordPart1 || !formData.passwordPart2 || !formData.passwordPart3) return alert("All 3 password parts are required");
     
     try {
       // In a real app, you would also need to create a Firebase Auth user if they don't exist.
       // Here we just manage the roles in the Firestore collection.
-      const docId = formData.id || formData.email.replace(/[^a-zA-Z0-9]/g, ''); // Simple ID generation
+      const docId = formData.id || Date.now().toString(); // Generate unique ID
       const docRef = doc(db, "users", docId);
       
       await setDoc(docRef, {
-        email: formData.email,
         name: formData.name,
+        passwordPart1: formData.passwordPart1,
+        passwordPart2: formData.passwordPart2,
+        passwordPart3: formData.passwordPart3,
         role: formData.role,
         updatedAt: serverTimestamp(),
         ...(!formData.id && { createdAt: serverTimestamp() })
@@ -155,7 +165,7 @@ export default function AdminRoles() {
             <thead className="bg-brand-primary/50 text-text-muted text-xs uppercase font-semibold border-b border-brand-border">
               <tr>
                 <th className="px-6 py-4">Name</th>
-                <th className="px-6 py-4">Email</th>
+                <th className="px-6 py-4">Passwords</th>
                 <th className="px-6 py-4">Role</th>
                 <th className="px-6 py-4 text-center">Actions</th>
               </tr>
@@ -175,7 +185,9 @@ export default function AdminRoles() {
                 users.map(user => (
                   <tr key={user.id} className="hover:bg-brand-primary/30 transition-colors">
                     <td className="px-6 py-4 font-medium text-text-main">{user.name || "N/A"}</td>
-                    <td className="px-6 py-4 text-text-muted">{user.email}</td>
+                    <td className="px-6 py-4 text-text-muted">
+                      {user.passwordPart1 ? "*** *** ***" : "Not Set"}
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         {getRoleIcon(user.role)}
@@ -232,15 +244,30 @@ export default function AdminRoles() {
               </div>
               
               <div>
-                <label className="text-sm font-medium text-text-muted mb-1 block">Email Address</label>
-                <input 
-                  type="email" 
-                  value={formData.email}
-                  disabled={!!formData.id} // Don't allow changing email if editing
-                  onChange={e => setFormData({...formData, email: e.target.value})}
-                  className="w-full bg-brand-primary border border-brand-border rounded-lg px-4 py-2.5 text-text-main focus:outline-none focus:border-brand-accent/50 disabled:opacity-50" 
-                  placeholder="admin@growplex.com"
-                />
+                <label className="text-sm font-medium text-text-muted mb-1 block">Security Passwords</label>
+                <div className="space-y-3">
+                  <input 
+                    type="password" 
+                    value={formData.passwordPart1}
+                    onChange={e => setFormData({...formData, passwordPart1: e.target.value})}
+                    className="w-full bg-brand-primary border border-brand-border rounded-lg px-4 py-2.5 text-text-main focus:outline-none focus:border-brand-accent/50" 
+                    placeholder="Password 1 (e.g. HVRS)"
+                  />
+                  <input 
+                    type="password" 
+                    value={formData.passwordPart2}
+                    onChange={e => setFormData({...formData, passwordPart2: e.target.value})}
+                    className="w-full bg-brand-primary border border-brand-border rounded-lg px-4 py-2.5 text-text-main focus:outline-none focus:border-brand-accent/50" 
+                    placeholder="Password 2 (e.g. HVRS)"
+                  />
+                  <input 
+                    type="password" 
+                    value={formData.passwordPart3}
+                    onChange={e => setFormData({...formData, passwordPart3: e.target.value})}
+                    className="w-full bg-brand-primary border border-brand-border rounded-lg px-4 py-2.5 text-text-main focus:outline-none focus:border-brand-accent/50" 
+                    placeholder="Password 3 (e.g. HVRS)"
+                  />
+                </div>
               </div>
 
               <div>

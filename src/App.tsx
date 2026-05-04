@@ -17,9 +17,11 @@ import RefundPolicy from "./pages/RefundPolicy";
 import OrderSuccess from "./pages/OrderSuccess";
 import OrderFailed from "./pages/OrderFailed";
 import ReceiptViewer from "./pages/ReceiptViewer";
+import AdminLogin from "./pages/AdminLogin";
 import AdminOrders from "./pages/AdminOrders";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminServices from "./pages/AdminServices";
+import { AdminProtectedRoute } from "./components/AdminProtectedRoute";
 import { 
   AdminPayments, 
   AdminCustomers, 
@@ -54,21 +56,25 @@ export default function App() {
           <Route path="/success" element={<OrderSuccess />} />
           <Route path="/failed" element={<OrderFailed />} />
           <Route path="/receipt/:orderId" element={<ReceiptViewer />} />
-          {/* Admin Routes */}
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="/admin/orders" element={<AdminOrders />} />
-          <Route path="/admin/services" element={<AdminServices />} />
-          <Route path="/admin/payments" element={<AdminPayments />} />
-          <Route path="/admin/customers" element={<AdminCustomers />} />
-          <Route path="/admin/notifications" element={<AdminNotifications />} />
-          <Route path="/admin/reports" element={<AdminReports />} />
-          <Route path="/admin/settings" element={<AdminSettings />} />
-          <Route path="/admin/roles" element={<AdminRoles />} />
-          <Route path="/admin/logs" element={<AdminLogs />} />
-          <Route path="/admin/content" element={<AdminContent />} />
-          <Route path="/admin/backup" element={<AdminBackup />} />
-          <Route path="/admin/growplex-orders" element={<AdminOrders />} />
+          
+          {/* Admin Auth Route */}
+          <Route path="/admin/login" element={<AdminLogin />} />
+
+          {/* Protected Admin Routes */}
+          <Route path="/admin" element={<AdminProtectedRoute allowedRoles={["Super Admin", "Sub-Admin"]}><AdminDashboard /></AdminProtectedRoute>} />
+          <Route path="/admin/dashboard" element={<AdminProtectedRoute allowedRoles={["Super Admin", "Sub-Admin"]}><AdminDashboard /></AdminProtectedRoute>} />
+          <Route path="/admin/orders" element={<AdminProtectedRoute allowedRoles={["Super Admin", "Sub-Admin", "Support"]}><AdminOrders /></AdminProtectedRoute>} />
+          <Route path="/admin/services" element={<AdminProtectedRoute allowedRoles={["Super Admin", "Sub-Admin", "Support"]}><AdminServices /></AdminProtectedRoute>} />
+          <Route path="/admin/payments" element={<AdminProtectedRoute allowedRoles={["Super Admin", "Sub-Admin", "Support"]}><AdminPayments /></AdminProtectedRoute>} />
+          <Route path="/admin/customers" element={<AdminProtectedRoute allowedRoles={["Super Admin", "Sub-Admin"]}><AdminCustomers /></AdminProtectedRoute>} />
+          <Route path="/admin/notifications" element={<AdminProtectedRoute allowedRoles={["Super Admin", "Sub-Admin"]}><AdminNotifications /></AdminProtectedRoute>} />
+          <Route path="/admin/reports" element={<AdminProtectedRoute allowedRoles={["Super Admin"]}><AdminReports /></AdminProtectedRoute>} />
+          <Route path="/admin/settings" element={<AdminProtectedRoute allowedRoles={["Super Admin"]}><AdminSettings /></AdminProtectedRoute>} />
+          <Route path="/admin/roles" element={<AdminProtectedRoute allowedRoles={["Super Admin"]}><AdminRoles /></AdminProtectedRoute>} />
+          <Route path="/admin/logs" element={<AdminProtectedRoute allowedRoles={["Super Admin"]}><AdminLogs /></AdminProtectedRoute>} />
+          <Route path="/admin/content" element={<AdminProtectedRoute allowedRoles={["Super Admin", "Sub-Admin"]}><AdminContent /></AdminProtectedRoute>} />
+          <Route path="/admin/backup" element={<AdminProtectedRoute allowedRoles={["Super Admin"]}><AdminBackup /></AdminProtectedRoute>} />
+          <Route path="/admin/growplex-orders" element={<AdminProtectedRoute allowedRoles={["Super Admin", "Sub-Admin", "Support"]}><AdminOrders /></AdminProtectedRoute>} />
         </Routes>
         <FloatingBadge />
       </BrowserRouter>
