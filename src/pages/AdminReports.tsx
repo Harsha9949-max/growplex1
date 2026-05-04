@@ -203,7 +203,7 @@ export default function AdminReports() {
             <div className="bg-brand-surface border border-brand-border p-5 sm:p-6 rounded-xl shadow-lg">
               <h3 className="font-heading font-bold text-lg mb-4">User Growth & Engagement</h3>
               <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                   <AreaChart data={chartsData.timeSeries}>
                     <defs>
                       <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
@@ -225,7 +225,7 @@ export default function AdminReports() {
               <h3 className="font-heading font-bold text-lg w-full mb-2">Order Source / Platform</h3>
               {chartsData.platformData.length > 0 ? (
                  <div className="w-full h-[300px]">
-                   <ResponsiveContainer width="100%" height="100%">
+                   <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                      <PieChart>
                        <Pie
                          data={chartsData.platformData}
@@ -256,7 +256,7 @@ export default function AdminReports() {
           <div className="bg-brand-surface border border-brand-border p-5 sm:p-6 rounded-xl shadow-lg">
              <h3 className="font-heading font-bold text-lg mb-4">Daily Volume (Revenue & Orders)</h3>
              <div className="h-[300px]">
-               <ResponsiveContainer width="100%" height="100%">
+               <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                  <BarChart data={chartsData.timeSeries}>
                    <CartesianGrid strokeDasharray="3 3" stroke="#2D2D2D" vertical={false} />
                    <XAxis dataKey="date" stroke="#6b7280" fontSize={10} tickLine={false} axisLine={false} />
