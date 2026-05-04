@@ -76,10 +76,13 @@ async function sendTelegramNotification(order: {
   }
 }
 
+import Confetti from 'react-confetti';
+import { useWindowSize } from 'react-use';
 import imageCompression from 'browser-image-compression';
 
 export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon }: OrderModalProps) {
-  const [step, setStep] = useState<"details" | "checkout" | "payment">("details");
+  const { width, height } = useWindowSize();
+  const [step, setStep] = useState<"details" | "checkout" | "payment" | "success">("details");
   const [formData, setFormData] = useState({
     customerName: "",
     phone: "",
@@ -194,53 +197,70 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
     setLoading(true);
 
     try {
-      // 1. Upload screenshot to Firebase Storage
-      setUploadProgress("Uploading screenshot...");
-      const screenshotRef = ref(storage, `payment-screenshots/${orderId}_${Date.now()}.${screenshotFile.name.split('.').pop()}`);
-      await uploadBytes(screenshotRef, screenshotFile);
-      const screenshotUrl = await getDownloadURL(screenshotRef);
+      // Create a copy of values so we can safely use them async
+      const currentScreenshotFile = screenshotFile;
+      const currentFormData = { ...formData };
+      const currentSelectedPackage = { ...selectedPackage };
+      const currentService = { ...service };
+      const currentOrderId = orderId;
 
-      // 2. Save order to Firestore
-      setUploadProgress("Creating order...");
-      const orderData = {
-        orderId,
-        customerName: formData.customerName,
-        phone: formData.phone,
-        serviceLink: formData.serviceLink,
-        serviceName: service.name,
-        serviceCategory: service.category,
-        packageQuantity: selectedPackage.quantity,
-        price: selectedPackage.price,
-        paymentId: `upi_${orderId}`,
-        paymentStatus: "pending_verification",
-        paymentScreenshotUrl: screenshotUrl,
-        paymentScreenshotPath: screenshotRef.fullPath,
-        orderStatus: "new",
-        upiId: UPI_ID,
-        createdAt: serverTimestamp(),
-      };
+      // 1. Show success step IMMEDIATELY (optimistic UI)
+      setStep("success");
+      
+      // 2. Start slow operations asynchronously in the background
+      (async () => {
+        try {
+          // Upload screenshot
+          const screenshotRef = ref(storage, `payment-screenshots/${currentOrderId}_${Date.now()}.${currentScreenshotFile.name.split('.').pop()}`);
+          await uploadBytes(screenshotRef, currentScreenshotFile);
+          const screenshotUrl = await getDownloadURL(screenshotRef);
 
-      await addDoc(collection(db, "orders"), orderData);
+          // Save order to Firestore
+          const orderData = {
+            orderId: currentOrderId,
+            customerName: currentFormData.customerName,
+            phone: currentFormData.phone,
+            serviceLink: currentFormData.serviceLink,
+            serviceName: currentService.name,
+            serviceCategory: currentService.category,
+            packageQuantity: currentSelectedPackage.quantity,
+            price: currentSelectedPackage.price,
+            paymentId: `upi_${currentOrderId}`,
+            paymentStatus: "pending_verification",
+            paymentScreenshotUrl: screenshotUrl,
+            paymentScreenshotPath: screenshotRef.fullPath,
+            orderStatus: "new",
+            upiId: UPI_ID,
+            createdAt: serverTimestamp(),
+          };
 
-      // 3. Send Telegram notification (fire-and-forget)
-      sendTelegramNotification({
-        orderId,
-        customerName: formData.customerName,
-        phone: formData.phone,
-        serviceName: service.name,
-        packageQuantity: selectedPackage.quantity,
-        price: selectedPackage.price,
-        serviceLink: formData.serviceLink,
-      });
+          await addDoc(collection(db, "orders"), orderData);
 
-      // 4. Navigate to success
-      navigate("/success", { state: { orderId } });
+          // Send Telegram notification
+          sendTelegramNotification({
+            orderId: currentOrderId,
+            customerName: currentFormData.customerName,
+            phone: currentFormData.phone,
+            serviceName: currentService.name,
+            packageQuantity: currentSelectedPackage.quantity,
+            price: currentSelectedPackage.price,
+            serviceLink: currentFormData.serviceLink,
+          });
+        } catch (bgError) {
+          console.error("Background order submission failed:", bgError);
+        }
+      })();
+
+      // 4. Navigate to success page after animation
+      setTimeout(() => {
+        navigate("/success", { state: { orderId } });
+        onClose();
+      }, 2500);
+
     } catch (err: any) {
-      console.error("Order submission error:", err);
-      setError(err.message || "Failed to submit order. Please try again.");
-    } finally {
+      console.error("Order UI transition error:", err);
+      setError(err.message || "Failed to process order. Please try again.");
       setLoading(false);
-      setUploadProgress("");
     }
   };
 
@@ -260,19 +280,25 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
         className="relative w-full max-w-md bg-brand-surface border border-brand-border shadow-2xl rounded-2xl overflow-hidden z-10 flex flex-col max-h-[90vh]"
       >
         <div className="bg-brand-primary p-6 border-b border-brand-border relative shrink-0">
-          <button 
-            onClick={onClose}
-            className="absolute top-4 right-4 text-text-muted hover:text-text-main hover:bg-brand-border p-1.5 rounded-lg transition-colors"
-          >
-            <X size={20} />
-          </button>
-          {step === "payment" && (
-            <button
-              onClick={() => { setStep("checkout"); setError(null); }}
-              className="absolute top-4 left-4 text-text-muted hover:text-text-main hover:bg-brand-border p-1.5 rounded-lg transition-colors"
-            >
-              <ArrowLeft size={20} />
-            </button>
+          {step !== "success" && (
+            <>
+              <button 
+                onClick={onClose}
+                className="absolute top-4 right-4 text-text-muted hover:text-text-main hover:bg-brand-border p-1.5 rounded-lg transition-colors"
+                disabled={loading}
+              >
+                <X size={20} />
+              </button>
+              {step === "payment" && (
+                <button
+                  onClick={() => { setStep("checkout"); setError(null); }}
+                  className="absolute top-4 left-4 text-text-muted hover:text-text-main hover:bg-brand-border p-1.5 rounded-lg transition-colors"
+                  disabled={loading}
+                >
+                  <ArrowLeft size={20} />
+                </button>
+              )}
+            </>
           )}
           <div className="inline-flex items-center px-2.5 py-1 rounded-md bg-brand-surface border border-brand-border text-xs font-medium text-text-muted mb-4 uppercase tracking-wider">
             {getCategoryIcon(service.category)}
@@ -502,6 +528,49 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
                     <><CheckCircle size={20} /> Confirm Payment</>
                   )}
                 </button>
+              </motion.div>
+            )}
+
+            {step === "success" && (
+              <motion.div
+                key="success"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col items-center justify-center py-12 text-center"
+              >
+                <Confetti
+                  width={width}
+                  height={height}
+                  recycle={false}
+                  numberOfPieces={500}
+                  colors={['#E8B84B', '#FFFFFF', '#D4A33B', '#111111']}
+                  style={{ position: 'fixed', top: 0, left: 0, zIndex: 100 }}
+                />
+                <motion.div 
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1, rotate: 360 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                  className="w-24 h-24 bg-brand-accent/20 rounded-full flex items-center justify-center mb-6 text-brand-accent mx-auto"
+                >
+                  <CheckCircle size={50} />
+                </motion.div>
+                <motion.h3 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="text-2xl font-bold font-heading text-text-main mb-2"
+                >
+                  Payment Submitted!
+                </motion.h3>
+                <motion.p 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                  className="text-text-muted"
+                >
+                  Redirecting to your order details...
+                </motion.p>
               </motion.div>
             )}
           </AnimatePresence>
