@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /api/
+Disallow: /success
+Disallow: /failed
+
+Sitemap: https://www.growplex.sbs/sitemap.xml
