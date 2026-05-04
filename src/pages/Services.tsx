@@ -15,6 +15,7 @@ import { Breadcrumbs } from "../components/Breadcrumbs";
 import { Footer } from "../components/Footer";
 import { Navbar } from "../components/Navbar";
 import { OrderModal } from "../components/OrderModal";
+import { useServices } from "../hooks/useServices";
 import { db } from "../lib/firebase";
 import { Package, Service } from "../types";
 
@@ -223,52 +224,7 @@ function applyMargin(services: Service[], marginPercent: number): Service[] {
 }
 
 export default function Services() {
-  const [dbServices, setDbServices] = useState<Service[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [marginPercent, setMarginPercent] = useState(40); // default 40%
-  
-  // Fetch admin margin setting
-  useEffect(() => {
-    const fetchMargin = async () => {
-      try {
-        const settingsDoc = await getDoc(doc(db, "system", "settings"));
-        if (settingsDoc.exists()) {
-          const data = settingsDoc.data();
-          if (typeof data.defaultMarkupMargin === "number") {
-            setMarginPercent(data.defaultMarkupMargin);
-          }
-        }
-      } catch (err) {
-        console.error("Failed to fetch margin setting:", err);
-      }
-    };
-    fetchMargin();
-  }, []);
-
-  // Fetch services from Firestore, fallback to BASE_SERVICES
-  useEffect(() => {
-    const q = query(collection(db, "services"), where("status", "==", "active"));
-    
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetched: Service[] = [];
-      snapshot.forEach((docSnap) => {
-        const data = docSnap.data();
-        fetched.push({
-          id: docSnap.id,
-          ...data,
-          name: data.serviceName || data.name
-        } as Service);
-      });
-      setDbServices(fetched.length > 0 ? fetched : BASE_SERVICES);
-      setLoading(false);
-    }, (err) => {
-      console.error("Failed to fetch services:", err);
-      setDbServices(BASE_SERVICES);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
+  const { services: servicesWithMargin, loading } = useServices();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -277,8 +233,7 @@ export default function Services() {
   const [selectedOrder, setSelectedOrder] = useState<{service: Service, pkg: Package} | null>(null);
 
   const filteredServices = useMemo(() => {
-    // Apply margin to all base prices
-    let result = applyMargin(dbServices, marginPercent);
+    let result = [...servicesWithMargin];
 
     if (selectedCategory !== "All") {
       result = result.filter(s => s.category.toLowerCase().includes(selectedCategory.toLowerCase()));
@@ -294,7 +249,7 @@ export default function Services() {
     }
 
     // Sort by checking the minimum package price for each service
-    result = [...result].sort((a, b) => {
+    result = result.sort((a, b) => {
       const aPkgs = a.packages || [];
       const bPkgs = b.packages || [];
       const aMinPrice = aPkgs.length > 0 ? Math.min(...aPkgs.map(p => p.price || 0)) : 0;
@@ -319,7 +274,7 @@ export default function Services() {
     });
 
     return result;
-  }, [searchQuery, selectedCategory, sortBy, dbServices, marginPercent]);
+  }, [searchQuery, selectedCategory, sortBy, servicesWithMargin]);
 
   const getCategoryIcon = (category: string) => {
     if (category.toLowerCase().includes("youtube")) {

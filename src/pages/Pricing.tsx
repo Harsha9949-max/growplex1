@@ -5,8 +5,10 @@ import { Link } from "react-router-dom";
 import { Breadcrumbs } from "../components/Breadcrumbs";
 import { Footer } from "../components/Footer";
 import { Navbar } from "../components/Navbar";
+import { useServices } from "../hooks/useServices";
+import { useMemo } from "react";
 
-const FEATURED_SERVICES = [
+const FALLBACK_FEATURED = [
   { id: 1, name: "Instagram Followers", qty: "1000 Followers", price: "₹69", time: "1–24 hours", icon: Instagram, popular: true },
   { id: 2, name: "YouTube Subscribers", qty: "1000 Subscribers", price: "₹83", time: "24–48 hours", icon: Youtube, popular: false },
   { id: 3, name: "Telegram Members", qty: "1000 Members", price: "₹111", time: "1–24 hours", icon: Send, popular: false },
@@ -26,6 +28,37 @@ const COMPARISON = [
 ];
 
 export default function Pricing() {
+  const { services, loading } = useServices();
+
+  const featuredServices = useMemo(() => {
+    if (loading || services.length === 0) return FALLBACK_FEATURED;
+    
+    const getServicePkg = (cat: string, qtyCheck: string) => {
+       const s = services.find(x => x.category?.includes(cat) || x.name?.includes(cat));
+       if (!s) return null;
+       const p = s.packages.find(x => String(x.quantity).includes(qtyCheck)) || s.packages[0];
+       if (!p) return null;
+       return { s, p };
+    };
+
+    const buildCard = (def: any, term: string, qtyCheck: string, qtyLabel: string, icon: any) => {
+        const sp = getServicePkg(term, qtyCheck);
+        if (sp) {
+           return { ...def, name: sp.s.name, qty: qtyLabel, price: `₹${sp.p.price}`, time: sp.s.deliveryTime || def.time, icon };
+        }
+        return def;
+    };
+
+    return [
+       buildCard(FALLBACK_FEATURED[0], "Instagram Followers", "1000", "1000 Followers", Instagram),
+       buildCard(FALLBACK_FEATURED[1], "YouTube Subscribers", "1000", "1000 Subscribers", Youtube),
+       buildCard(FALLBACK_FEATURED[2], "Telegram Members", "1000", "1000 Members", Send),
+       buildCard(FALLBACK_FEATURED[3], "Instagram Likes", "1000", "1000 Likes", Instagram),
+       buildCard(FALLBACK_FEATURED[4], "Instagram Reel", "5000", "5000 Views", Instagram),
+       buildCard(FALLBACK_FEATURED[5], "YouTube Views", "1000", "1000 Views", Youtube),
+    ];
+  }, [services, loading]);
+
   return (
     <div className="min-h-screen bg-brand-primary text-text-main font-sans">
       <Helmet>
@@ -61,7 +94,7 @@ export default function Pricing() {
       <section className="py-20 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {FEATURED_SERVICES.map((service, idx) => (
+            {featuredServices.map((service, idx) => (
               <motion.div 
                 key={service.id}
                 initial={{ opacity: 0, y: 20 }}

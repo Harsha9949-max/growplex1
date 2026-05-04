@@ -17,6 +17,8 @@ import { Footer } from "../components/Footer";
 import { Navbar } from "../components/Navbar";
 import { AggregateRatingSchema } from "../components/SchemaMarkup";
 import { SocialProofTicker } from "../components/SocialProofTicker";
+import { useServices } from "../hooks/useServices";
+import { useMemo } from "react";
 
 const TRUST_BADGES = [
   { icon: Lock, title: "No Login Required", desc: "Order without creating an account or giving any password." },
@@ -25,7 +27,7 @@ const TRUST_BADGES = [
   { icon: Headphones, title: "24/7 Human Support", desc: "Real agents available around the clock via chat and email." }
 ];
 
-const TOP_SERVICES = [
+const FALLBACK_TOP_SERVICES = [
   { icon: Instagram, platform: "Instagram", name: "Followers", price: "₹8", desc: "Real & stable followers for your Instagram profile. No password needed.", link: "/services" },
   { icon: Instagram, platform: "Instagram", name: "Likes", price: "₹30", desc: "Instant likes on your posts to boost engagement.", link: "/services" },
   { icon: Youtube, platform: "YouTube", name: "Subscribers", price: "₹59", desc: "Active subscribers for your YouTube channel growth.", link: "/services" },
@@ -60,6 +62,41 @@ const COMPARISON = [
 ];
 
 export default function Home() {
+  const { services, loading } = useServices();
+
+  const topServices = useMemo(() => {
+    if (loading || services.length === 0) return FALLBACK_TOP_SERVICES;
+    
+    const getStartingPrice = (cat: string) => {
+       const matched = services.filter(x => x.category?.includes(cat) || x.name?.includes(cat));
+       if (!matched || matched.length === 0) return null;
+       let lowest = Infinity;
+       matched.forEach(s => {
+         s.packages.forEach(p => {
+            if (p.price < lowest) lowest = p.price;
+         });
+       });
+       if (lowest === Infinity) return null;
+       return `₹${lowest}`;
+    };
+
+    const buildCard = (def: any, term: string) => {
+        const lowestPrice = getStartingPrice(term);
+        if (lowestPrice) {
+           return { ...def, price: lowestPrice };
+        }
+        return def;
+    };
+
+    return [
+       buildCard(FALLBACK_TOP_SERVICES[0], "Instagram Followers"),
+       buildCard(FALLBACK_TOP_SERVICES[1], "Instagram Likes"),
+       buildCard(FALLBACK_TOP_SERVICES[2], "YouTube Subscribers"),
+       buildCard(FALLBACK_TOP_SERVICES[3], "YouTube Views"),
+       buildCard(FALLBACK_TOP_SERVICES[4], "Telegram Members"),
+       buildCard(FALLBACK_TOP_SERVICES[5], "Instagram Reel"),
+    ];
+  }, [services, loading]);
   return (
     <div className="min-h-screen bg-brand-primary text-text-main font-sans selection:bg-brand-accent selection:text-brand-primary">
       <Helmet>
@@ -173,7 +210,7 @@ export default function Home() {
             <p className="text-text-muted max-w-2xl mx-auto text-sm md:text-base px-2">Top-rated social media growth services at the cheapest prices. No login, no password — just results.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {TOP_SERVICES.map((service, idx) => (
+            {topServices.map((service, idx) => (
               <motion.div 
                 key={idx}
                 whileHover={{ y: -5 }}
