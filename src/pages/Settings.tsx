@@ -14,7 +14,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 
 const Settings: React.FC = () => {
-  const { userProfile, signOut } = useAuth();
+  const { userProfile, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'notifications'>('profile');
 
   const tabs = [
@@ -31,7 +31,7 @@ const Settings: React.FC = () => {
           <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px] mt-2 italic">Customize your professional identity and security.</p>
         </div>
         <button 
-          onClick={() => signOut()}
+          onClick={() => logout()}
           className="px-6 py-3 rounded-2xl bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all"
         >
           <LogOut size={14} />

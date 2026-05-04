@@ -45,22 +45,22 @@ interface VentureSpecificTasksProps {
 }
 
 const VentureSpecificTasks: React.FC<VentureSpecificTasksProps> = ({ venture }) => {
-  const mockTasks = {
+  const mockTasks: Record<string, TaskCardProps[]> = {
     BuyRix: [
-      { title: 'Instagram Reel Engagement', reward: 45, expiry: '1h left', difficulty: 'Easy' },
-      { title: 'X (Twitter) Viral Campaign', reward: 120, expiry: '3h left', difficulty: 'Mid' },
+      { title: 'Instagram Reel Engagement', reward: 45, expiry: '1h left', difficulty: 'Easy', venture: 'BuyRix' },
+      { title: 'X (Twitter) Viral Campaign', reward: 120, expiry: '3h left', difficulty: 'Mid', venture: 'BuyRix' },
     ],
     Vyuma: [
-      { title: 'Product Story Script', reward: 250, expiry: '5h left', difficulty: 'Hard' },
-      { title: 'Brand Logo Feedback', reward: 30, expiry: '12h left', difficulty: 'Easy' },
+      { title: 'Product Story Script', reward: 250, expiry: '5h left', difficulty: 'Hard', venture: 'Vyuma' },
+      { title: 'Brand Logo Feedback', reward: 30, expiry: '12h left', difficulty: 'Easy', venture: 'Vyuma' },
     ],
     TrendyVerse: [
-      { title: 'Fashion Trend Analysis', reward: 180, expiry: '2h left', difficulty: 'Mid' },
-      { title: 'Lifestyle Reel Submission', reward: 400, expiry: '8h left', difficulty: 'Hard' },
+      { title: 'Fashion Trend Analysis', reward: 180, expiry: '2h left', difficulty: 'Mid', venture: 'TrendyVerse' },
+      { title: 'Lifestyle Reel Submission', reward: 400, expiry: '8h left', difficulty: 'Hard', venture: 'TrendyVerse' },
     ],
     Growplex: [
-      { title: 'Lead Generation Sync', reward: 90, expiry: '2h left', difficulty: 'Mid' },
-      { title: 'SEO Keyword Audit', reward: 350, expiry: '6h left', difficulty: 'Hard' },
+      { title: 'Lead Generation Sync', reward: 90, expiry: '2h left', difficulty: 'Mid', venture: 'Growplex' },
+      { title: 'SEO Keyword Audit', reward: 350, expiry: '6h left', difficulty: 'Hard', venture: 'Growplex' },
     ],
   };
 

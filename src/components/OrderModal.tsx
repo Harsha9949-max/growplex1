@@ -61,16 +61,33 @@ async function sendTelegramNotification(order: {
     ].join("\n");
 
     if (order.screenshotUrl) {
-      await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: chatId,
-          photo: order.screenshotUrl,
-          caption: message,
-          parse_mode: "Markdown",
-        }),
-      });
+      if (order.screenshotUrl.startsWith("data:image")) {
+        const form = new FormData();
+        form.append("chat_id", chatId);
+        form.append("caption", message);
+        form.append("parse_mode", "Markdown");
+
+        // Convert base64 to blob
+        const res = await fetch(order.screenshotUrl);
+        const blob = await res.blob();
+        form.append("photo", blob, "payment.jpg");
+
+        await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+          method: "POST",
+          body: form,
+        });
+      } else {
+        await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id: chatId,
+            photo: order.screenshotUrl,
+            caption: message,
+            parse_mode: "Markdown",
+          }),
+        });
+      }
     } else {
       await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
         method: "POST",
@@ -224,11 +241,51 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
     setLoading(true);
 
     try {
-      // 1. Upload screenshot to Firebase Storage
-      setUploadProgress("Uploading screenshot...");
-      const screenshotRef = ref(storage, `payment-screenshots/${orderId}_${Date.now()}.${screenshotFile.name.split('.').pop()}`);
-      await uploadBytes(screenshotRef, screenshotFile);
-      const screenshotUrl = await getDownloadURL(screenshotRef);
+      // 1. Process screenshot as fast base64 string
+      setUploadProgress("Preparing screenshot...");
+      const getBase64Compress = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target?.result as string;
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              const MAX_WIDTH = 600;
+              const MAX_HEIGHT = 800;
+              let width = img.width;
+              let height = img.height;
+
+              if (width > height) {
+                if (width > MAX_WIDTH) {
+                  height *= MAX_WIDTH / width;
+                  width = MAX_WIDTH;
+                }
+              } else {
+                if (height > MAX_HEIGHT) {
+                  width *= MAX_HEIGHT / height;
+                  height = MAX_HEIGHT;
+                }
+              }
+              canvas.width = width;
+              canvas.height = height;
+              const ctx = canvas.getContext('2d');
+              // Fill background with white in case of transparency
+              if (ctx) {
+                ctx.fillStyle = "white";
+                ctx.fillRect(0, 0, width, height);
+                ctx.drawImage(img, 0, 0, width, height);
+              }
+              resolve(canvas.toDataURL('image/jpeg', 0.5));
+            };
+            img.onerror = (error) => reject(error);
+          };
+          reader.onerror = (error) => reject(error);
+        });
+      };
+
+      const screenshotUrl = await getBase64Compress(screenshotFile);
 
       // 2. Save order to Firestore
       setUploadProgress("Creating order...");
@@ -244,7 +301,6 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
         paymentId: `upi_${orderId}`,
         paymentStatus: "pending_verification",
         paymentScreenshotUrl: screenshotUrl,
-        paymentScreenshotPath: screenshotRef.fullPath,
         orderStatus: "new",
         upiId: UPI_ID,
         createdAt: serverTimestamp(),
@@ -253,6 +309,7 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
       await addDoc(collection(db, "orders"), orderData);
 
       // 3. Send Telegram notification (fire-and-forget)
+      setUploadProgress("Notifying admin...");
       sendTelegramNotification({
         orderId,
         customerName: formData.customerName,
