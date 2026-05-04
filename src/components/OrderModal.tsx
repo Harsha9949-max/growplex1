@@ -1,10 +1,11 @@
 import { addDoc, collection, doc, getDoc, serverTimestamp } from "firebase/firestore";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { ArrowLeft, Camera, Check, CheckCircle, Clock, Copy, IndianRupee, Info, Loader2, Upload, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { QRCodeSVG } from "qrcode.react";
 import React, { useCallback, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { db } from "../lib/firebase";
+import { db, storage } from "../lib/firebase";
 import { generateOrderId } from "../lib/utils";
 import { Package, Service } from "../types";
 
@@ -240,9 +241,9 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
     setLoading(true);
 
     try {
-      // 1. Process screenshot as fast base64 string
+      // 1. Process and upload screenshot to Firebase Storage
       setUploadProgress("Preparing screenshot...");
-      const getCompressedBase64 = (file: File): Promise<string> => {
+      const getCompressedBlob = (file: File): Promise<Blob> => {
         return new Promise((resolve, reject) => {
           const reader = new FileReader();
           reader.readAsDataURL(file);
@@ -275,7 +276,10 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
                 ctx.fillRect(0, 0, width, height);
                 ctx.drawImage(img, 0, 0, width, height);
               }
-              resolve(canvas.toDataURL('image/jpeg', 0.5));
+              canvas.toBlob((blob) => {
+                if (blob) resolve(blob);
+                else reject(new Error("Canvas to Blob failed"));
+              }, 'image/jpeg', 0.5);
             };
             img.onerror = (error) => reject(error);
           };
@@ -283,7 +287,12 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
         });
       };
 
-      const screenshotUrl = await getCompressedBase64(screenshotFile);
+      const compressedBlob = await getCompressedBlob(screenshotFile);
+      
+      setUploadProgress("Uploading screenshot...");
+      const screenshotRef = ref(storage, `payment-screenshots/${orderId}_${Date.now()}.jpg`);
+      await uploadBytes(screenshotRef, compressedBlob);
+      const screenshotUrl = await getDownloadURL(screenshotRef);
       
       // 2. Save order to Firestore
       setUploadProgress("Creating order...");
@@ -299,6 +308,7 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
         paymentId: `upi_${orderId}`,
         paymentStatus: "pending_verification",
         paymentScreenshotUrl: screenshotUrl,
+        paymentScreenshotPath: screenshotRef.fullPath,
         orderStatus: "new",
         upiId: UPI_ID,
         createdAt: serverTimestamp(),
