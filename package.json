@@ -4,8 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "start": "vite build && vite preview",
+    "dev": "tsx server.ts",
+    "start": "vite build && node --experimental-strip-types server.ts",
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist",
