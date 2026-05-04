@@ -6,7 +6,12 @@ import {
   FileText, LayoutTemplate, Database, LogOut
 } from "lucide-react";
 
-export function AdminSidebar() {
+interface AdminSidebarProps {
+  onNavItemClick?: () => void;
+  isMobile?: boolean;
+}
+
+export function AdminSidebar({ onNavItemClick, isMobile }: AdminSidebarProps) {
   const location = useLocation();
 
   const menuItems = [
@@ -25,12 +30,14 @@ export function AdminSidebar() {
   ];
 
   return (
-    <div className="w-64 bg-brand-surface border-r border-brand-border h-screen flex flex-col fixed left-0 top-0">
-      <div className="h-16 flex items-center px-6 border-b border-brand-border shrink-0">
-        <span className="font-heading font-bold text-xl text-text-main flex items-center gap-2">
-          <span className="text-brand-accent">Grow</span>plex Admin
-        </span>
-      </div>
+    <div className={`w-64 bg-brand-surface border-r border-brand-border h-screen flex flex-col ${isMobile ? '' : 'fixed left-0 top-0'}`}>
+      {!isMobile && (
+        <div className="h-16 flex items-center px-6 border-b border-brand-border shrink-0">
+          <span className="font-heading font-bold text-xl text-text-main flex items-center gap-2">
+            <span className="text-brand-accent">Grow</span>plex Admin
+          </span>
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto custom-scrollbar py-4 space-y-1">
         {menuItems.map((item) => {
@@ -40,6 +47,7 @@ export function AdminSidebar() {
             <Link
               key={item.path}
               to={item.path}
+              onClick={onNavItemClick}
               className={`flex items-center px-6 py-3 text-sm font-medium transition-colors ${
                 isActive 
                   ? "text-brand-accent bg-brand-accent/10 border-r-2 border-brand-accent" 

@@ -136,8 +136,8 @@ export default function Pricing() {
           <h2 className="font-heading text-3xl md:text-4xl font-bold mb-4 text-center">Cheapest Price Guarantee</h2>
           <p className="text-text-muted text-center mb-12">See how Growplex stacks up against every other SMM panel on the market.</p>
           <div className="bg-brand-surface border border-brand-border rounded-2xl overflow-hidden shadow-xl">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <div className="overflow-x-auto w-full">
+              <table className="w-full text-sm min-w-[600px]">
                 <thead>
                   <tr className="border-b border-brand-border bg-brand-primary/50">
                     <th className="text-left px-6 py-4 font-heading font-bold text-text-muted">Feature</th>

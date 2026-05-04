@@ -18,9 +18,6 @@ export default function AdminSettings() {
     upiId: "growplex@upi",
     razorpayKey: "",
     razorpaySecret: "",
-    providerApiUrl: "https://growwsmmpanel.com/api/v2",
-    providerApiKey: "",
-    defaultMarkupMargin: 40,
     firebaseProjectId: "",
     firebaseApiKey: "",
     firebaseAuthDomain: "",
@@ -173,27 +170,6 @@ export default function AdminSettings() {
               {/* API Keys Tab */}
               {activeTab === "API Keys" && (
                 <div className="space-y-6">
-                  <div className="bg-brand-surface border border-brand-border rounded-xl p-6 shadow-lg">
-                    <h3 className="text-lg font-bold font-heading mb-4 border-b border-brand-border pb-3 flex items-center gap-2">
-                      <Database size={18} className="text-brand-accent"/> SMM Provider API
-                    </h3>
-                    <div className="space-y-4">
-                      <div>
-                        <label className="text-sm font-medium text-text-muted mb-1 block">Provider API URL</label>
-                        <input type="text" value={settings.providerApiUrl} onChange={e => handleChange('providerApiUrl', e.target.value)} className="w-full bg-brand-primary border border-brand-border rounded-lg px-4 py-2 text-text-main focus:outline-none focus:border-brand-accent/50" />
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-text-muted mb-1 block">API Key</label>
-                        <input type="password" value={settings.providerApiKey} onChange={e => handleChange('providerApiKey', e.target.value)} placeholder="Enter your provider API Key" className="w-full bg-brand-primary border border-brand-border rounded-lg px-4 py-2 text-text-main focus:outline-none focus:border-brand-accent/50" />
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-text-muted mb-1 block">Default Markup Margin (%)</label>
-                        <input type="number" value={settings.defaultMarkupMargin} onChange={e => handleChange('defaultMarkupMargin', Number(e.target.value))} className="w-full bg-brand-primary border border-brand-border rounded-lg px-4 py-2 text-text-main focus:outline-none focus:border-brand-accent/50" />
-                        <p className="text-xs text-text-muted mt-1">This margin is applied to provider prices when syncing services.</p>
-                      </div>
-                    </div>
-                  </div>
-
                   <div className="bg-brand-surface border border-brand-border rounded-xl p-6 shadow-lg">
                     <h3 className="text-lg font-bold font-heading mb-4 border-b border-brand-border pb-3 flex items-center gap-2">
                       <Key size={18} className="text-brand-accent"/> Firebase Configuration

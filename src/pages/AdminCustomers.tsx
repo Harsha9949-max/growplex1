@@ -53,8 +53,8 @@ export default function AdminCustomers() {
       </div>
       
       <div className="bg-brand-surface border border-brand-border rounded-xl shadow-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm whitespace-nowrap">
+        <div className="overflow-x-auto w-full">
+          <table className="w-full text-left text-sm whitespace-nowrap min-w-[700px]">
             <thead className="bg-brand-primary/50 text-text-muted text-xs uppercase font-semibold">
               <tr>
                 <th className="px-6 py-4">Customer Name</th>

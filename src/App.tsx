@@ -17,8 +17,8 @@ import RefundPolicy from "./pages/RefundPolicy";
 import OrderSuccess from "./pages/OrderSuccess";
 import OrderFailed from "./pages/OrderFailed";
 import AdminOrders from "./pages/AdminOrders";
-import AdminServices from "./pages/AdminServices";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminServices from "./pages/AdminServices";
 import { 
   AdminPayments, 
   AdminCustomers, 

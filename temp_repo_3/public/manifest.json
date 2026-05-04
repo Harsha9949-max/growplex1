@@ -1,9 +1,0 @@
-{
-  "short_name": "WorkPlex",
-  "name": "WorkPlex Gig Mission Control",
-  "icons": [],
-  "start_url": ".",
-  "display": "standalone",
-  "theme_color": "#E8B84B",
-  "background_color": "#0A0A0A"
-}

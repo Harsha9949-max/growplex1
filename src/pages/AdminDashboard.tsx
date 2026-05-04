@@ -192,7 +192,7 @@ export default function AdminDashboard() {
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-brand-surface border border-brand-border p-3 rounded-xl shadow-xl">
+        <div className="bg-brand-surface border border-brand-border p-3 rounded-xl shadow-xl z-50">
           <p className="text-text-main font-semibold mb-1">{label}</p>
           {payload.map((entry: any, index: number) => (
              <p key={index} className="text-sm flex items-center gap-2" style={{ color: entry.color }}>
@@ -208,20 +208,20 @@ export default function AdminDashboard() {
 
   return (
     <AdminLayout>
-      <main className="flex-grow max-w-7xl mx-auto w-full mb-12">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+      <main className="flex-grow max-w-7xl mx-auto w-full mb-12 space-y-6 lg:space-y-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold font-heading">Analytics Dashboard</h1>
-            <p className="text-text-muted mt-1">Real-time revenue and order metrics</p>
+            <h1 className="text-2xl md:text-3xl font-bold font-heading">Analytics Dashboard</h1>
+            <p className="text-text-muted mt-1 text-sm md:text-base">Real-time revenue and order metrics</p>
           </div>
           
-          <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-            <div className="flex items-center gap-2 w-full sm:w-auto bg-brand-surface border border-brand-border rounded-xl px-3 py-2">
-              <Calendar size={18} className="text-text-muted" />
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+            <div className="flex items-center gap-2 bg-brand-surface border border-brand-border rounded-xl px-3 py-2 w-full sm:w-auto overflow-hidden">
+              <Calendar size={18} className="text-text-muted shrink-0" />
               <select 
                 value={dateRange}
                 onChange={(e) => setDateRange(e.target.value)}
-                className="bg-transparent border-none text-text-main text-sm font-medium focus:outline-none cursor-pointer"
+                className="bg-transparent border-none text-text-main text-sm font-medium focus:outline-none w-full cursor-pointer"
               >
                 <option value="Today">Today</option>
                 <option value="Last 7 Days">Last 7 Days</option>
@@ -231,7 +231,7 @@ export default function AdminDashboard() {
             </div>
             <button 
               onClick={exportCSV}
-              className="w-full sm:w-auto bg-brand-accent hover:bg-brand-accent-hover text-brand-primary py-2 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
+              className="bg-brand-accent hover:bg-brand-accent-hover text-brand-primary py-2 px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-colors whitespace-nowrap w-full sm:w-auto"
             >
               <Download size={18} /> Export Report
             </button>
@@ -240,8 +240,8 @@ export default function AdminDashboard() {
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20">
-             <div className="w-12 h-12 border-4 border-brand-accent border-t-transparent rounded-full animate-spin mb-4" />
-             <p className="text-text-muted">Loading dashboard data...</p>
+             <div className="w-10 h-10 border-4 border-brand-accent border-t-transparent rounded-full animate-spin mb-4" />
+             <p className="text-text-muted text-sm">Loading dashboard data...</p>
           </div>
         ) : (
           <motion.div 
@@ -250,90 +250,90 @@ export default function AdminDashboard() {
             className="space-y-6"
           >
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div className="bg-brand-surface border border-brand-border p-5 rounded-xl shadow-lg">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+              <div className="bg-brand-surface border border-brand-border p-4 rounded-xl shadow-sm">
                 <div className="flex justify-between items-start mb-2">
-                  <p className="text-text-muted text-sm font-medium">Total Revenue</p>
-                  <div className="p-2 bg-green-500/10 rounded-lg"><DollarSign size={18} className="text-green-500"/></div>
+                  <p className="text-text-muted text-xs md:text-sm font-medium">Total Revenue</p>
+                  <div className="p-1.5 md:p-2 bg-green-500/10 rounded-lg"><DollarSign size={16} className="text-green-500"/></div>
                 </div>
-                <h3 className="text-2xl font-bold text-text-main">₹{stats.totalRevenue.toLocaleString()}</h3>
-                <p className="text-xs text-text-muted mt-1 uppercase tracking-wider">{dateRange}</p>
+                <h3 className="text-lg md:text-2xl font-bold text-text-main truncate">₹{stats.totalRevenue.toLocaleString()}</h3>
+                <p className="text-[10px] md:text-xs text-text-muted mt-1 uppercase tracking-wider">{dateRange}</p>
               </div>
               
-              <div className="bg-brand-surface border border-brand-border p-5 rounded-xl shadow-lg">
+              <div className="bg-brand-surface border border-brand-border p-4 rounded-xl shadow-sm">
                 <div className="flex justify-between items-start mb-2">
-                  <p className="text-text-muted text-sm font-medium">Today's Revenue</p>
-                  <div className="p-2 bg-brand-accent/10 rounded-lg"><Activity size={18} className="text-brand-accent"/></div>
+                  <p className="text-text-muted text-xs md:text-sm font-medium">Today's Revenue</p>
+                  <div className="p-1.5 md:p-2 bg-brand-accent/10 rounded-lg"><Activity size={16} className="text-brand-accent"/></div>
                 </div>
-                <h3 className="text-2xl font-bold text-text-main">₹{stats.todaysRevenue.toLocaleString()}</h3>
-                <p className="text-xs text-text-muted mt-1 uppercase tracking-wider">TODAY</p>
+                <h3 className="text-lg md:text-2xl font-bold text-text-main truncate">₹{stats.todaysRevenue.toLocaleString()}</h3>
+                <p className="text-[10px] md:text-xs text-text-muted mt-1 uppercase tracking-wider">TODAY</p>
               </div>
               
-              <div className="bg-brand-surface border border-brand-border p-5 rounded-xl shadow-lg">
+              <div className="bg-brand-surface border border-brand-border p-4 rounded-xl shadow-sm">
                 <div className="flex justify-between items-start mb-2">
-                  <p className="text-text-muted text-sm font-medium">Total Orders</p>
-                  <div className="p-2 bg-blue-500/10 rounded-lg"><ShoppingCart size={18} className="text-blue-500"/></div>
+                  <p className="text-text-muted text-xs md:text-sm font-medium">Total Orders</p>
+                  <div className="p-1.5 md:p-2 bg-blue-500/10 rounded-lg"><ShoppingCart size={16} className="text-blue-500"/></div>
                 </div>
-                <h3 className="text-2xl font-bold text-text-main">{stats.totalOrders.toLocaleString()}</h3>
-                <p className="text-xs text-text-muted mt-1 uppercase tracking-wider">{dateRange}</p>
+                <h3 className="text-lg md:text-2xl font-bold text-text-main">{stats.totalOrders.toLocaleString()}</h3>
+                <p className="text-[10px] md:text-xs text-text-muted mt-1 uppercase tracking-wider">{dateRange}</p>
               </div>
               
-              <div className="bg-brand-surface border border-brand-border p-5 rounded-xl shadow-lg">
+              <div className="bg-brand-surface border border-brand-border p-4 rounded-xl shadow-sm">
                 <div className="flex justify-between items-start mb-2">
-                  <p className="text-text-muted text-sm font-medium">Today's Orders</p>
-                  <div className="p-2 bg-purple-500/10 rounded-lg"><Activity size={18} className="text-purple-500"/></div>
+                  <p className="text-text-muted text-xs md:text-sm font-medium">Today's Orders</p>
+                  <div className="p-1.5 md:p-2 bg-purple-500/10 rounded-lg"><Activity size={16} className="text-purple-500"/></div>
                 </div>
-                <h3 className="text-2xl font-bold text-text-main">{stats.todaysOrders.toLocaleString()}</h3>
-                <p className="text-xs text-text-muted mt-1 uppercase tracking-wider">TODAY</p>
+                <h3 className="text-lg md:text-2xl font-bold text-text-main">{stats.todaysOrders.toLocaleString()}</h3>
+                <p className="text-[10px] md:text-xs text-text-muted mt-1 uppercase tracking-wider">TODAY</p>
               </div>
               
-              <div className="bg-brand-surface border border-brand-border p-5 rounded-xl shadow-lg">
+              <div className="bg-brand-surface border border-brand-border p-4 rounded-xl shadow-sm">
                 <div className="flex justify-between items-start mb-2">
-                  <p className="text-text-muted text-sm font-medium">Completed Orders</p>
-                  <div className="p-2 bg-teal-500/10 rounded-lg"><CheckCircle size={18} className="text-teal-500"/></div>
+                  <p className="text-text-muted text-xs md:text-sm font-medium">Completed</p>
+                  <div className="p-1.5 md:p-2 bg-teal-500/10 rounded-lg"><CheckCircle size={16} className="text-teal-500"/></div>
                 </div>
-                <h3 className="text-2xl font-bold text-text-main">{stats.completedOrders.toLocaleString()}</h3>
-                <p className="text-xs text-text-muted mt-1 uppercase tracking-wider">{dateRange}</p>
+                <h3 className="text-lg md:text-2xl font-bold text-text-main">{stats.completedOrders.toLocaleString()}</h3>
+                <p className="text-[10px] md:text-xs text-text-muted mt-1 uppercase tracking-wider">{dateRange}</p>
               </div>
               
-              <div className="bg-brand-surface border border-brand-border p-5 rounded-xl shadow-lg">
+              <div className="bg-brand-surface border border-brand-border p-4 rounded-xl shadow-sm">
                 <div className="flex justify-between items-start mb-2">
-                  <p className="text-text-muted text-sm font-medium">Pending Orders</p>
-                  <div className="p-2 bg-yellow-500/10 rounded-lg"><AlertCircle size={18} className="text-yellow-500"/></div>
+                  <p className="text-text-muted text-xs md:text-sm font-medium">Pending</p>
+                  <div className="p-1.5 md:p-2 bg-yellow-500/10 rounded-lg"><AlertCircle size={16} className="text-yellow-500"/></div>
                 </div>
-                <h3 className="text-2xl font-bold text-text-main">{stats.pendingOrders.toLocaleString()}</h3>
-                <p className="text-xs text-text-muted mt-1 uppercase tracking-wider">NEW & PROCESSING</p>
+                <h3 className="text-lg md:text-2xl font-bold text-text-main">{stats.pendingOrders.toLocaleString()}</h3>
+                <p className="text-[10px] md:text-xs text-text-muted mt-1 uppercase tracking-wider">NEW & PROCCESSING</p>
               </div>
             </div>
 
             {/* Charts Row 1 */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-brand-surface border border-brand-border p-6 rounded-xl shadow-lg h-[400px] flex flex-col">
-                <h3 className="font-heading font-bold text-lg mb-4">Revenue Over Time</h3>
-                <div className="flex-grow">
+              <div className="bg-brand-surface border border-brand-border p-5 rounded-xl shadow-sm h-[350px] md:h-[400px] flex flex-col">
+                <h3 className="font-heading font-bold text-base md:text-lg mb-4">Revenue Over Time</h3>
+                <div className="flex-grow w-full overflow-hidden">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartsData.timeSeries}>
+                    <LineChart data={chartsData.timeSeries} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#2D2D2D" vertical={false} />
-                      <XAxis dataKey="date" stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} />
-                      <YAxis stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `₹${val}`} />
+                      <XAxis dataKey="date" stroke="#6b7280" fontSize={10} tickLine={false} axisLine={false} />
+                      <YAxis stroke="#6b7280" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => `₹${val}`} width={40} />
                       <Tooltip content={<CustomTooltip />} />
-                      <Legend iconType="circle" />
-                      <Line type="monotone" name="Revenue" dataKey="revenue" stroke="#A3E635" strokeWidth={3} dot={{ r: 4, fill: "#A3E635", strokeWidth: 0 }} activeDot={{ r: 6 }} />
+                      <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
+                      <Line type="monotone" name="Revenue" dataKey="revenue" stroke="#A3E635" strokeWidth={3} dot={{ r: 3, fill: "#A3E635", strokeWidth: 0 }} activeDot={{ r: 5 }} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
               </div>
               
-              <div className="bg-brand-surface border border-brand-border p-6 rounded-xl shadow-lg h-[400px] flex flex-col">
-                <h3 className="font-heading font-bold text-lg mb-4">Orders Per Day</h3>
-                <div className="flex-grow">
+              <div className="bg-brand-surface border border-brand-border p-5 rounded-xl shadow-sm h-[350px] md:h-[400px] flex flex-col">
+                <h3 className="font-heading font-bold text-base md:text-lg mb-4">Orders Per Day</h3>
+                <div className="flex-grow w-full overflow-hidden">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartsData.timeSeries}>
+                    <BarChart data={chartsData.timeSeries} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#2D2D2D" vertical={false} />
-                      <XAxis dataKey="date" stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} />
-                      <YAxis stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} />
+                      <XAxis dataKey="date" stroke="#6b7280" fontSize={10} tickLine={false} axisLine={false} />
+                      <YAxis stroke="#6b7280" fontSize={10} tickLine={false} axisLine={false} width={30} />
                       <Tooltip content={<CustomTooltip />} />
-                      <Legend iconType="circle" />
+                      <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }}/>
                       <Bar dataKey="orders" name="Orders" fill="#3B82F6" radius={[4, 4, 0, 0]} maxBarSize={40} />
                     </BarChart>
                   </ResponsiveContainer>
@@ -342,19 +342,19 @@ export default function AdminDashboard() {
             </div>
 
             {/* Charts Row 2 */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-brand-surface border border-brand-border p-6 rounded-xl shadow-lg flex flex-col items-center">
-                <h3 className="font-heading font-bold text-lg w-full mb-2">Top Services</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-brand-surface border border-brand-border p-5 rounded-xl shadow-sm flex flex-col items-center">
+                <h3 className="font-heading font-bold text-base md:text-lg w-full mb-2">Top Services</h3>
                 {chartsData.topServices.length > 0 ? (
-                   <div className="w-full h-[300px]">
+                   <div className="w-full h-[250px] md:h-[300px]">
                      <ResponsiveContainer width="100%" height="100%">
                        <PieChart>
                          <Pie
                            data={chartsData.topServices}
                            cx="50%"
                            cy="50%"
-                           innerRadius={60}
-                           outerRadius={100}
+                           innerRadius={50}
+                           outerRadius={80}
                            paddingAngle={5}
                            dataKey="value"
                          >
@@ -363,21 +363,21 @@ export default function AdminDashboard() {
                            ))}
                          </Pie>
                          <Tooltip content={<CustomTooltip />} />
-                         <Legend layout="horizontal" verticalAlign="bottom" align="center" />
+                         <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{ fontSize: '10px' }}/>
                        </PieChart>
                      </ResponsiveContainer>
                    </div>
                 ) : (
-                   <div className="w-full h-[300px] flex items-center justify-center text-text-muted">
+                   <div className="w-full h-[250px] flex items-center justify-center text-text-muted text-sm">
                      No services ordered yet.
                    </div>
                 )}
               </div>
               
-              <div className="bg-brand-surface border border-brand-border p-6 rounded-xl shadow-lg flex flex-col items-center">
-                <h3 className="font-heading font-bold text-lg w-full mb-2">Order Status Breakdown</h3>
+              <div className="bg-brand-surface border border-brand-border p-5 rounded-xl shadow-sm flex flex-col items-center">
+                <h3 className="font-heading font-bold text-base md:text-lg w-full mb-2">Status Breakdown</h3>
                 {chartsData.statusObj.length > 0 ? (
-                   <div className="w-full h-[300px]">
+                   <div className="w-full h-[250px] md:h-[300px]">
                      <ResponsiveContainer width="100%" height="100%">
                        <PieChart>
                          <Pie
@@ -385,7 +385,7 @@ export default function AdminDashboard() {
                            cx="50%"
                            cy="50%"
                            innerRadius={0}
-                           outerRadius={100}
+                           outerRadius={80}
                            paddingAngle={2}
                            dataKey="value"
                          >
@@ -399,12 +399,12 @@ export default function AdminDashboard() {
                            })}
                          </Pie>
                          <Tooltip content={<CustomTooltip />} />
-                         <Legend layout="horizontal" verticalAlign="bottom" align="center" />
+                         <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{ fontSize: '10px' }}/>
                        </PieChart>
                      </ResponsiveContainer>
                    </div>
                 ) : (
-                   <div className="w-full h-[300px] flex items-center justify-center text-text-muted">
+                   <div className="w-full h-[250px] flex items-center justify-center text-text-muted text-sm">
                      No orders available.
                    </div>
                 )}
@@ -412,39 +412,39 @@ export default function AdminDashboard() {
             </div>
 
             {/* Recent Orders Table */}
-            <div className="bg-brand-surface border border-brand-border rounded-xl shadow-lg overflow-hidden">
-               <div className="p-5 border-b border-brand-border flex justify-between items-center bg-brand-primary/30">
-                 <h3 className="font-heading font-bold text-lg">Recent Orders</h3>
+            <div className="bg-brand-surface border border-brand-border rounded-xl shadow-sm overflow-hidden">
+               <div className="p-4 md:p-5 border-b border-brand-border flex justify-between items-center bg-brand-primary/30">
+                 <h3 className="font-heading font-bold text-base md:text-lg">Recent Orders</h3>
                </div>
-               <div className="overflow-x-auto">
-                 <table className="w-full text-left text-sm whitespace-nowrap">
-                   <thead className="bg-brand-primary/50 text-text-muted text-xs uppercase font-semibold">
+               <div className="overflow-x-auto w-full">
+                 <table className="w-full text-left text-xs md:text-sm whitespace-nowrap min-w-[700px]">
+                   <thead className="bg-brand-primary/50 text-text-muted text-[10px] md:text-xs uppercase font-semibold">
                      <tr>
-                       <th className="px-6 py-4">Order ID</th>
-                       <th className="px-6 py-4">Customer</th>
-                       <th className="px-6 py-4">Service</th>
-                       <th className="px-6 py-4">Amount</th>
-                       <th className="px-6 py-4">Status</th>
-                       <th className="px-6 py-4">Date</th>
+                       <th className="px-4 py-3 md:px-6 md:py-4">Order ID</th>
+                       <th className="px-4 py-3 md:px-6 md:py-4">Customer</th>
+                       <th className="px-4 py-3 md:px-6 md:py-4">Service</th>
+                       <th className="px-4 py-3 md:px-6 md:py-4">Amount</th>
+                       <th className="px-4 py-3 md:px-6 md:py-4">Status</th>
+                       <th className="px-4 py-3 md:px-6 md:py-4">Date</th>
                      </tr>
                    </thead>
                    <tbody className="divide-y divide-brand-border">
                      {orders.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="px-6 py-8 text-center text-text-muted">No recent orders</td>
+                          <td colSpan={6} className="px-4 py-6 text-center text-text-muted">No recent orders</td>
                         </tr>
                      ) : (
                         orders.slice(0, 10).map((order) => (
                            <tr key={order.orderId} className="hover:bg-brand-primary/30 transition-colors">
-                             <td className="px-6 py-4 font-mono text-brand-accent text-xs">{order.orderId}</td>
-                             <td className="px-6 py-4 font-medium">{order.customerName}</td>
-                             <td className="px-6 py-4">
-                               <div className="text-text-main">{order.serviceName}</div>
-                               <div className="text-xs text-text-muted">{order.packageQuantity}</div>
+                             <td className="px-4 md:px-6 py-3 font-mono text-brand-accent text-[10px] md:text-xs">{order.orderId}</td>
+                             <td className="px-4 md:px-6 py-3 font-medium">{(order.customerName || "No Name").substring(0,20)}</td>
+                             <td className="px-4 md:px-6 py-3">
+                               <div className="text-text-main text-xs md:text-sm truncate max-w-[150px] md:max-w-[200px]" title={order.serviceName}>{order.serviceName}</div>
+                               <div className="text-[10px] md:text-xs text-text-muted">{order.packageQuantity}</div>
                              </td>
-                             <td className="px-6 py-4 font-medium">₹{order.price}</td>
-                             <td className="px-6 py-4">
-                               <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                             <td className="px-4 md:px-6 py-3 font-medium">₹{order.price}</td>
+                             <td className="px-4 md:px-6 py-3">
+                               <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] md:text-[10px] font-bold uppercase ${
                                  order.orderStatus === 'completed' ? 'bg-green-500/10 text-green-500' :
                                  order.orderStatus === 'processing' ? 'bg-blue-500/10 text-blue-500' :
                                  order.orderStatus === 'failed' ? 'bg-red-500/10 text-red-500' :
@@ -453,8 +453,8 @@ export default function AdminDashboard() {
                                  {order.orderStatus}
                                </span>
                              </td>
-                             <td className="px-6 py-4 text-text-muted text-xs">
-                               {order.createdAt ? new Date(order.createdAt.seconds * 1000).toLocaleString() : 'N/A'}
+                             <td className="px-4 md:px-6 py-3 text-text-muted text-[10px] md:text-xs">
+                               {order.createdAt ? new Date(order.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}
                              </td>
                            </tr>
                         ))

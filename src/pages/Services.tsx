@@ -11,217 +11,9 @@ import { Footer } from "../components/Footer";
 import { Breadcrumbs } from "../components/Breadcrumbs";
 import { OrderModal } from "../components/OrderModal";
 import { Service, Package } from "../types";
-import { collection, query, onSnapshot, where } from "firebase/firestore";
+import { MOCK_SERVICES } from "../data/mockServices";
+import { collection, query, onSnapshot } from "firebase/firestore";
 import { db } from "../lib/firebase";
-
-export const MOCK_SERVICES: Service[] = [
-  {
-    id: "s1",
-    category: "Instagram Followers",
-    name: "Instagram Followers",
-    deliveryTime: "1-24 hours",
-    description: "Grow your Instagram followers quickly with high-quality, stable accounts.",
-    packages: [
-      { id: "pkg_1_1", quantity: "50", price: 11 },
-      { id: "pkg_1_2", quantity: "100", price: 18 },
-      { id: "pkg_1_3", quantity: "1000", price: 69 },
-      { id: "pkg_1_4", quantity: "2000", price: 111 },
-      { id: "pkg_1_5", quantity: "5000", price: 139 },
-      { id: "pkg_1_6", quantity: "10000", price: 210 },
-      { id: "pkg_1_7", quantity: "15000", price: 279 },
-      { id: "pkg_1_8", quantity: "25000", price: 419 },
-      { id: "pkg_1_9", quantity: "50000", price: 629 },
-      { id: "pkg_1_10", quantity: "100K", price: 909 },
-      { id: "pkg_1_11", quantity: "1M", price: 699 }
-    ]
-  },
-  {
-    id: "s2",
-    category: "Instagram Likes",
-    name: "Instagram Likes",
-    deliveryTime: "Instant",
-    description: "Instant likes on your latest Instagram post to boost engagement.",
-    packages: [
-      { id: "pkg_2_1", quantity: "1000", price: 42 },
-      { id: "pkg_2_2", quantity: "2000", price: 67 },
-      { id: "pkg_2_3", quantity: "5000", price: 97 },
-      { id: "pkg_2_4", quantity: "10000", price: 139 },
-      { id: "pkg_2_5", quantity: "20000", price: 209 }
-    ]
-  },
-  {
-    id: "s3",
-    category: "Instagram Comments",
-    name: "Instagram Comments",
-    deliveryTime: "1-6 hours",
-    description: "Customizable comments to spark conversation on your posts.",
-    packages: [
-      { id: "pkg_3_1", quantity: "100", price: 49 },
-      { id: "pkg_3_2", quantity: "200", price: 91 },
-      { id: "pkg_3_3", quantity: "500", price: 210 },
-      { id: "pkg_3_4", quantity: "1000", price: 392 }
-    ]
-  },
-  {
-    id: "s4",
-    category: "Instagram Reel Views",
-    name: "Instagram Reel Views",
-    deliveryTime: "Instant",
-    description: "High retention Instagram Reel views to help your video rank higher in algorithms.",
-    packages: [
-      { id: "pkg_4_1", quantity: "5000", price: 10 },
-      { id: "pkg_4_2", quantity: "10000", price: 17 },
-      { id: "pkg_4_3", quantity: "25000", price: 35 },
-      { id: "pkg_4_4", quantity: "50000", price: 63 },
-      { id: "pkg_4_5", quantity: "100000", price: 105 },
-      { id: "pkg_4_6", quantity: "200000", price: 126 },
-      { id: "pkg_4_7", quantity: "300000", price: 153 },
-      { id: "pkg_4_8", quantity: "500000", price: 175 },
-      { id: "pkg_4_9", quantity: "1000000", price: 307 }
-    ]
-  },
-  {
-    id: "s5",
-    category: "Instagram Story Views",
-    name: "Instagram Story Views",
-    deliveryTime: "Instant",
-    description: "Increase story views quickly.",
-    packages: [
-      { id: "pkg_5_1", quantity: "1000", price: 34 },
-      { id: "pkg_5_2", quantity: "2000", price: 49 },
-      { id: "pkg_5_3", quantity: "5000", price: 63 },
-      { id: "pkg_5_4", quantity: "10000", price: 119 }
-    ]
-  },
-  {
-    id: "s6",
-    category: "YouTube Subscribers",
-    name: "YouTube Subscribers",
-    deliveryTime: "24-48 hours",
-    description: "Real and active subscribers for your YouTube channel.",
-    packages: [
-      { id: "pkg_6_1", quantity: "1000 Subscribers", price: 83 },
-      { id: "pkg_6_2", quantity: "2000 Subscribers", price: 111 },
-      { id: "pkg_6_3", quantity: "5000 Subscribers", price: 167 },
-      { id: "pkg_6_4", quantity: "10000 Subscribers", price: 279 },
-      { id: "pkg_6_5", quantity: "25000 Subscribers", price: 349 },
-      { id: "pkg_6_6", quantity: "50000 Subscribers", price: 559 },
-      { id: "pkg_6_7", quantity: "100K Subscribers", price: 419 },
-      { id: "pkg_6_8", quantity: "4K Watchtime + 2K Subscribers", price: 699 }
-    ]
-  },
-  {
-    id: "s7",
-    category: "YouTube Views",
-    name: "YouTube Views",
-    deliveryTime: "24-48 hours",
-    description: "High retention YouTube views to help your video rank higher in search.",
-    packages: [
-      { id: "pkg_7_1", quantity: "1000 Views", price: 34 },
-      { id: "pkg_7_2", quantity: "2000 Views", price: 55 },
-      { id: "pkg_7_3", quantity: "5000 Views", price: 84 },
-      { id: "pkg_7_4", quantity: "10000 Views", price: 139 },
-      { id: "pkg_7_5", quantity: "50000 Views", price: 279 },
-      { id: "pkg_7_6", quantity: "100000 Views", price: 335 },
-      { id: "pkg_7_7", quantity: "10 Million Views", price: 699 }
-    ]
-  },
-  {
-    id: "s8",
-    category: "YouTube Likes",
-    name: "YouTube Likes",
-    deliveryTime: "12-24 hours",
-    description: "Real YouTube likes to boost your video engagement and credibility.",
-    packages: [
-      { id: "pkg_8_1", quantity: "1000 Likes", price: 34 },
-      { id: "pkg_8_2", quantity: "2000 Likes", price: 49 },
-      { id: "pkg_8_3", quantity: "5000 Likes", price: 69 },
-      { id: "pkg_8_4", quantity: "10000 Likes", price: 125 }
-    ]
-  },
-  {
-    id: "s9",
-    category: "YouTube Comments",
-    name: "YouTube Comments",
-    deliveryTime: "24-48 hours",
-    description: "Custom, relevant comments on your YouTube videos.",
-    packages: [
-      { id: "pkg_9_1", quantity: "100 Comments", price: 49 },
-      { id: "pkg_9_2", quantity: "200 Comments", price: 91 },
-      { id: "pkg_9_3", quantity: "500 Comments", price: 210 },
-      { id: "pkg_9_4", quantity: "1000 Comments", price: 392 }
-    ]
-  },
-  {
-    id: "s10",
-    category: "Telegram Premium",
-    name: "Telegram Premium",
-    deliveryTime: "1-24 hours",
-    description: "Premium Telegram subscription for your account.",
-    packages: [
-      { id: "pkg_10_1", quantity: "1 Month", price: 279 },
-      { id: "pkg_10_2", quantity: "3 Months", price: 349 },
-      { id: "pkg_10_3", quantity: "6 Months", price: 629 },
-      { id: "pkg_10_4", quantity: "12 Months", price: 1119 }
-    ]
-  },
-  {
-    id: "s11",
-    category: "Telegram Group Members",
-    name: "Telegram Group Members",
-    deliveryTime: "24-48 hours",
-    description: "Real and active members for your Telegram group.",
-    packages: [
-      { id: "pkg_11_1", quantity: "500 Members", price: 69 },
-      { id: "pkg_11_2", quantity: "1000 Members", price: 111 },
-      { id: "pkg_11_3", quantity: "2000 Members", price: 195 },
-      { id: "pkg_11_4", quantity: "5000 Members", price: 419 },
-      { id: "pkg_11_5", quantity: "10000 Members", price: 769 }
-    ]
-  },
-  {
-    id: "s12",
-    category: "Telegram Channel Subscribers",
-    name: "Telegram Channel Subscribers",
-    deliveryTime: "24-48 hours",
-    description: "Real subscribers for your Telegram channel.",
-    packages: [
-      { id: "pkg_12_1", quantity: "500 Subscribers", price: 63 },
-      { id: "pkg_12_2", quantity: "1000 Subscribers", price: 111 },
-      { id: "pkg_12_3", quantity: "2000 Subscribers", price: 195 },
-      { id: "pkg_12_4", quantity: "5000 Subscribers", price: 405 },
-      { id: "pkg_12_5", quantity: "10000 Subscribers", price: 741 }
-    ]
-  },
-  {
-    id: "s13",
-    category: "Telegram Post Views",
-    name: "Telegram Post Views",
-    deliveryTime: "Instant",
-    description: "Views for your Telegram channel posts.",
-    packages: [
-      { id: "pkg_13_1", quantity: "1000 Views", price: 27 },
-      { id: "pkg_13_2", quantity: "5000 Views", price: 69 },
-      { id: "pkg_13_3", quantity: "10000 Views", price: 125 },
-      { id: "pkg_13_4", quantity: "50000 Views", price: 279 },
-      { id: "pkg_13_5", quantity: "100000 Views", price: 489 },
-      { id: "pkg_13_6", quantity: "500000 Views", price: 1399 },
-      { id: "pkg_13_7", quantity: "1000000 Views", price: 2519 }
-    ]
-  },
-  {
-    id: "s14",
-    category: "Telegram Reactions",
-    name: "Telegram Reactions",
-    deliveryTime: "Instant",
-    description: "Positive reactions for your Telegram posts.",
-    packages: [
-      { id: "pkg_14_1", quantity: "100 Reactions", price: 27 },
-      { id: "pkg_14_2", quantity: "500 Reactions", price: 83 },
-      { id: "pkg_14_3", quantity: "1000 Reactions", price: 125 }
-    ]
-  }
-];
 
 const CATEGORIES = ["All", "Followers", "Likes", "Comments", "Views", "YouTube", "Telegram"];
 const SORT_OPTIONS = [
@@ -237,16 +29,18 @@ export default function Services() {
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
-    // Only fetch active services
-    const q = query(collection(db, "services"), where("status", "==", "active"));
+    // Fetch all services that are not archived or inactive, or just all services
+    const q = query(collection(db, "services"));
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const fetched: Service[] = [];
       snapshot.forEach((docSnap) => {
         const data = docSnap.data();
+        
         fetched.push({
           id: docSnap.id,
           ...data,
+          packages: data.packages || [],
           // map "serviceName" to "name" for the frontend if needed
           name: data.serviceName || data.name
         } as Service);
@@ -419,7 +213,7 @@ export default function Services() {
 
         {/* Service Grid */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20">
+          <div className="flex flex-col items-center justify-center py-20 text-center">
              <div className="w-12 h-12 border-4 border-brand-accent border-t-transparent rounded-full animate-spin mb-4" />
              <p className="text-text-muted">Loading services...</p>
           </div>

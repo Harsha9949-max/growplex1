@@ -76,6 +76,8 @@ async function sendTelegramNotification(order: {
   }
 }
 
+import imageCompression from 'browser-image-compression';
+
 export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon }: OrderModalProps) {
   const [step, setStep] = useState<"details" | "checkout" | "payment">("details");
   const [formData, setFormData] = useState({
@@ -92,6 +94,14 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
+  React.useEffect(() => {
+    return () => {
+      if (screenshotPreview) {
+        URL.revokeObjectURL(screenshotPreview);
+      }
+    };
+  }, [screenshotPreview]);
+
   // Generate the UPI deep link for QR code
   const orderId = useRef(generateOrderId()).current;
   const upiLink = `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(UPI_NAME)}&am=${selectedPackage.price}&cu=INR&tn=${encodeURIComponent(`Growplex Order ${orderId}`)}`;
@@ -100,7 +110,7 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleScreenshotSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleScreenshotSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -110,21 +120,37 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
       return;
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Screenshot must be less than 5MB");
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setError("Screenshot must be less than 10MB");
       return;
     }
 
     setError(null);
-    setScreenshotFile(file);
-
-    // Create preview
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      setScreenshotPreview(ev.target?.result as string);
-    };
-    reader.readAsDataURL(file);
+    setUploadProgress("Compressing image...");
+    
+    // Compress image
+    try {
+       const options = {
+         maxSizeMB: 0.2, // Max 200KB
+         maxWidthOrHeight: 800,
+         useWebWorker: true,
+         fileType: 'image/jpeg'
+       };
+       const compressedFile = await imageCompression(file, options);
+       setScreenshotFile(compressedFile);
+       
+       // Create preview
+       const previewUrl = URL.createObjectURL(compressedFile);
+       setScreenshotPreview(previewUrl);
+    } catch (err) {
+       console.error("Compression failed:", err);
+       // Fallback
+       setScreenshotFile(file);
+       setScreenshotPreview(URL.createObjectURL(file));
+    } finally {
+       setUploadProgress("");
+    }
   }, []);
 
   const copyUpiId = useCallback(() => {
@@ -438,6 +464,7 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
                       <button
                         onClick={() => {
                           setScreenshotFile(null);
+                          if (screenshotPreview) URL.revokeObjectURL(screenshotPreview);
                           setScreenshotPreview(null);
                           if (fileInputRef.current) fileInputRef.current.value = "";
                         }}

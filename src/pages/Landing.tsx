@@ -225,7 +225,7 @@ const Landing: React.FC = () => {
               { label: 'Gig Workers', value: '12K+', icon: Users },
               { label: 'Daily Payouts', value: 'Rs.50K+', icon: Wallet },
               { label: 'Active Tasks', value: '500+', icon: Briefcase },
-              { label: 'Average Margin', value: '18%', icon: TrendingUp }
+              { label: 'Growth Strategies', value: '18+', icon: TrendingUp }
             ].map((stat, i) => (
               <div key={i} className="text-center group">
                 <div className="text-slate-500 mb-4 flex justify-center transform group-hover:scale-110 transition-transform">

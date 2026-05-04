@@ -230,8 +230,8 @@ export default function Home() {
             <p className="text-text-muted">See why thousands of creators choose Growplex over every other panel.</p>
           </div>
           <div className="bg-brand-surface border border-brand-border rounded-2xl overflow-hidden shadow-xl">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <div className="overflow-x-auto w-full">
+              <table className="w-full text-sm min-w-[600px]">
                 <thead>
                   <tr className="border-b border-brand-border bg-brand-primary/50">
                     <th className="text-left px-6 py-4 font-heading font-bold text-text-muted">Feature</th>
