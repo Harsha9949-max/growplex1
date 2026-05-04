@@ -302,7 +302,7 @@ export default function AdminDashboard() {
               <div className="bg-brand-surface border border-brand-border p-4 sm:p-6 rounded-xl shadow-lg flex flex-col">
                 <h3 className="font-heading font-bold text-sm sm:text-lg mb-3 sm:mb-4">Revenue Over Time</h3>
                 <div className="h-[250px] sm:h-[320px]">
-                  <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                  <ResponsiveContainer width="99%" height="100%">
                     <LineChart data={chartsData.timeSeries}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#2D2D2D" vertical={false} />
                       <XAxis dataKey="date" stroke="#6b7280" fontSize={10} tickLine={false} axisLine={false} interval="preserveStartEnd" />
@@ -317,7 +317,7 @@ export default function AdminDashboard() {
               <div className="bg-brand-surface border border-brand-border p-4 sm:p-6 rounded-xl shadow-lg flex flex-col">
                 <h3 className="font-heading font-bold text-sm sm:text-lg mb-3 sm:mb-4">Orders Per Day</h3>
                 <div className="h-[250px] sm:h-[320px]">
-                  <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                  <ResponsiveContainer width="99%" height="100%">
                     <BarChart data={chartsData.timeSeries}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#2D2D2D" vertical={false} />
                       <XAxis dataKey="date" stroke="#6b7280" fontSize={10} tickLine={false} axisLine={false} interval="preserveStartEnd" />
@@ -336,7 +336,7 @@ export default function AdminDashboard() {
                 <h3 className="font-heading font-bold text-sm sm:text-lg w-full mb-2">Top Services</h3>
                 {chartsData.topServices.length > 0 ? (
                    <div className="w-full h-[250px] sm:h-[300px]">
-                     <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                     <ResponsiveContainer width="99%" height="100%">
                        <PieChart>
                          <Pie
                            data={chartsData.topServices}
@@ -367,7 +367,7 @@ export default function AdminDashboard() {
                 <h3 className="font-heading font-bold text-sm sm:text-lg w-full mb-2">Order Status Breakdown</h3>
                 {chartsData.statusObj.length > 0 ? (
                    <div className="w-full h-[250px] sm:h-[300px]">
-                     <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                     <ResponsiveContainer width="99%" height="100%">
                        <PieChart>
                          <Pie
                            data={chartsData.statusObj}

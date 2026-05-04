@@ -32,6 +32,7 @@ async function sendTelegramNotification(order: {
   packageQuantity: string;
   price: number;
   serviceLink: string;
+  screenshotUrl?: string; // Optional screenshot URL to send as photo
 }) {
   try {
     // Fetch Telegram config from Firestore system/settings
@@ -57,19 +58,30 @@ async function sendTelegramNotification(order: {
       `📦 *Service:* ${order.serviceName}`,
       `📊 *Package:* ${order.packageQuantity}`,
       `💰 *Amount:* ₹${order.price}`,
-      ``,
-      `📸 *Payment:* Screenshot uploaded — pending verification`,
     ].join("\n");
 
-    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text: message,
-        parse_mode: "Markdown",
-      }),
-    });
+    if (order.screenshotUrl) {
+      await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          photo: order.screenshotUrl,
+          caption: message,
+          parse_mode: "Markdown",
+        }),
+      });
+    } else {
+      await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: message,
+          parse_mode: "Markdown",
+        }),
+      });
+    }
   } catch (err) {
     console.error("Telegram notification failed:", err);
     // Don't throw — notification failure shouldn't block the order
@@ -249,6 +261,7 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
         packageQuantity: selectedPackage.quantity,
         price: selectedPackage.price,
         serviceLink: formData.serviceLink,
+        screenshotUrl: screenshotUrl,
       });
 
       // 4. Navigate to success
