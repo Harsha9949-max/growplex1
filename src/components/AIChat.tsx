@@ -29,7 +29,7 @@ const AIChat: React.FC = () => {
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
-    const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+    const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || (import.meta as any).env?.GEMINI_API_KEY;
     if (!apiKey) {
       setMessages(prev => [...prev, 
         { role: 'user', text: input.trim() },
