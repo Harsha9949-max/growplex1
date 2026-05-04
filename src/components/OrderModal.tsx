@@ -1,11 +1,10 @@
 import { addDoc, collection, doc, getDoc, serverTimestamp } from "firebase/firestore";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { ArrowLeft, Camera, Check, CheckCircle, Clock, Copy, IndianRupee, Info, Loader2, Upload, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { QRCodeSVG } from "qrcode.react";
 import React, { useCallback, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { db, storage } from "../lib/firebase";
+import { db } from "../lib/firebase";
 import { generateOrderId } from "../lib/utils";
 import { Package, Service } from "../types";
 
@@ -243,7 +242,7 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
     try {
       // 1. Process screenshot as fast base64 string
       setUploadProgress("Preparing screenshot...");
-      const getBase64Compress = (file: File): Promise<string> => {
+      const getCompressedBase64 = (file: File): Promise<string> => {
         return new Promise((resolve, reject) => {
           const reader = new FileReader();
           reader.readAsDataURL(file);
@@ -271,7 +270,6 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
               canvas.width = width;
               canvas.height = height;
               const ctx = canvas.getContext('2d');
-              // Fill background with white in case of transparency
               if (ctx) {
                 ctx.fillStyle = "white";
                 ctx.fillRect(0, 0, width, height);
@@ -285,8 +283,8 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
         });
       };
 
-      const screenshotUrl = await getBase64Compress(screenshotFile);
-
+      const screenshotUrl = await getCompressedBase64(screenshotFile);
+      
       // 2. Save order to Firestore
       setUploadProgress("Creating order...");
       const orderData = {

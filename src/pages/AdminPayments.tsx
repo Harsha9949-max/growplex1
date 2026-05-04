@@ -1,9 +1,8 @@
 import { collection, doc, onSnapshot, orderBy, query, updateDoc, deleteField } from "firebase/firestore";
-import { deleteObject, ref } from "firebase/storage";
 import { Camera, Check, CheckCircle, Copy, ExternalLink, Filter, RefreshCw, Search, X, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AdminLayout } from "../components/AdminLayout";
-import { db, storage } from "../lib/firebase";
+import { db } from "../lib/firebase";
 
 export default function AdminPayments() {
   const [payments, setPayments] = useState<any[]>([]);
@@ -48,25 +47,14 @@ export default function AdminPayments() {
     return () => unsubscribe();
   }, []);
 
-  const handleUpdatePaymentStatus = async (paymentId: string, docId: string, newPaymentStatus: string, newOrderStatus: string, paymentScreenshotPath?: string) => {
+  const handleUpdatePaymentStatus = async (paymentId: string, docId: string, newPaymentStatus: string, newOrderStatus: string) => {
     try {
       setUpdatingId(paymentId);
-
-      // Delete old photo from storage if there was a path
-      if (paymentScreenshotPath) {
-        try {
-          const screenshotRef = ref(storage, paymentScreenshotPath);
-          await deleteObject(screenshotRef);
-        } catch (storageErr) {
-          console.warn("Screenshot deletion from storage failed:", storageErr);
-        }
-      }
 
       await updateDoc(doc(db, "orders", docId), {
         paymentStatus: newPaymentStatus,
         orderStatus: newOrderStatus,
         paymentScreenshotUrl: deleteField(),
-        paymentScreenshotPath: deleteField(),
       });
       setSelectedPayment(null);
     } catch (error) {
@@ -222,14 +210,14 @@ export default function AdminPayments() {
 
             <div className="p-4 border-t border-brand-border bg-brand-primary flex flex-wrap gap-3 justify-end shrink-0">
               <button
-                onClick={() => handleUpdatePaymentStatus(selectedPayment.paymentId, selectedPayment.id, "failed", "failed", selectedPayment.paymentScreenshotPath)}
+                onClick={() => handleUpdatePaymentStatus(selectedPayment.paymentId, selectedPayment.id, "failed", "failed")}
                 disabled={updatingId === selectedPayment.paymentId}
                 className="px-4 py-2 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white font-medium rounded-lg transition-colors flex items-center gap-2 text-sm disabled:opacity-50"
               >
                 <XCircle size={16} /> Mark as Failed / Refund
               </button>
               <button
-                onClick={() => handleUpdatePaymentStatus(selectedPayment.paymentId, selectedPayment.id, "paid", "processing", selectedPayment.paymentScreenshotPath)}
+                onClick={() => handleUpdatePaymentStatus(selectedPayment.paymentId, selectedPayment.id, "paid", "processing")}
                 disabled={updatingId === selectedPayment.paymentId}
                 className="px-4 py-2 bg-green-500 text-white hover:bg-green-600 font-medium rounded-lg transition-colors flex items-center gap-2 text-sm disabled:opacity-50"
               >

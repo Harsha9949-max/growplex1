@@ -1,5 +1,4 @@
 import { collection, deleteField, doc, onSnapshot, orderBy, query, updateDoc } from "firebase/firestore";
-import { deleteObject, ref } from "firebase/storage";
 import {
   Camera,
   CheckCircle,
@@ -12,7 +11,7 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import { AdminLayout } from "../components/AdminLayout";
-import { db, storage } from "../lib/firebase";
+import { db } from "../lib/firebase";
 
 interface GrowplexOrder {
   id?: string;
@@ -84,35 +83,23 @@ export default function AdminOrders() {
   /**
    * Approve payment: 
    * 1. Set paymentStatus to "paid"
-   * 2. Delete screenshot from Firebase Storage
-   * 3. Remove screenshot fields from Firestore document
+   * 2. Remove screenshot fields from Firestore document
    */
   const handleApprovePayment = async (order: GrowplexOrder) => {
     if (!order.id) return;
     setApproving(true);
 
     try {
-      // 1. Delete screenshot from Storage if path exists
-      if (order.paymentScreenshotPath) {
-        try {
-          const screenshotRef = ref(storage, order.paymentScreenshotPath);
-          await deleteObject(screenshotRef);
-        } catch (storageErr) {
-          console.warn("Screenshot deletion from storage failed (may already be deleted):", storageErr);
-        }
-      }
-
-      // 2. Update Firestore: set paid, remove screenshot fields
+      // Update Firestore: set paid, remove screenshot fields
       await updateDoc(doc(db, "orders", order.id), {
         paymentStatus: "paid",
         paymentScreenshotUrl: deleteField(),
-        paymentScreenshotPath: deleteField(),
       });
 
-      // 3. Update local state
+      // Update local state
       setOrders(prev => prev.map(o => 
         o.orderId === order.orderId 
-          ? { ...o, paymentStatus: "paid", paymentScreenshotUrl: undefined, paymentScreenshotPath: undefined } 
+          ? { ...o, paymentStatus: "paid", paymentScreenshotUrl: undefined } 
           : o
       ));
 
@@ -120,8 +107,7 @@ export default function AdminOrders() {
         setSelectedOrder(prev => prev ? { 
           ...prev, 
           paymentStatus: "paid", 
-          paymentScreenshotUrl: undefined, 
-          paymentScreenshotPath: undefined 
+          paymentScreenshotUrl: undefined 
         } : null);
       }
 
