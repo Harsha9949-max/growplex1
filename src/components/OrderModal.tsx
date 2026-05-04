@@ -6,7 +6,7 @@ import { Service, Package } from "../types";
 import { generateOrderId } from "../lib/utils";
 import { useNavigate } from "react-router-dom";
 import { db, storage } from "../lib/firebase";
-import { collection, addDoc, doc, getDoc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 interface OrderModalProps {
@@ -210,13 +210,8 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
       // 2. Start slow operations asynchronously in the background
       (async () => {
         try {
-          // Upload screenshot
-          const screenshotRef = ref(storage, `payment-screenshots/${currentOrderId}_${Date.now()}.${currentScreenshotFile.name.split('.').pop()}`);
-          await uploadBytes(screenshotRef, currentScreenshotFile);
-          const screenshotUrl = await getDownloadURL(screenshotRef);
-
-          // Save order to Firestore
-          const orderData = {
+          // Save order to Firestore FIRST so it appears in Admin instantly
+          const orderRef = await addDoc(collection(db, "orders"), {
             orderId: currentOrderId,
             customerName: currentFormData.customerName,
             phone: currentFormData.phone,
@@ -226,15 +221,27 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
             packageQuantity: currentSelectedPackage.quantity,
             price: currentSelectedPackage.price,
             paymentId: `upi_${currentOrderId}`,
-            paymentStatus: "pending_verification",
-            paymentScreenshotUrl: screenshotUrl,
-            paymentScreenshotPath: screenshotRef.fullPath,
+            paymentStatus: "uploading_screenshot",
             orderStatus: "new",
             upiId: UPI_ID,
             createdAt: serverTimestamp(),
-          };
+          });
 
-          await addDoc(collection(db, "orders"), orderData);
+          // Convert screenshot to Base64
+          const toBase64 = (file: File) => new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = error => reject(error);
+          });
+          const base64Data = await toBase64(currentScreenshotFile);
+
+          // Update order with screenshot URL
+          await updateDoc(orderRef, {
+            paymentStatus: "pending_verification",
+            paymentScreenshotUrl: base64Data,
+            paymentScreenshotPath: "base64_upload", // Marker flag
+          });
 
           // Send Telegram notification
           sendTelegramNotification({

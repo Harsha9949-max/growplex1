@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { 
   Search, Eye, CheckCircle, XCircle, 
-  Clock, Package, Filter, X, Camera, Image, Trash2, ShieldCheck
+  Clock, Package, Filter, X, Camera, Image, Trash2, ShieldCheck, Send
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { AdminLayout } from "../components/AdminLayout";
@@ -180,10 +180,33 @@ export default function AdminOrders() {
     currentPage * ITEMS_PER_PAGE
   );
 
+  const handleForwardOrder = (order: GrowplexOrder) => {
+    const screenshotLink = order.paymentScreenshotUrl ? `${window.location.origin}/receipt/${order.orderId}` : "Not Provided";
+    const text = `*New Order Info*
+Order ID: ${order.orderId}
+Customer: ${order.customerName}
+Phone: ${order.phone}
+Service: ${order.serviceName}
+Package: ${order.packageQuantity}
+Amount: ₹${order.price}
+Service Link: ${order.serviceLink}
+Payment Status: ${order.paymentStatus}
+Order Status: ${order.orderStatus}
+Screenshot: ${screenshotLink}`;
+
+    const whatsappUrl = `https://wa.me/919949175029?text=${encodeURIComponent(text)}`;
+    window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+  };
+
   const getPaymentBadge = (status: string, hasScreenshot: boolean) => {
     if (status === "paid") {
       return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-500">
         <CheckCircle size={12} /> PAID
+      </span>;
+    }
+    if (status === "uploading_screenshot") {
+      return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500/10 text-blue-500">
+        <Clock size={12} /> UPLOADING
       </span>;
     }
     if (status === "pending_verification") {
@@ -499,6 +522,12 @@ export default function AdminOrders() {
                         <CheckCircle size={18} /> Mark Completed
                       </button>
                    )}
+                   <button 
+                     onClick={() => handleForwardOrder(selectedOrder)}
+                     className="flex-1 bg-brand-accent/20 text-brand-accent border border-brand-accent/30 hover:bg-brand-accent/30 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all"
+                   >
+                     <Send size={18} /> Forward
+                   </button>
                    <button 
                      onClick={() => setSelectedOrder(null)}
                      className="flex-1 bg-brand-surface border border-brand-border text-text-main hover:bg-brand-border py-2.5 rounded-xl font-medium transition-all"
