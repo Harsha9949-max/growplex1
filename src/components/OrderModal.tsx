@@ -263,7 +263,7 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
         packageQuantity: selectedPackage.quantity,
         price: selectedPackage.price,
         serviceLink: formData.serviceLink,
-        screenshotUrl: screenshotUrl,
+        screenshotUrl: screenshotPreview,
       });
 
       // 4. Navigate to success
