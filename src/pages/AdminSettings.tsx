@@ -59,6 +59,17 @@ export default function AdminSettings() {
     setSaving(true);
     try {
       await setDoc(doc(db, "system", "settings"), settings, { merge: true });
+      
+      // Attempt to register Telegram Webhook if token exists
+      if (settings.telegramBotToken) {
+        const webhookUrl = `${window.location.origin}/api/telegram-webhook`;
+        try {
+          await fetch(`https://api.telegram.org/bot${settings.telegramBotToken}/setWebhook?url=${encodeURIComponent(webhookUrl)}`);
+        } catch (e) {
+          console.error("Failed to set telegram webhook:", e);
+        }
+      }
+
       alert("Settings saved successfully!");
     } catch (error) {
       console.error("Failed to save settings:", error);

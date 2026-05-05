@@ -46,6 +46,8 @@ async function sendTelegramNotification(order: {
       return;
     }
 
+    const chatIds = chatId.split(",").map((id: string) => id.trim()).filter(Boolean);
+
     const message = [
       `🆕 *New Growplex Order*`,
       ``,
@@ -59,45 +61,49 @@ async function sendTelegramNotification(order: {
       `💰 *Amount:* ₹${order.price}`,
     ].join("\n");
 
-    if (order.screenshotUrl) {
-      if (order.screenshotUrl.startsWith("data:image")) {
-        const form = new FormData();
-        form.append("chat_id", chatId);
-        form.append("caption", message);
-        form.append("parse_mode", "Markdown");
+    const promises = chatIds.map(async (id: string) => {
+      if (order.screenshotUrl) {
+        if (order.screenshotUrl.startsWith("data:image")) {
+          const form = new FormData();
+          form.append("chat_id", id);
+          form.append("caption", message);
+          form.append("parse_mode", "Markdown");
 
-        // Convert base64 to blob
-        const res = await fetch(order.screenshotUrl);
-        const blob = await res.blob();
-        form.append("photo", blob, "payment.jpg");
+          // Convert base64 to blob
+          const res = await fetch(order.screenshotUrl);
+          const blob = await res.blob();
+          form.append("photo", blob, "payment.jpg");
 
-        await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
-          method: "POST",
-          body: form,
-        });
+          await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+            method: "POST",
+            body: form,
+          });
+        } else {
+          await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              chat_id: id,
+              photo: order.screenshotUrl,
+              caption: message,
+              parse_mode: "Markdown",
+            }),
+          });
+        }
       } else {
-        await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+        await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            chat_id: chatId,
-            photo: order.screenshotUrl,
-            caption: message,
+            chat_id: id,
+            text: message,
             parse_mode: "Markdown",
           }),
         });
       }
-    } else {
-      await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: chatId,
-          text: message,
-          parse_mode: "Markdown",
-        }),
-      });
-    }
+    });
+
+    await Promise.allSettled(promises);
   } catch (err) {
     console.error("Telegram notification failed:", err);
     // Don't throw — notification failure shouldn't block the order
