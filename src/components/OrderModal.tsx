@@ -1,11 +1,10 @@
 import { addDoc, collection, doc, getDoc, serverTimestamp } from "firebase/firestore";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { ArrowLeft, Camera, Check, CheckCircle, Clock, Copy, IndianRupee, Info, Loader2, Upload, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { QRCodeSVG } from "qrcode.react";
 import React, { useCallback, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { db, storage } from "../lib/firebase";
+import { db } from "../lib/firebase";
 import { generateOrderId } from "../lib/utils";
 import { Package, Service } from "../types";
 
@@ -114,8 +113,8 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
+  const [screenshotName, setScreenshotName] = useState<string | null>(null);
   const [upiCopied, setUpiCopied] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -147,16 +146,15 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
 
     setError(null);
 
-    // Create preview and compress
+    // Create compressed base64 string
     const reader = new FileReader();
     reader.onload = (ev) => {
       const result = ev.target?.result as string;
-      setScreenshotPreview(result); // Show immediate preview
       
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement("canvas");
-        const MAX_WIDTH = 800;
+        const MAX_WIDTH = 600;
         const MAX_HEIGHT = 800;
         let width = img.width;
         let height = img.height;
@@ -178,21 +176,14 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
         canvas.height = height;
         const ctx = canvas.getContext("2d");
         if (ctx) {
+          // Fill with white background in case of transparent PNG
+          ctx.fillStyle = "white";
+          ctx.fillRect(0, 0, width, height);
           ctx.drawImage(img, 0, 0, width, height);
-          // Compress to JPEG with 0.6 quality (highly optimized for fast upload)
-          canvas.toBlob(
-            (blob) => {
-              if (blob) {
-                const compressedFile = new File([blob], file.name.replace(/\.[^/.]+$/, ".jpg"), {
-                  type: "image/jpeg",
-                  lastModified: Date.now(),
-                });
-                setScreenshotFile(compressedFile);
-              }
-            },
-            "image/jpeg",
-            0.6
-          );
+          // Compress to JPEG with 0.5 quality for max <100kb payload
+          const compressedBase64 = canvas.toDataURL("image/jpeg", 0.5);
+          setScreenshotPreview(compressedBase64);
+          setScreenshotName(file.name);
         }
       };
       img.src = result;
@@ -232,7 +223,7 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
   };
 
   const submitOrder = async () => {
-    if (!screenshotFile) {
+    if (!screenshotPreview) {
       setError("Please upload your payment screenshot");
       return;
     }
@@ -241,60 +232,7 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
     setLoading(true);
 
     try {
-      // 1. Process and upload screenshot to Firebase Storage
-      setUploadProgress("Preparing screenshot...");
-      const getCompressedBlob = (file: File): Promise<Blob> => {
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.readAsDataURL(file);
-          reader.onload = (event) => {
-            const img = new Image();
-            img.src = event.target?.result as string;
-            img.onload = () => {
-              const canvas = document.createElement('canvas');
-              const MAX_WIDTH = 600;
-              const MAX_HEIGHT = 800;
-              let width = img.width;
-              let height = img.height;
-
-              if (width > height) {
-                if (width > MAX_WIDTH) {
-                  height *= MAX_WIDTH / width;
-                  width = MAX_WIDTH;
-                }
-              } else {
-                if (height > MAX_HEIGHT) {
-                  width *= MAX_HEIGHT / height;
-                  height = MAX_HEIGHT;
-                }
-              }
-              canvas.width = width;
-              canvas.height = height;
-              const ctx = canvas.getContext('2d');
-              if (ctx) {
-                ctx.fillStyle = "white";
-                ctx.fillRect(0, 0, width, height);
-                ctx.drawImage(img, 0, 0, width, height);
-              }
-              canvas.toBlob((blob) => {
-                if (blob) resolve(blob);
-                else reject(new Error("Canvas to Blob failed"));
-              }, 'image/jpeg', 0.5);
-            };
-            img.onerror = (error) => reject(error);
-          };
-          reader.onerror = (error) => reject(error);
-        });
-      };
-
-      const compressedBlob = await getCompressedBlob(screenshotFile);
-      
-      setUploadProgress("Uploading screenshot...");
-      const screenshotRef = ref(storage, `payment-screenshots/${orderId}_${Date.now()}.jpg`);
-      await uploadBytes(screenshotRef, compressedBlob);
-      const screenshotUrl = await getDownloadURL(screenshotRef);
-      
-      // 2. Save order to Firestore
+      // 1. Save order to Firestore
       setUploadProgress("Creating order...");
       const orderData = {
         orderId,
@@ -307,8 +245,7 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
         price: selectedPackage.price,
         paymentId: `upi_${orderId}`,
         paymentStatus: "pending_verification",
-        paymentScreenshotUrl: screenshotUrl,
-        paymentScreenshotPath: screenshotRef.fullPath,
+        paymentScreenshotUrl: screenshotPreview,
         orderStatus: "new",
         upiId: UPI_ID,
         createdAt: serverTimestamp(),
@@ -559,7 +496,7 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
                       />
                       <button
                         onClick={() => {
-                          setScreenshotFile(null);
+                          setScreenshotName(null);
                           setScreenshotPreview(null);
                           if (fileInputRef.current) fileInputRef.current.value = "";
                         }}
@@ -568,7 +505,7 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
                         <X size={14} />
                       </button>
                       <p className="text-xs text-green-500 mt-2 flex items-center gap-1">
-                        <CheckCircle size={12} /> Screenshot attached — {screenshotFile?.name}
+                        <CheckCircle size={12} /> Screenshot attached — {screenshotName}
                       </p>
                     </div>
                   ) : (
@@ -588,7 +525,7 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
                 {/* Submit Button */}
                 <button
                   onClick={submitOrder}
-                  disabled={loading || !screenshotFile}
+                  disabled={loading || !screenshotPreview}
                   className="w-full bg-brand-accent text-brand-primary font-bold py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-brand-accent-hover hover:shadow-[0_0_20px_rgba(232,184,75,0.4)] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? (
