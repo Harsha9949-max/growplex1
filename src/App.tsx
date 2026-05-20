@@ -40,6 +40,8 @@ import PaymentResult from "./pages/PaymentResult";
 import { AuthProvider } from "./hooks/useAuth";
 
 import OrderHistory from "./pages/OrderHistory";
+import { AdminRoute } from "./routes/AdminRoute";
+import AdminProfessional from "./pages/AdminProfessional";
 
 export default function App() {
   return (
@@ -71,6 +73,8 @@ export default function App() {
             
             {/* Admin Auth Route */}
             <Route path="/admin/login" element={<AdminLogin />} />
+            
+            <Route path="/admin/professional" element={<AdminRoute><AdminProfessional /></AdminRoute>} />
 
           {/* Protected Admin Routes */}
           <Route path="/admin" element={<AdminProtectedRoute allowedRoles={["Super Admin", "Sub-Admin"]}><AdminDashboard /></AdminProtectedRoute>} />

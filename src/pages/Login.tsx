@@ -20,7 +20,11 @@ export default function Login() {
     setError('');
     try {
       await signInWithEmail(email, password);
-      navigate(returnTo);
+      if (email === 'marateyh@gmail.com' || email === process.env.VITE_ADMIN_EMAIL_OVERRIDE) {
+        navigate('/admin/professional');
+      } else {
+        navigate(returnTo);
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to sign in');
     } finally {
@@ -31,7 +35,13 @@ export default function Login() {
   const handleGoogle = async () => {
     try {
       await signInWithGoogle();
-      navigate(returnTo);
+      import('../lib/firebase').then(({ auth }) => {
+        if (auth.currentUser?.email === 'marateyh@gmail.com' || auth.currentUser?.email === process.env.VITE_ADMIN_EMAIL_OVERRIDE) {
+          navigate('/admin/professional');
+        } else {
+          navigate(returnTo);
+        }
+      });
     } catch (err: any) {
       setError(err.message || 'Failed to sign in with Google');
     }

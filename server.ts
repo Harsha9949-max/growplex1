@@ -97,9 +97,57 @@ async function startServer() {
         console.log(`Provider order already exists for ${orderId}. Skipping duplicate placement.`);
         return;
       }
+
+      // Check service source
+      let syncSource = 'api';
+      let cleanServiceId = orderInfo.serviceId || 'default';
       
+      // Look up service in firestore
+      const sRef = doc(db, 'services', `api_${cleanServiceId}`);
+      const mRef = doc(db, 'services', cleanServiceId); // For manual, ID is just the generated one
+      
+      let serviceDoc = await getDoc(sRef);
+      if (!serviceDoc.exists()) {
+        serviceDoc = await getDoc(mRef);
+      }
+
+      if (serviceDoc.exists()) {
+        syncSource = serviceDoc.data().syncSource || 'api';
+      } else if (cleanServiceId && cleanServiceId.toString().startsWith('MANUAL')) {
+        syncSource = 'manual';
+      }
+
       const settingsDoc = await getDoc(doc(db, "system", "settings"));
       const settings = settingsDoc.exists() ? settingsDoc.data() : null;
+      
+      if (syncSource === 'manual') {
+        const manualStatus = 'manual_pending';
+        console.log(`Routing order ${orderId} as MANUAL.`);
+        await setDoc(doc(db, 'manualOrders', orderId), {
+           orderId,
+           serviceId: cleanServiceId,
+           adminNotes: '',
+           fulfillmentStatus: manualStatus,
+           createdAt: new Date().toISOString()
+        });
+        
+        await updateDoc(doc(db, 'orders', orderId), { orderStatus: manualStatus });
+        
+        // Telegram Alert for manual
+        const botToken = settings?.telegramBotToken;
+        const chatId = settings?.telegramChatId;
+        if (botToken && chatId) {
+           const chatIds = chatId.split(",").map((id: string) => id.trim()).filter(Boolean);
+           for (const id of chatIds) {
+             fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ chat_id: id, text: `🔧 *Manual Order Alert* #${orderId}\nService: ${orderInfo.serviceName}` })
+             }).catch(() => null);
+           }
+        }
+        return;
+      }
+      
       const apiKey = settings?.providerApiKey;
       const apiUrl = settings?.providerApiUrl || "https://growwsmmpanel.com/api/v2";
       
@@ -531,6 +579,101 @@ async function startServer() {
     } catch (err: any) {
       console.error('Webhook processing error:', err);
       return res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post('/api/services/sync', async (req, res) => {
+    try {
+      const { adminEmail } = req.body;
+      const overrideEmail = process.env.VITE_ADMIN_EMAIL_OVERRIDE || "override@example.com";
+      if (adminEmail !== 'marateyh@gmail.com' && adminEmail !== overrideEmail) {
+         return res.status(403).json({ error: "Unauthorized" });
+      }
+
+      const settingsDoc = await getDoc(doc(db, "system", "settings"));
+      const settings = settingsDoc.exists() ? settingsDoc.data() : null;
+      
+      const apiUrl = settings?.providerApiUrl || "https://growwsmmpanel.com/api/v2";
+      const apiKey = settings?.providerApiKey;
+
+      // Mock response if no key for local testing
+      if (!apiKey) {
+        console.warn("GrowwSMM API key not configured, using mock sync.");
+        const providerServices = [
+          { service: '1', name: 'Mock API Service 1', category: 'Instagram', rate: '10' },
+          { service: '2', name: 'Mock API Service 2', category: 'YouTube', rate: '20' }
+        ];
+
+        for (const s of providerServices) {
+          const sRef = doc(db, 'services', `api_${s.service}`);
+          const sDoc = await getDoc(sRef);
+          let marginPct = 25;
+          if (sDoc.exists() && sDoc.data().marginPct !== undefined) {
+             marginPct = sDoc.data().marginPct;
+          }
+          const basePrice = Number(s.rate) || 0;
+          const finalPrice = basePrice * (1 + marginPct / 100);
+
+          await setDoc(sRef, {
+             serviceId: String(s.service),
+             name: s.name,
+             category: s.category || 'General',
+             basePrice,
+             marginPct,
+             finalPrice,
+             syncSource: 'api',
+             apiEndpoint: apiUrl,
+             isActive: true,
+             updatedAt: new Date().toISOString()
+          }, { merge: true });
+        }
+        return res.json({ status: "success", syncedCount: providerServices.length });
+      }
+
+      // Hit API
+      const reqBody = { key: apiKey, action: 'services' };
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(reqBody)
+      });
+      
+      if (!response.ok) throw new Error("API call failed");
+      
+      const respText = await response.text();
+      let providerServices;
+      try { providerServices = JSON.parse(respText); } catch(e) { throw new Error("Invalid format"); }
+
+      if (Array.isArray(providerServices)) {
+        for (const s of providerServices) {
+          const sRef = doc(db, 'services', `api_${s.service}`);
+          const sDoc = await getDoc(sRef);
+          let marginPct = 25;
+          if (sDoc.exists() && sDoc.data().marginPct !== undefined) {
+             marginPct = sDoc.data().marginPct;
+          }
+          const basePrice = Number(s.rate) || 0;
+          const finalPrice = basePrice * (1 + marginPct / 100);
+
+          await setDoc(sRef, {
+             serviceId: String(s.service),
+             name: s.name,
+             category: s.category || 'General',
+             basePrice,
+             marginPct,
+             finalPrice,
+             syncSource: 'api',
+             apiEndpoint: apiUrl,
+             isActive: true,
+             updatedAt: new Date().toISOString()
+          }, { merge: true });
+        }
+      }
+
+      return res.json({ status: "success", syncedCount: providerServices.length || 0 });
+    } catch(err: any) {
+       console.error("GrowwSMM sync error", err);
+       return res.status(500).json({ error: err.message });
     }
   });
 
