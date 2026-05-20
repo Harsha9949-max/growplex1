@@ -4,6 +4,7 @@ export { default as AdminCustomers } from './AdminCustomers';
 export { default as AdminDashboard } from './AdminDashboard';
 export { default as AdminLogs } from './AdminLogs';
 export { default as AdminNotifications } from './AdminNotifications';
+export { default as AdminOffers } from './AdminOffers';
 export { default as AdminOrders } from './AdminOrders';
 export { default as AdminPayments } from './AdminPayments';
 export { default as AdminReports } from './AdminReports';

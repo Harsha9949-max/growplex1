@@ -9,6 +9,7 @@ import {
   AdminCustomers,
   AdminLogs,
   AdminNotifications,
+  AdminOffers,
   AdminPayments,
   AdminReports,
   AdminRoles,
@@ -33,32 +34,43 @@ import RefundPolicy from "./pages/RefundPolicy";
 import Services from "./pages/Services";
 import Support from "./pages/Support";
 import TermsOfService from "./pages/TermsOfService";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import PaymentResult from "./pages/PaymentResult";
+import { AuthProvider } from "./hooks/useAuth";
+
+import OrderHistory from "./pages/OrderHistory";
 
 export default function App() {
   return (
     <HelmetProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* Public Pages */}
-          <Route path="/" element={<Home />} />
-          <Route path="/services" element={<Services />} />
-          <Route path="/pricing" element={<Pricing />} />
-          <Route path="/support" element={<Support />} />
-          <Route path="/how-it-works" element={<HowItWorks />} />
-          <Route path="/faq" element={<FAQ />} />
-          <Route path="/blog" element={<Blog />} />
-          <Route path="/blog/:slug" element={<BlogPost />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-          <Route path="/terms-of-service" element={<TermsOfService />} />
-          <Route path="/refund-policy" element={<RefundPolicy />} />
-          <Route path="/success" element={<OrderSuccess />} />
-          <Route path="/failed" element={<OrderFailed />} />
-          <Route path="/receipt/:orderId" element={<ReceiptViewer />} />
-          
-          {/* Admin Auth Route */}
-          <Route path="/admin/login" element={<AdminLogin />} />
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Public Pages */}
+            <Route path="/" element={<Home />} />
+            <Route path="/services" element={<Services />} />
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/support" element={<Support />} />
+            <Route path="/how-it-works" element={<HowItWorks />} />
+            <Route path="/faq" element={<FAQ />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:slug" element={<BlogPost />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/terms-of-service" element={<TermsOfService />} />
+            <Route path="/refund-policy" element={<RefundPolicy />} />
+            <Route path="/success" element={<OrderSuccess />} />
+            <Route path="/failed" element={<OrderFailed />} />
+            <Route path="/receipt/:orderId" element={<ReceiptViewer />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/payment-result" element={<PaymentResult />} />
+            <Route path="/orders" element={<OrderHistory />} />
+            
+            {/* Admin Auth Route */}
+            <Route path="/admin/login" element={<AdminLogin />} />
 
           {/* Protected Admin Routes */}
           <Route path="/admin" element={<AdminProtectedRoute allowedRoles={["Super Admin", "Sub-Admin"]}><AdminDashboard /></AdminProtectedRoute>} />
@@ -67,6 +79,7 @@ export default function App() {
           <Route path="/admin/services" element={<AdminProtectedRoute allowedRoles={["Super Admin", "Sub-Admin", "Support"]}><AdminServices /></AdminProtectedRoute>} />
           <Route path="/admin/payments" element={<AdminProtectedRoute allowedRoles={["Super Admin", "Sub-Admin", "Support"]}><AdminPayments /></AdminProtectedRoute>} />
           <Route path="/admin/customers" element={<AdminProtectedRoute allowedRoles={["Super Admin", "Sub-Admin"]}><AdminCustomers /></AdminProtectedRoute>} />
+          <Route path="/admin/offers" element={<AdminProtectedRoute allowedRoles={["Super Admin", "Sub-Admin"]}><AdminOffers /></AdminProtectedRoute>} />
           <Route path="/admin/notifications" element={<AdminProtectedRoute allowedRoles={["Super Admin", "Sub-Admin"]}><AdminNotifications /></AdminProtectedRoute>} />
           <Route path="/admin/reports" element={<AdminProtectedRoute allowedRoles={["Super Admin"]}><AdminReports /></AdminProtectedRoute>} />
           <Route path="/admin/settings" element={<AdminProtectedRoute allowedRoles={["Super Admin"]}><AdminSettings /></AdminProtectedRoute>} />
@@ -78,6 +91,7 @@ export default function App() {
         </Routes>
         <FloatingBadge />
       </BrowserRouter>
+      </AuthProvider>
     </HelmetProvider>
   );
 }

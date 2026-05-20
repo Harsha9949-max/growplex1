@@ -10,6 +10,7 @@ import {
   Package,
   Settings, ShieldCheck,
   ShoppingCart,
+  Image as ImageIcon,
   Users,
   X
 } from "lucide-react";
@@ -20,6 +21,7 @@ const MENU_ITEMS = [
   { name: "Dashboard", path: "/admin/dashboard", icon: LayoutDashboard },
   { name: "Orders", path: "/admin/orders", icon: ShoppingCart },
   { name: "Services", path: "/admin/services", icon: Package },
+  { name: "Offers", path: "/admin/offers", icon: ImageIcon },
   { name: "Payments", path: "/admin/payments", icon: CreditCard },
   { name: "Customers", path: "/admin/customers", icon: Users },
   { name: "Notifications", path: "/admin/notifications", icon: Bell },

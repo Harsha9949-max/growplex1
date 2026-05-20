@@ -15,6 +15,7 @@ import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import { Footer } from "../components/Footer";
 import { Navbar } from "../components/Navbar";
+import { OfferBanners } from "../components/OfferBanners";
 import { AggregateRatingSchema } from "../components/SchemaMarkup";
 import { SocialProofTicker } from "../components/SocialProofTicker";
 import { useServices } from "../hooks/useServices";
@@ -113,6 +114,7 @@ export default function Home() {
       <AggregateRatingSchema ratingValue={4.9} reviewCount={2847} />
 
       <Navbar />
+      <OfferBanners />
 
       {/* ═══════ HERO SECTION ═══════ */}
       <section className="relative pt-20 pb-16 md:pt-32 md:pb-32 px-4 overflow-hidden">

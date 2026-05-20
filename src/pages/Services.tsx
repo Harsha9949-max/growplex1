@@ -14,6 +14,7 @@ import { Helmet } from "react-helmet-async";
 import { Breadcrumbs } from "../components/Breadcrumbs";
 import { Footer } from "../components/Footer";
 import { Navbar } from "../components/Navbar";
+import { OfferBanners } from "../components/OfferBanners";
 import { OrderModal } from "../components/OrderModal";
 import { useServices } from "../hooks/useServices";
 import { db } from "../lib/firebase";
@@ -299,6 +300,7 @@ export default function Services() {
 
       <Navbar />
       <Breadcrumbs />
+      <OfferBanners />
 
       {/* Header */}
       <header className="py-12 sm:py-20 md:py-28 px-4 text-center border-b border-brand-border bg-brand-surface/30 relative overflow-hidden">

@@ -1,12 +1,11 @@
 import {
-  ConfirmationResult,
   GoogleAuthProvider,
   onAuthStateChanged,
-  RecaptchaVerifier,
-  signInWithPhoneNumber,
   signInWithPopup,
   signOut,
-  User
+  User,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword
 } from 'firebase/auth';
 import {
   doc,
@@ -25,11 +24,13 @@ interface AuthContextType {
   userProfile: UserProfile | null;
   loading: boolean;
   isAdmin: boolean;
-  sendOTP: (phoneNumber: string) => Promise<void>;
-  verifyOTP: (otp: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
-  updateOnboarding: (data: Partial<UserProfile>) => Promise<void>;
+  signInWithEmail: (email: string, pass: string) => Promise<void>;
+  signUpWithEmail: (email: string, pass: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
+  sendOTP: (phone: string) => Promise<void>;
+  verifyOTP: (otp: string) => Promise<void>;
+  updateOnboarding: (data: any) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -38,7 +39,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
 
   useEffect(() => {
     let unsubProfile: (() => void) | null = null;
@@ -76,131 +76,91 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const setupRecaptcha = (containerId: string) => {
-    if ((window as any).recaptchaVerifier) {
-      (window as any).recaptchaVerifier.clear();
+  const getDeviceId = () => {
+    let deviceId = localStorage.getItem('deviceId');
+    if (!deviceId) {
+      deviceId = 'device_' + Math.random().toString(36).substr(2, 9);
+      localStorage.setItem('deviceId', deviceId);
     }
-    (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
-      'size': 'invisible',
-    });
-  };
+    return deviceId;
+  }
 
-  const sendOTP = async (phoneNumber: string) => {
-    try {
-      setupRecaptcha('recaptcha-container');
-      const appVerifier = (window as any).recaptchaVerifier;
-      const result = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
-      setConfirmationResult(result);
-    } catch (error) {
-      console.error('Error sending OTP:', error);
-      throw error;
-    }
-  };
+  const createOrUpdateProfile = async (user: User, name?: string) => {
+    const userDocRef = doc(db, 'users', user.uid);
+    const userDoc = await getDoc(userDocRef);
 
-  const verifyOTP = async (otp: string) => {
-    try {
-      if (!confirmationResult) throw new Error('No confirmation result found');
-      const result = await confirmationResult.confirm(otp);
-      const user = result.user;
+    const adminEmail = import.meta.env.VITE_ADMIN_EMAIL || 'marateyh@gmail.com';
+    const isAdminEmail = user.email === adminEmail;
+    const role = isAdminEmail ? 'Super Admin' : 'Customer';
 
-      // Check if profile exists
-      const userDocRef = doc(db, 'users', user.uid);
-      const userDoc = await getDoc(userDocRef);
-
-      if (!userDoc.exists()) {
-        const profile: UserProfile = {
-          uid: user.uid,
-          email: user.email || '',
-          phone: user.phoneNumber || '',
-          username: user.phoneNumber || 'User',
-          role: 'user',
-          onboardingStatus: 'not_started',
-          onboardingStep: 0,
-          isDigitalAgreementSigned: false,
-          wallets: { earned: 0, pending: 27, bonus: 0, savings: 0 },
-          signingBonus: 27,
-          createdAt: Timestamp.now(),
-        };
-        await setDoc(userDocRef, profile);
-      }
-    } catch (error) {
-      console.error('Error verifying OTP:', error);
-      throw error;
+    if (!userDoc.exists()) {
+      const profile: Partial<UserProfile> & any = {
+        uid: user.uid,
+        email: user.email!,
+        name: name || user.displayName || user.email!.split('@')[0],
+        role: role,
+        isGuest: false,
+        deviceId: getDeviceId(),
+        createdAt: Timestamp.now(),
+      };
+      await setDoc(userDocRef, profile);
     }
   };
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
     const result = await signInWithPopup(auth, provider);
-    const user = result.user;
-
-    const userDocRef = doc(db, 'users', user.uid);
-    const userDoc = await getDoc(userDocRef);
-
-    // Special Admin Detection
-    const adminEmail = import.meta.env.VITE_ADMIN_EMAIL || 'marateyh@gmail.com';
-    const isAdminEmail = user.email === adminEmail;
-    const role = isAdminEmail ? 'admin' : 'user';
-
-    if (!userDoc.exists()) {
-      const profile: UserProfile = {
-        uid: user.uid,
-        email: user.email!,
-        fullName: user.displayName || '',
-        username: user.email!.split('@')[0],
-        role: role as 'user' | 'admin',
-        onboardingStatus: isAdminEmail ? 'completed' : 'not_started',
-        onboardingStep: isAdminEmail ? 6 : 0,
-        isDigitalAgreementSigned: isAdminEmail,
-        wallets: {
-            earned: 0,
-            pending: isAdminEmail ? 0 : 27,
-            bonus: 0,
-            savings: 0
-        },
-        signingBonus: isAdminEmail ? 0 : 27,
-        createdAt: Timestamp.now(),
-      };
-      await setDoc(userDocRef, profile);
-    } else if (isAdminEmail && userDoc.data()?.role !== 'admin') {
-      // Update role if user is the designated admin but profile says otherwise
-      await updateDoc(userDocRef, { role: 'admin' });
-    }
+    await createOrUpdateProfile(result.user);
   };
 
-  const updateOnboarding = async (data: Partial<UserProfile>) => {
-    if (!currentUser) return;
-    const userDocRef = doc(db, 'users', currentUser.uid);
-    await setDoc(userDocRef, {
-      ...data,
-      onboardingStatus: data.onboardingStep === 7 ? 'completed' : 'in_progress'
-    }, { merge: true });
+  const signInWithEmail = async (email: string, pass: string) => {
+    await signInWithEmailAndPassword(auth, email, pass);
+  };
+
+  const signUpWithEmail = async (email: string, pass: string, name: string) => {
+    const result = await createUserWithEmailAndPassword(auth, email, pass);
+    await createOrUpdateProfile(result.user, name);
   };
 
   const logout = async () => {
     await signOut(auth);
   };
 
+  const sendOTP = async (phone: string) => {
+    // Stub
+  };
+
+  const verifyOTP = async (otp: string) => {
+    // Stub
+  };
+
+  const updateOnboarding = async (data: any) => {
+    if (currentUser) {
+      const userDocRef = doc(db, 'users', currentUser.uid);
+      await updateDoc(userDocRef, data);
+    }
+  };
+
   const isAdmin = useMemo(() => {
-    const adminEmail = import.meta.env.VITE_ADMIN_EMAIL || 'marateyh@gmail.com';
-    return userProfile?.role === 'admin' || currentUser?.email === adminEmail;
-  }, [userProfile, currentUser]);
+    return userProfile?.role === 'Super Admin' || userProfile?.role === 'Sub-Admin';
+  }, [userProfile]);
 
   const value = useMemo(() => ({
     currentUser,
     userProfile,
     loading,
     isAdmin,
+    signInWithGoogle,
+    signInWithEmail,
+    signUpWithEmail,
+    logout,
     sendOTP,
     verifyOTP,
-    signInWithGoogle,
     updateOnboarding,
-    logout,
   }), [currentUser, userProfile, loading, isAdmin]);
 
   return (
     <AuthContext.Provider value={value}>
-      <div id="recaptcha-container"></div>
       {!loading && children}
     </AuthContext.Provider>
   );
@@ -213,3 +173,4 @@ export const useAuth = () => {
   }
   return context;
 };
+

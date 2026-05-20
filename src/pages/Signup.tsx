@@ -2,14 +2,15 @@ import { useState } from 'react';
 import { motion } from 'motion/react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { AlertCircle, Lock, Mail, ArrowRight } from 'lucide-react';
+import { AlertCircle, Lock, Mail, User as UserIcon, ArrowRight } from 'lucide-react';
 
-export default function Login() {
+export default function Signup() {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { signInWithEmail, signInWithGoogle } = useAuth();
+  const { signUpWithEmail, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const returnTo = location.state?.returnTo || '/';
@@ -19,10 +20,10 @@ export default function Login() {
     setLoading(true);
     setError('');
     try {
-      await signInWithEmail(email, password);
+      await signUpWithEmail(email, password, name);
       navigate(returnTo);
     } catch (err: any) {
-      setError(err.message || 'Failed to sign in');
+      setError(err.message || 'Failed to sign up');
     } finally {
       setLoading(false);
     }
@@ -45,8 +46,8 @@ export default function Login() {
         className="w-full max-w-md bg-brand-surface border border-brand-border rounded-2xl p-8"
       >
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-heading font-bold text-brand-accent mb-2">Welcome Back</h1>
-          <p className="text-text-muted">Sign in to your Growplex account</p>
+          <h1 className="text-3xl font-heading font-bold text-brand-accent mb-2">Create Account</h1>
+          <p className="text-text-muted">Join Growplex to track your orders</p>
         </div>
 
         {error && (
@@ -57,6 +58,21 @@ export default function Login() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-text-muted mb-1">Full Name</label>
+            <div className="relative">
+              <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={18} />
+              <input 
+                type="text" 
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full bg-brand-primary border border-brand-border rounded-lg pl-10 pr-4 py-3 text-text-main focus:outline-none focus:border-brand-accent"
+                placeholder="John Doe"
+              />
+            </div>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-text-muted mb-1">Email</label>
             <div className="relative">
@@ -83,6 +99,7 @@ export default function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full bg-brand-primary border border-brand-border rounded-lg pl-10 pr-4 py-3 text-text-main focus:outline-none focus:border-brand-accent"
                 placeholder="••••••••"
+                minLength={6}
               />
             </div>
           </div>
@@ -92,7 +109,7 @@ export default function Login() {
             disabled={loading}
             className="w-full bg-brand-accent text-brand-primary font-bold py-3 rounded-lg hover:bg-brand-accent-hover transition flex justify-center items-center gap-2 mt-2"
           >
-            {loading ? "Signing in..." : <>Sign In <ArrowRight size={18} /></>}
+            {loading ? "Creating Account..." : <>Sign Up <ArrowRight size={18} /></>}
           </button>
         </form>
 
@@ -107,14 +124,13 @@ export default function Login() {
           className="w-full mt-6 bg-brand-primary border border-brand-border hover:bg-brand-border/50 text-text-main font-bold py-3 rounded-lg transition-colors flex items-center justify-center gap-3"
         >
           <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5" alt="Google" />
-          Continue with Google
+          Sign up with Google
         </button>
 
         <p className="mt-8 text-center text-sm text-text-muted">
-          Don't have an account? <Link to="/signup" className="text-brand-accent hover:underline">Sign Up</Link>
+          Already have an account? <Link to="/login" className="text-brand-accent hover:underline">Sign In</Link>
         </p>
       </motion.div>
     </div>
   );
 }
-

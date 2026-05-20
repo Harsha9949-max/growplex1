@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
+import { PaymentDiagnostics } from "../components/PaymentDiagnostics";
 import {
   Bar,
   BarChart,
@@ -265,6 +266,8 @@ export default function AdminDashboard() {
             </button>
           </div>
         </div>
+
+        <PaymentDiagnostics />
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20">

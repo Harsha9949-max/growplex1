@@ -331,12 +331,21 @@ export default function AdminOrders() {
                       </div>
                       <div className="flex flex-col items-end gap-1 shrink-0">
                         {getPaymentBadge(order.paymentStatus, !!order.paymentScreenshotUrl)}
-                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
-                          order.orderStatus === 'completed' ? 'bg-green-500/10 text-green-500' :
-                          order.orderStatus === 'processing' ? 'bg-blue-500/10 text-blue-500' :
-                          order.orderStatus === 'failed' ? 'bg-red-500/10 text-red-500' :
-                          'bg-yellow-500/10 text-yellow-500'
-                        }`}>{order.orderStatus}</span>
+                        <select 
+                          value={order.orderStatus}
+                          onChange={(e) => { e.stopPropagation(); handleStatusUpdate(order.orderId, e.target.value); }}
+                          className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase cursor-pointer border border-transparent focus:outline-none ${
+                            order.orderStatus === 'completed' ? 'bg-green-500/10 text-green-500 border-green-500/20' :
+                            order.orderStatus === 'processing' ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' :
+                            order.orderStatus === 'failed' ? 'bg-red-500/10 text-red-500 border-red-500/20' :
+                            'bg-brand-accent/10 text-brand-accent border-brand-accent/20'
+                          }`}
+                        >
+                          <option className="bg-brand-surface text-text-main" value="new">NEW</option>
+                          <option className="bg-brand-surface text-text-main" value="processing">PROCESSING</option>
+                          <option className="bg-brand-surface text-text-main" value="completed">COMPLETED</option>
+                          <option className="bg-brand-surface text-text-main" value="failed">FAILED</option>
+                        </select>
                       </div>
                     </div>
                     <div className="flex justify-between items-end text-xs">
@@ -455,9 +464,23 @@ export default function AdminOrders() {
                        <span className="text-sm text-text-muted">Payment ID</span>
                        <span className="text-xs font-mono text-text-main break-all">{selectedOrder.paymentId}</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between items-center">
                        <span className="text-sm text-text-muted">Order Status</span>
-                       <span className="text-sm font-medium uppercase text-text-main">{selectedOrder.orderStatus}</span>
+                       <select 
+                         value={selectedOrder.orderStatus} 
+                         onChange={(e) => handleStatusUpdate(selectedOrder.orderId, e.target.value)}
+                         className={`text-xs font-bold uppercase px-2 py-1 rounded-md cursor-pointer border focus:outline-none ${
+                           selectedOrder.orderStatus === 'completed' ? 'bg-green-500/10 text-green-500 border-green-500/20' : 
+                           selectedOrder.orderStatus === 'processing' ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' :
+                           selectedOrder.orderStatus === 'failed' ? 'bg-red-500/10 text-red-500 border-red-500/20' :
+                           'bg-brand-accent/10 text-brand-accent border-brand-accent/20'
+                         }`}
+                       >
+                         <option className="bg-brand-surface text-text-main" value="new">NEW</option>
+                         <option className="bg-brand-surface text-text-main" value="processing">PROCESSING</option>
+                         <option className="bg-brand-surface text-text-main" value="completed">COMPLETED</option>
+                         <option className="bg-brand-surface text-text-main" value="failed">FAILED</option>
+                       </select>
                     </div>
                  </div>
 
