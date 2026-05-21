@@ -137,8 +137,8 @@ export default function Home() {
             transition={{ duration: 0.5 }}
             className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold mb-4 md:mb-6 tracking-tight leading-tight"
           >
-            Super growth at affordable prices<br className="hidden sm:block"/>
-            <span className="text-brand-accent">with no login.</span>
+            Super Growth At Affordable Prices<br className="hidden sm:block"/>
+            <span className="text-brand-accent">With No Login Required.</span>
           </motion.h1>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
