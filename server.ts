@@ -119,6 +119,17 @@ async function startServer() {
   } else {
     // Check if dist exists, else it might be build time
     const distPath = path.join(process.cwd(), 'dist');
+    
+    // Explicit static maps for exact route matching
+    app.get('/sitemap.xml', (req, res) => {
+      res.setHeader('Content-Type', 'application/xml');
+      res.sendFile(path.join(distPath, 'sitemap.xml'));
+    });
+    app.get('/robots.txt', (req, res) => {
+      res.setHeader('Content-Type', 'text/plain');
+      res.sendFile(path.join(distPath, 'robots.txt'));
+    });
+
     // Ensure static files are served correctly without index fallback for missing assets
     app.use(express.static(distPath, {
       index: false,
