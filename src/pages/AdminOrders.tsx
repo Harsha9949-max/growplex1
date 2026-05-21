@@ -285,7 +285,7 @@ export default function AdminOrders() {
                   </thead>
                   <tbody className="divide-y divide-brand-border">
                     {paginatedOrders.map((order) => (
-                      <tr key={order.orderId} className="hover:bg-brand-primary/30 transition-colors">
+                      <tr key={order.id} className="hover:bg-brand-primary/30 transition-colors">
                         <td className="px-5 py-3 font-mono text-brand-accent text-xs">{order.orderId}</td>
                         <td className="px-5 py-3">
                           <div className="font-medium text-text-main text-sm">{order.customerName}</div>
@@ -323,7 +323,7 @@ export default function AdminOrders() {
               {/* Mobile card view */}
               <div className="lg:hidden divide-y divide-brand-border">
                 {paginatedOrders.map((order) => (
-                  <div key={order.orderId} className="p-3 sm:p-4 space-y-2" onClick={() => setSelectedOrder(order)}>
+                  <div key={order.id} className="p-3 sm:p-4 space-y-2" onClick={() => setSelectedOrder(order)}>
                     <div className="flex justify-between items-start gap-2">
                       <div className="min-w-0">
                         <p className="font-mono text-brand-accent text-[11px]">{order.orderId}</p>

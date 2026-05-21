@@ -36,6 +36,7 @@ import { AdminLayout } from "../components/AdminLayout";
 import { db } from "../lib/firebase";
 
 interface GrowplexOrder {
+  id?: string;
   orderId: string;
   customerName: string;
   phone: string;
@@ -426,7 +427,7 @@ export default function AdminDashboard() {
                         </tr>
                      ) : (
                         orders.slice(0, 10).map((order) => (
-                           <tr key={order.orderId} className="hover:bg-brand-primary/30 transition-colors">
+                           <tr key={order.id} className="hover:bg-brand-primary/30 transition-colors">
                              <td className="px-6 py-4 font-mono text-brand-accent text-xs">{order.orderId}</td>
                              <td className="px-6 py-4 font-medium">{order.customerName}</td>
                              <td className="px-6 py-4">
@@ -460,7 +461,7 @@ export default function AdminDashboard() {
                    <div className="p-6 text-center text-text-muted text-sm">No recent orders</div>
                  ) : (
                    orders.slice(0, 10).map((order) => (
-                     <div key={order.orderId} className="p-4 space-y-2">
+                     <div key={order.id} className="p-4 space-y-2">
                        <div className="flex justify-between items-start">
                          <div>
                            <p className="font-mono text-brand-accent text-xs">{order.orderId}</p>
