@@ -3,10 +3,16 @@ import { motion } from "motion/react";
 import { Link } from "react-router-dom";
 import { Footer } from "../components/Footer";
 import { Navbar } from "../components/Navbar";
+import { SEO } from "../components/SEO";
 
 export default function OrderFailed() {
   return (
     <div className="min-h-screen flex flex-col bg-brand-primary text-text-main font-sans selection:bg-brand-accent selection:text-brand-primary">
+      <SEO 
+        title="Payment Failed"
+        description="Your payment could not be processed. Your account was not charged. Please try again."
+        noindex={true}
+      />
       <Navbar />
 
       <main className="flex-1 flex items-center justify-center p-4 py-20">

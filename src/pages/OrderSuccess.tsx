@@ -5,6 +5,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useWindowSize } from "react-use";
 import { Footer } from "../components/Footer";
 import { Navbar } from "../components/Navbar";
+import { SEO } from "../components/SEO";
 
 export default function OrderSuccess() {
   const location = useLocation();
@@ -13,6 +14,11 @@ export default function OrderSuccess() {
 
   return (
     <div className="min-h-screen flex flex-col bg-brand-primary text-text-main font-sans selection:bg-brand-accent selection:text-brand-primary">
+      <SEO 
+        title="Payment Successful"
+        description="Your order has been received and will be processed shortly."
+        noindex={true}
+      />
       <Navbar />
       <Confetti
         width={width}

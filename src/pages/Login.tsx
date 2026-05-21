@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import React, { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
+import { SEO } from '../components/SEO';
 import { useAuth } from '../hooks/useAuth';
 
 const Login: React.FC = () => {
@@ -80,6 +81,7 @@ const Login: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center p-4 md:p-6 relative overflow-hidden font-sans">
+      <SEO title="Login | WorkPlex" description="Login securely to your WorkPlex account." noindex={true} />
       {/* Dynamic Background */}
       <div className="absolute top-0 left-0 w-full h-full">
         <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-[#E8B84B]/5 rounded-full blur-[150px] animate-pulse" />

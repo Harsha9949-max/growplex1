@@ -2,6 +2,7 @@ import { collection, getDocs, query, where } from "firebase/firestore";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { SEO } from "../components/SEO";
 import { db } from "../lib/firebase";
 
 export default function ReceiptViewer() {
@@ -46,6 +47,7 @@ export default function ReceiptViewer() {
   if (loading) {
     return (
       <div className="min-h-screen bg-brand-primary flex flex-col items-center justify-center p-4">
+        <SEO title="Loading Receipt" description="Loading your order receipt." noindex={true} />
         <Loader2 className="animate-spin text-brand-accent mb-4" size={48} />
         <p className="text-text-muted">Loading receipt...</p>
       </div>
@@ -55,6 +57,7 @@ export default function ReceiptViewer() {
   if (error) {
     return (
       <div className="min-h-screen bg-brand-primary flex flex-col items-center justify-center p-4">
+        <SEO title="Receipt Not Found" description="The requested receipt is not available." noindex={true} />
         <AlertCircle className="text-red-500 mb-4" size={48} />
         <p className="text-text-main font-semibold mb-2">{error}</p>
         <p className="text-text-muted text-sm max-w-md text-center">
@@ -66,6 +69,7 @@ export default function ReceiptViewer() {
 
   return (
     <div className="min-h-screen bg-brand-primary flex flex-col items-center p-4 md:p-8">
+      <SEO title={`Receipt for Order ${orderId}`} description="View your order receipt payment screenshot." noindex={true} />
       <div className="bg-brand-surface border border-brand-border rounded-xl p-4 md:p-8 max-w-3xl w-full shadow-2xl">
         <div className="text-center mb-6">
           <h1 className="text-2xl font-heading font-bold text-text-main">Order Receipt</h1>

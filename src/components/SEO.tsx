@@ -7,6 +7,7 @@ interface SEOProps {
   url?: string;
   image?: string;
   schema?: string;
+  noindex?: boolean;
 }
 
 export function SEO({
@@ -16,6 +17,7 @@ export function SEO({
   url = "https://growplex.sbs",
   image = "https://growplex.sbs/og-image.png",
   schema,
+  noindex = false,
 }: SEOProps) {
   const fullTitle = title.includes("Growplex") ? title : `${title} | Growplex`;
 
@@ -24,6 +26,7 @@ export function SEO({
       <title>{fullTitle}</title>
       <meta name="description" content={description} />
       {keywords && <meta name="keywords" content={keywords} />}
+      {noindex && <meta name="robots" content="noindex, nofollow" />}
       
       {/* Open Graph / Facebook */}
       <meta property="og:type" content="website" />
