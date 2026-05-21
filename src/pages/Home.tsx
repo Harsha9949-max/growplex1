@@ -23,7 +23,7 @@ import { useMemo } from "react";
 
 const TRUST_BADGES = [
   { icon: Lock, title: "No Login Required", desc: "Order without creating an account or giving any password." },
-  { icon: Zap, title: "Instant Delivery", desc: "Most orders start processing within seconds of payment." },
+  { icon: Zap, title: "Fastest Possible Delivery", desc: "Most orders start processing within seconds of payment." },
   { icon: RefreshCw, title: "30-Day Refill", desc: "Free refill guarantee if your count drops within 30 days." },
   { icon: Headphones, title: "24/7 Human Support", desc: "Real agents available around the clock via chat and email." }
 ];
@@ -56,7 +56,7 @@ const COMPARISON = [
   { feature: "Login Required", growplex: false, others: true },
   { feature: "Password Needed", growplex: false, others: true },
   { feature: "Cheapest Prices", growplex: true, others: false },
-  { feature: "Instant Delivery", growplex: true, others: false },
+  { feature: "Fastest Possible Delivery", growplex: true, others: false },
   { feature: "30-Day Refill Guarantee", growplex: true, others: false },
   { feature: "24/7 Human Support", growplex: true, others: false },
   { feature: "SSL Encrypted Payments", growplex: true, others: true },
@@ -137,8 +137,8 @@ export default function Home() {
             transition={{ duration: 0.5 }}
             className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold mb-4 md:mb-6 tracking-tight leading-tight"
           >
-            No Login. Pure Growth.<br className="hidden sm:block"/>
-            <span className="text-brand-accent">The Cheapest SMM Panel Ever.</span>
+            Super growth at affordable prices<br className="hidden sm:block"/>
+            <span className="text-brand-accent">with no login.</span>
           </motion.h1>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}

@@ -7,7 +7,6 @@ import { useNavigate } from "react-router-dom";
 import { db } from "../lib/firebase";
 import { generateOrderId } from "../lib/utils";
 import { Package, Service } from "../types";
-import { useAuth } from "../hooks/useAuth";
 
 interface OrderModalProps {
   service: Service;
@@ -19,7 +18,6 @@ interface OrderModalProps {
 // UPI Payment destination
 const UPI_ID = "harshahvr@fam";
 const UPI_NAME = "Growplex";
-
 
 /**
  * Sends a Telegram notification for a new order.
@@ -112,24 +110,6 @@ async function sendTelegramNotification(order: {
   }
 }
 
-const loadCashfreeSDK = (): Promise<any> => {
-  return new Promise((resolve, reject) => {
-    if ((window as any).Cashfree) {
-      resolve((window as any).Cashfree);
-      return;
-    }
-    const script = document.createElement("script");
-    script.src = "https://sdk.cashfree.com/js/v3/cashfree.js";
-    script.onload = () => {
-      resolve((window as any).Cashfree);
-    };
-    script.onerror = () => {
-      reject(new Error("Failed to load Cashfree SDK"));
-    };
-    document.body.appendChild(script);
-  });
-};
-
 export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon }: OrderModalProps) {
   const [step, setStep] = useState<"details" | "checkout" | "payment">("details");
   const [formData, setFormData] = useState({
@@ -138,110 +118,17 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
     serviceLink: ""
   });
   const [loading, setLoading] = useState(false);
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [checkoutProgress, setCheckoutProgress] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const [screenshotName, setScreenshotName] = useState<string | null>(null);
   const [upiCopied, setUpiCopied] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { currentUser } = useAuth();
   const navigate = useNavigate();
-
-  const handleCashfreeCheckout = async () => {
-    setError(null);
-    if (!formData.customerName) {
-      setError("Customer name is required");
-      return;
-    }
-    if (!formData.phone || formData.phone.length !== 10 || !/^\d+$/.test(formData.phone)) {
-      setError("Please enter a valid 10-digit phone number");
-      return;
-    }
-    if (!formData.serviceLink) {
-      setError("Service link is required");
-      return;
-    }
-
-    setCheckoutLoading(true);
-    setCheckoutProgress("Initializing secure checkout...");
-
-    try {
-      let devId = localStorage.getItem('deviceId');
-      if (!devId) {
-        devId = 'device_' + Math.random().toString(36).substr(2, 9);
-        localStorage.setItem('deviceId', devId);
-      }
-
-      // Generate order via server
-      const response = await fetch('/api/cashfree/create-order', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          amount: selectedPackage.price,
-          customerName: formData.customerName,
-          phone: formData.phone,
-          serviceName: service.name,
-          serviceCategory: service.category,
-          packageQuantity: selectedPackage.quantity,
-          serviceLink: formData.serviceLink,
-          userId: currentUser?.uid || null,
-          deviceId: devId
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create payment session');
-      }
-
-      const checkoutData = await response.json();
-      const orderIdReturned = checkoutData.orderId;
-      const paymentSessionId = checkoutData.paymentSessionId;
-
-      // increment guest order count
-      const count = parseInt(localStorage.getItem('orderCount') || '0', 10);
-      localStorage.setItem('orderCount', (count + 1).toString());
-
-      setCheckoutProgress("Redirecting to Cashfree secure gateway...");
-      const CashfreeSDKClass = await loadCashfreeSDK();
-      
-      // Determine the exact environment returned by the backend
-      const cfModeReturned = checkoutData.cashfreeMode || "sandbox";
-      const mode = cfModeReturned === "PRODUCTION" ? "production" : "sandbox";
-      
-      const cashfreeInstance = CashfreeSDKClass({ mode });
-      
-      onClose();
-      cashfreeInstance.checkout({
-        paymentSessionId: paymentSessionId,
-        redirectTarget: "_self"
-      });
-    } catch (err: any) {
-      console.error(err);
-      setError(err.message || 'Payment session creation failed. Please check environment configuration.');
-    } finally {
-      setCheckoutLoading(false);
-      setCheckoutProgress("");
-    }
-  };
 
   // Generate the UPI deep link for QR code
   const orderId = useRef(generateOrderId()).current;
   const upiLink = `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(UPI_NAME)}&am=${selectedPackage.price}&cu=INR&tn=${encodeURIComponent(`Growplex Order ${orderId}`)}`;
-
-  const handleProceedToCheckout = () => {
-    const orderCount = parseInt(localStorage.getItem('orderCount') || '0', 10);
-    if (!currentUser && orderCount >= 1) {
-      onClose();
-      navigate('/login', { state: { returnTo: '/services' } });
-      return;
-    }
-    setStep("checkout");
-  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -353,12 +240,6 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
     try {
       // 1. Save order to Firestore
       setUploadProgress("Creating order...");
-      let deviceId = localStorage.getItem('deviceId');
-      if (!deviceId) {
-        deviceId = 'device_' + Math.random().toString(36).substr(2, 9);
-        localStorage.setItem('deviceId', deviceId);
-      }
-
       const orderData = {
         orderId,
         customerName: formData.customerName,
@@ -373,16 +254,10 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
         paymentScreenshotUrl: screenshotPreview,
         orderStatus: "new",
         upiId: UPI_ID,
-        deviceId: deviceId,
-        userId: currentUser?.uid || null,
         createdAt: serverTimestamp(),
       };
 
       await addDoc(collection(db, "orders"), orderData);
-
-      // increment guest order count
-      const count = parseInt(localStorage.getItem('orderCount') || '0', 10);
-      localStorage.setItem('orderCount', (count + 1).toString());
 
       // 3. Send Telegram notification (fire-and-forget)
       setUploadProgress("Notifying admin...");
@@ -477,7 +352,7 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
                 </div>
 
                 <button 
-                  onClick={handleProceedToCheckout}
+                  onClick={() => setStep("checkout")}
                   className="w-full bg-brand-accent text-brand-primary font-bold py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-brand-accent-hover hover:shadow-[0_0_20px_rgba(232,184,75,0.4)] transition-all duration-300"
                 >
                   Proceed to Checkout
@@ -548,20 +423,10 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
                 </div>
 
                 <button 
-                  onClick={handleCashfreeCheckout}
-                  disabled={checkoutLoading}
-                  className="w-full mt-auto bg-brand-accent text-brand-primary font-bold py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-brand-accent-hover hover:shadow-[0_0_20px_rgba(232,184,75,0.4)] transition-all duration-300 disabled:opacity-50"
+                  onClick={proceedToPayment}
+                  className="w-full mt-auto bg-brand-accent text-brand-primary font-bold py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-brand-accent-hover hover:shadow-[0_0_20px_rgba(232,184,75,0.4)] transition-all duration-300"
                 >
-                  {checkoutLoading ? (
-                    <>
-                      <Loader2 className="animate-spin" size={20} />
-                      <span>{checkoutProgress || "Processing..."}</span>
-                    </>
-                  ) : (
-                    <>
-                      <IndianRupee size={20} /> Pay ₹{selectedPackage.price}
-                    </>
-                  )}
+                  <IndianRupee size={20} /> Pay ₹{selectedPackage.price}
                 </button>
               </motion.div>
             )}

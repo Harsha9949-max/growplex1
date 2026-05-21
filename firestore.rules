@@ -6,10 +6,6 @@ service cloud.firestore {
     // In a real production app, you MUST implement Firebase Authentication and restrict access 
     // to only authenticated admin users.
     
-    function isAdmin() {
-      return request.auth != null && (request.auth.token.email == "marateyh@gmail.com" || request.auth.token.email == "override@example.com");
-    }
-
     match /orders/{orderId} {
       allow read, write: if true;
     }
@@ -23,15 +19,7 @@ service cloud.firestore {
     // Services catalog
     match /services/{serviceId} {
       allow read: if true;
-      allow write: if isAdmin();
-    }
-    
-    match /adminActions/{docId} {
-      allow read, write: if isAdmin();
-    }
-    
-    match /manualOrders/{docId} {
-      allow read, write: if isAdmin();
+      allow write: if true;
     }
 
     // Users & other collections

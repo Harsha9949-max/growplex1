@@ -24,7 +24,7 @@ const STEPS = [
   {
     num: "03",
     icon: Rocket,
-    title: "Instant Delivery — Track Without Login",
+    title: "Fastest Possible Delivery — Track Without Login",
     desc: "Your order begins processing within seconds. You'll receive a unique order ID and tracking link via the confirmation page. Use it anytime to check progress — no account or login needed. Most services are delivered within minutes to 24 hours.",
     highlight: "Track with just your order ID."
   }
