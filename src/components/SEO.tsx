@@ -17,7 +17,7 @@ export function SEO({
   image = "https://growplex.sbs/og-image.png",
   schema,
 }: SEOProps) {
-  const fullTitle = `${title} | Growplex`;
+  const fullTitle = title.includes("Growplex") ? title : `${title} | Growplex`;
 
   return (
     <Helmet>
