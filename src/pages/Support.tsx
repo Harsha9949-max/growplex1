@@ -1,11 +1,11 @@
 import { ChevronDown, ChevronUp, Mail, MessageCircle, Send } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
-import { Helmet } from "react-helmet-async";
 import { Breadcrumbs } from "../components/Breadcrumbs";
 import { Footer } from "../components/Footer";
 import { Navbar } from "../components/Navbar";
 import { FAQSchema } from "../components/SchemaMarkup";
+import { SEO } from "../components/SEO";
 
 const FAQS = [
   { question: "Do I need to login or give my password to use Growplex?", answer: "Absolutely not! Growplex is a no-login SMM panel. You never need to create an account, share your social media password, or provide any login credentials. We only need the public URL of your profile or post to deliver the service. Your account security is our top priority." },
@@ -29,14 +29,11 @@ export default function Support() {
 
   return (
     <div className="min-h-screen bg-brand-primary text-text-main font-sans">
-      <Helmet>
-        <title>Contact Growplex – 24/7 Support for Cheap SMM Services</title>
-        <meta name="description" content="Get 24/7 priority support from Growplex. Browse our FAQ for answers about our no-login SMM panel, delivery times, refill warranty, and safe social media growth services." />
-        <link rel="canonical" href="https://growplex.sbs/support" />
-        <meta property="og:title" content="Contact Growplex – 24/7 Support for Cheap SMM Services" />
-        <meta property="og:description" content="24/7 human support for the cheapest SMM panel online. Get help with orders, refills, and more." />
-        <meta property="og:url" content="https://growplex.sbs/support" />
-      </Helmet>
+      <SEO 
+        title="Contact Growplex – 24/7 Support for Cheap SMM Services"
+        description="Get 24/7 priority support from Growplex. Browse our FAQ for answers about our no-login SMM panel, delivery times, refill warranty, and safe social media growth services."
+        url="https://growplex.sbs/support"
+      />
 
       <FAQSchema faqs={FAQS} />
       

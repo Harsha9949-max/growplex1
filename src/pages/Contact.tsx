@@ -1,19 +1,17 @@
 import { Facebook, Instagram, Mail, MessageCircle, Youtube } from "lucide-react";
-import { Helmet } from "react-helmet-async";
 import { Breadcrumbs } from "../components/Breadcrumbs";
 import { Footer } from "../components/Footer";
 import { Navbar } from "../components/Navbar";
+import { SEO } from "../components/SEO";
 
 export default function Contact() {
   return (
     <div className="min-h-screen bg-brand-primary text-text-main font-sans">
-      <Helmet>
-        <title>Contact Growplex – 24/7 Support for Cheap SMM Services</title>
-        <meta name="description" content="Contact Growplex by HVRS Innovations. Get 24/7 support via email, live chat, or Telegram. We're here to help with orders, refills, and any questions about our no-login SMM panel." />
-        <link rel="canonical" href="https://growplex.sbs/contact" />
-        <meta property="og:title" content="Contact Growplex – 24/7 Support" />
-        <meta property="og:url" content="https://growplex.sbs/contact" />
-      </Helmet>
+      <SEO 
+        title="Contact Growplex – 24/7 Support for Cheap SMM Services"
+        description="Contact Growplex by HVRS Innovations. Get 24/7 support via email, live chat, or Telegram. We're here to help with orders, refills, and any questions about our no-login SMM panel."
+        url="https://growplex.sbs/contact"
+      />
 
       <Navbar />
       <Breadcrumbs />

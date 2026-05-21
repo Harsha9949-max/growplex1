@@ -1,20 +1,18 @@
 import { Heart, Lock, ShieldCheck, Target } from "lucide-react";
-import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import { Breadcrumbs } from "../components/Breadcrumbs";
 import { Footer } from "../components/Footer";
 import { Navbar } from "../components/Navbar";
+import { SEO } from "../components/SEO";
 
 export default function About() {
   return (
     <div className="min-h-screen bg-brand-primary text-text-main font-sans">
-      <Helmet>
-        <title>About Growplex – HVRS Innovations | Safest No-Login SMM Panel</title>
-        <meta name="description" content="Growplex is a product of HVRS Innovations. Learn about our mission to make social media growth affordable, instant, and safe — without ever requiring your password." />
-        <link rel="canonical" href="https://growplex.sbs/about" />
-        <meta property="og:title" content="About Growplex – HVRS Innovations" />
-        <meta property="og:url" content="https://growplex.sbs/about" />
-      </Helmet>
+      <SEO 
+        title="About Growplex – HVRS Innovations | Safest No-Login SMM Panel"
+        description="Growplex is a product of HVRS Innovations. Learn about our mission to make social media growth affordable, instant, and safe — without ever requiring your password."
+        url="https://growplex.sbs/about"
+      />
 
       <Navbar />
       <Breadcrumbs />

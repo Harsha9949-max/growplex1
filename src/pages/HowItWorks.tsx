@@ -1,10 +1,10 @@
 import { ArrowRight, CreditCard, Link as LinkIcon, Lock, Rocket, ShieldCheck } from "lucide-react";
-import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import { Breadcrumbs } from "../components/Breadcrumbs";
 import { Footer } from "../components/Footer";
 import { Navbar } from "../components/Navbar";
 import { HowToSchema } from "../components/SchemaMarkup";
+import { SEO } from "../components/SEO";
 
 const STEPS = [
   {
@@ -33,13 +33,12 @@ const STEPS = [
 export default function HowItWorks() {
   return (
     <div className="min-h-screen bg-brand-primary text-text-main font-sans">
-      <Helmet>
-        <title>How Growplex Works – Order SMM Services in 60 Seconds Without Login</title>
-        <meta name="description" content="Learn how Growplex works in 3 simple steps. Paste your link, pay securely, and get instant delivery. No login, no password, no account needed. The easiest SMM panel ever." />
-        <link rel="canonical" href="https://growplex.sbs/how-it-works" />
-        <meta property="og:title" content="How Growplex Works – 3 Steps, No Login" />
-        <meta property="og:url" content="https://growplex.sbs/how-it-works" />
-      </Helmet>
+      <SEO 
+        title="How Growplex Works – Order SMM Services in 60 Seconds Without Login"
+        description="Learn how Growplex works in 3 simple steps. Paste your link, pay securely, and get instant delivery. No login, no password, no account needed. The easiest SMM panel ever."
+        keywords="how SMM panel works, buy Instagram followers easily, Indian SMM panel process"
+        url="https://growplex.sbs/how-it-works"
+      />
 
       <HowToSchema />
 

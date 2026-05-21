@@ -1,9 +1,9 @@
 import { ArrowRight, Clock } from "lucide-react";
-import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import { Breadcrumbs } from "../components/Breadcrumbs";
 import { Footer } from "../components/Footer";
 import { Navbar } from "../components/Navbar";
+import { SEO } from "../components/SEO";
 
 export const BLOG_POSTS = [
   {
@@ -51,13 +51,11 @@ export const BLOG_POSTS = [
 export default function Blog() {
   return (
     <div className="min-h-screen bg-brand-primary text-text-main font-sans">
-      <Helmet>
-        <title>Blog – Social Media Growth Tips & SMM Guides | Growplex</title>
-        <meta name="description" content="Read Growplex's blog for expert tips on social media growth, SMM panel guides, safety advice, and pricing comparisons. Grow smarter with no login needed." />
-        <link rel="canonical" href="https://growplex.sbs/blog" />
-        <meta property="og:title" content="Blog – Social Media Growth Tips & SMM Guides | Growplex" />
-        <meta property="og:url" content="https://growplex.sbs/blog" />
-      </Helmet>
+      <SEO 
+        title="Blog – Social Media Growth Tips & SMM Guides"
+        description="Read Growplex's blog for expert tips on social media growth, SMM panel guides, safety advice, and pricing comparisons. Grow smarter with no login needed."
+        url="https://growplex.sbs/blog"
+      />
 
       <Navbar />
       <Breadcrumbs />

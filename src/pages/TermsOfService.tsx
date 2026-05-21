@@ -1,16 +1,16 @@
-import { Helmet } from "react-helmet-async";
 import { Breadcrumbs } from "../components/Breadcrumbs";
 import { Footer } from "../components/Footer";
 import { Navbar } from "../components/Navbar";
+import { SEO } from "../components/SEO";
 
 export default function TermsOfService() {
   return (
     <div className="min-h-screen bg-brand-primary text-text-main font-sans">
-      <Helmet>
-        <title>Terms of Service | Growplex by HVRS Innovations</title>
-        <meta name="description" content="Read Growplex's terms of service. Understand our acceptable use policy, delivery guarantees, refund and refill policies, and liability terms." />
-        <link rel="canonical" href="https://growplex.sbs/terms-of-service" />
-      </Helmet>
+      <SEO 
+        title="Terms of Service | Growplex by HVRS Innovations"
+        description="Read Growplex's terms of service. Understand our acceptable use policy, delivery guarantees, refund and refill policies, and liability terms."
+        url="https://growplex.sbs/terms-of-service"
+      />
 
       <Navbar />
       <Breadcrumbs />

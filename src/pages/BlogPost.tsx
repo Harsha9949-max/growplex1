@@ -1,10 +1,10 @@
 import { ArrowLeft, ArrowRight, Clock } from "lucide-react";
-import { Helmet } from "react-helmet-async";
 import { Link, useParams } from "react-router-dom";
 import { Breadcrumbs } from "../components/Breadcrumbs";
 import { Footer } from "../components/Footer";
 import { Navbar } from "../components/Navbar";
 import { ArticleSchema } from "../components/SchemaMarkup";
+import { SEO } from "../components/SEO";
 import { BLOG_POSTS } from "./Blog";
 
 const BLOG_CONTENT: Record<string, string> = {
@@ -238,18 +238,11 @@ export default function BlogPost() {
 
   return (
     <div className="min-h-screen bg-brand-primary text-text-main font-sans">
-      <Helmet>
-        <title>{post.title} | Growplex Blog</title>
-        <meta name="description" content={post.excerpt} />
-        <link rel="canonical" href={`https://growplex.sbs/blog/${post.slug}`} />
-        <meta property="og:title" content={`${post.title} | Growplex Blog`} />
-        <meta property="og:description" content={post.excerpt} />
-        <meta property="og:url" content={`https://growplex.sbs/blog/${post.slug}`} />
-        <meta property="og:type" content="article" />
-        <meta property="og:image" content="https://growplex.sbs/og-image.png" />
-        <meta property="article:published_time" content={post.date} />
-        <meta property="article:author" content="Growplex" />
-      </Helmet>
+      <SEO 
+        title={`${post.title} | Growplex Blog`}
+        description={post.excerpt}
+        url={`https://growplex.sbs/blog/${post.slug}`}
+      />
 
       <ArticleSchema
         title={post.title}

@@ -1,16 +1,16 @@
-import { Helmet } from "react-helmet-async";
 import { Breadcrumbs } from "../components/Breadcrumbs";
 import { Footer } from "../components/Footer";
 import { Navbar } from "../components/Navbar";
+import { SEO } from "../components/SEO";
 
 export default function PrivacyPolicy() {
   return (
     <div className="min-h-screen bg-brand-primary text-text-main font-sans">
-      <Helmet>
-        <title>Privacy Policy | Growplex by HVRS Innovations</title>
-        <meta name="description" content="Read Growplex's privacy policy. We never collect passwords. Learn what minimal data we collect and how we protect your privacy. GDPR & CCPA compliant." />
-        <link rel="canonical" href="https://growplex.sbs/privacy-policy" />
-      </Helmet>
+      <SEO 
+        title="Privacy Policy | Growplex by HVRS Innovations"
+        description="Read Growplex's privacy policy. We never collect passwords. Learn what minimal data we collect and how we protect your privacy. DPDP Act & GDPR compliant."
+        url="https://growplex.sbs/privacy-policy"
+      />
 
       <Navbar />
       <Breadcrumbs />

@@ -1,16 +1,16 @@
-import { Helmet } from "react-helmet-async";
 import { Breadcrumbs } from "../components/Breadcrumbs";
 import { Footer } from "../components/Footer";
 import { Navbar } from "../components/Navbar";
+import { SEO } from "../components/SEO";
 
 export default function RefundPolicy() {
   return (
     <div className="min-h-screen bg-brand-primary text-text-main font-sans">
-      <Helmet>
-        <title>Refund & Refill Policy | Growplex by HVRS Innovations</title>
-        <meta name="description" content="Growplex's refund and refill policy. 30-day refill guarantee on all services. Full refund for undelivered orders. No questions asked." />
-        <link rel="canonical" href="https://growplex.sbs/refund-policy" />
-      </Helmet>
+      <SEO 
+        title="Refund & Refill Policy | Growplex by HVRS Innovations"
+        description="Growplex's refund and refill policy. 30-day refill guarantee on all services. Full refund for undelivered orders. No questions asked."
+        url="https://growplex.sbs/refund-policy"
+      />
 
       <Navbar />
       <Breadcrumbs />
