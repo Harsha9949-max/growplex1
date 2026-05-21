@@ -1,12 +1,12 @@
 import { ArrowRight, Check, Instagram, Lock, Send, Youtube } from "lucide-react";
 import { motion } from "motion/react";
-import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import { Breadcrumbs } from "../components/Breadcrumbs";
 import { Footer } from "../components/Footer";
 import { Navbar } from "../components/Navbar";
 import { useServices } from "../hooks/useServices";
 import { useMemo } from "react";
+import { SEO } from "../components/SEO";
 
 const FALLBACK_FEATURED = [
   { id: 1, name: "Instagram Followers", qty: "1000 Followers", price: "₹69", time: "1–24 hours", icon: Instagram, popular: true },
@@ -61,14 +61,12 @@ export default function Pricing() {
 
   return (
     <div className="min-h-screen bg-brand-primary text-text-main font-sans">
-      <Helmet>
-        <title>Cheapest SMM Panel Pricing – No Login Required | Growplex</title>
-        <meta name="description" content="View Growplex's unbeatable pricing for Instagram, YouTube, Telegram & more. Starting from ₹10. No login, no password, instant delivery. Cheapest price guarantee!" />
-        <link rel="canonical" href="https://growplex.sbs/pricing" />
-        <meta property="og:title" content="Cheapest SMM Panel Pricing – No Login Required | Growplex" />
-        <meta property="og:description" content="Starting from ₹10. The cheapest SMM services online with no login required." />
-        <meta property="og:url" content="https://growplex.sbs/pricing" />
-      </Helmet>
+      <SEO 
+        title="Cheapest SMM Panel Pricing – No Login Required"
+        description="View Growplex's unbeatable pricing for Instagram, YouTube, Telegram & more. Starting from ₹10. No login, no password, instant delivery. Cheapest price guarantee!"
+        url="https://growplex.sbs/pricing"
+        keywords="cheapest SMM panel, SMM reseller pricing, India SMM panel, cheap Instagram followers"
+      />
       
       <Navbar />
       <Breadcrumbs />

@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import React, { useEffect, useMemo, useState } from "react";
-import { Helmet } from "react-helmet-async";
+import { SEO } from "../components/SEO";
 import { Breadcrumbs } from "../components/Breadcrumbs";
 import { Footer } from "../components/Footer";
 import { Navbar } from "../components/Navbar";
@@ -289,14 +289,33 @@ export default function Services() {
 
   return (
     <div className="min-h-screen bg-brand-primary text-text-main font-sans selection:bg-brand-accent selection:text-brand-primary">
-      <Helmet>
-        <title>Buy Social Media Services – Instant & No Password Needed | Growplex</title>
-        <meta name="description" content="Browse Growplex's complete catalog of cheap SMM services. Buy Instagram followers, YouTube subscribers, Telegram members & more. No login required. Instant delivery guaranteed." />
-        <link rel="canonical" href="https://growplex.sbs/services" />
-        <meta property="og:title" content="Buy Social Media Services – No Login Required | Growplex" />
-        <meta property="og:description" content="The cheapest SMM services online. Instagram, YouTube, Telegram — instant delivery, no password needed." />
-        <meta property="og:url" content="https://growplex.sbs/services" />
-      </Helmet>
+      <SEO 
+        title="Buy Social Media Services – Instant & No Password Needed"
+        description="Browse Growplex's complete catalog of cheap SMM services. Buy Instagram followers, YouTube subscribers, Telegram members & more. No login required. Instant delivery guaranteed."
+        url="https://growplex.sbs/services"
+        schema={JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "ItemList",
+          "itemListElement": filteredServices.slice(0, 5).map((service, index) => ({
+            "@type": "ListItem",
+            "position": index + 1,
+            "item": {
+              "@type": "Service",
+              "name": service.name,
+              "provider": {
+                "@type": "Organization",
+                "name": "Growplex"
+              },
+              "offers": {
+                "@type": "Offer",
+                "priceCurrency": "INR",
+                "price": service.packages[0]?.price || 0,
+                "availability": "https://schema.org/InStock"
+              }
+            }
+          }))
+        })}
+      />
 
       <Navbar />
       <Breadcrumbs />

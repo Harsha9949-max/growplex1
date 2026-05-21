@@ -7,6 +7,20 @@ async function startServer() {
   const app = express();
   const PORT = process.env.PORT || 3000;
 
+  // Global Security & Cache Headers
+  app.use((req, res, next) => {
+    // HSTS enforcement for HTTPS
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+    
+    // Cache headers for static assets
+    if (req.path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    } else {
+      res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+    }
+    next();
+  });
+
   // Dynamic routes removed; using static files in /public directory instead.
 
   app.use(express.json());

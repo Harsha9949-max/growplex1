@@ -1,12 +1,12 @@
 import { ArrowRight, ChevronDown, ChevronUp } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
-import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import { Breadcrumbs } from "../components/Breadcrumbs";
 import { Footer } from "../components/Footer";
 import { Navbar } from "../components/Navbar";
 import { FAQSchema } from "../components/SchemaMarkup";
+import { SEO } from "../components/SEO";
 
 const FAQ_CATEGORIES = [
   {
@@ -18,11 +18,11 @@ const FAQ_CATEGORIES = [
     ]
   },
   {
-    title: "Safety & Security",
+    title: "Safety & Compliance",
     faqs: [
       { question: "Is Growplex safe to use? Will my account get banned?", answer: "Yes, Growplex is completely safe. Since we never ask for your password or access your account directly, there is zero risk of account compromise. Our services use gradual delivery that mimics organic growth patterns, keeping your account safe from platform flags." },
-      { question: "Why is no-login safer than traditional SMM panels?", answer: "Traditional SMM panels ask you to create an account and sometimes share your Instagram/YouTube password. This puts your social media accounts at risk of theft, unauthorized access, and data breaches. Growplex eliminates this entirely — we only need your public profile URL. Your credentials are never shared with anyone." },
-      { question: "Are my payments secure?", answer: "Absolutely. All payments are processed through Razorpay, which is PCI-DSS Level 1 certified — the highest level of payment security. We support UPI, credit/debit cards, net banking, and wallets. We never store your payment information on our servers." }
+      { question: "Is Growplex compliant with the DPDP Act 2023?", answer: "Yes. In compliance with the Digital Personal Data Protection (DPDP) Act 2023, we only collect the minimum required data (such as order email and public URLs for delivery) under explicit consent. You can request deletion of your session data at any time by contacting our support." },
+      { question: "Are my payments secure?", answer: "Absolutely. All payments are processed through RBI-approved gateways like Razorpay, which is PCI-DSS Level 1 certified. We support UPI, credit/debit cards, net banking, and wallets. We never store your payment information on our servers." }
     ]
   },
   {
@@ -54,13 +54,12 @@ export default function FAQ() {
 
   return (
     <div className="min-h-screen bg-brand-primary text-text-main font-sans">
-      <Helmet>
-        <title>SMM Panel FAQ – No-Login Answers | Growplex</title>
-        <meta name="description" content="Find answers to all your questions about Growplex, the cheapest no-login SMM panel. Learn about safety, delivery, refills, pricing, and more." />
-        <link rel="canonical" href="https://growplex.sbs/faq" />
-        <meta property="og:title" content="SMM Panel FAQ – No-Login Answers | Growplex" />
-        <meta property="og:url" content="https://growplex.sbs/faq" />
-      </Helmet>
+      <SEO 
+        title="SMM Panel FAQ – No-Login Answers"
+        description="Find answers to all your questions about Growplex, the cheapest no-login SMM panel. Learn about safety, delivery, refills, pricing, and DPDP Act compliance."
+        keywords="SMM panel FAQ, cheapest SMM panel India, DPDP Act 2023 compliant SMM, SMM panel answers"
+        url="https://growplex.sbs/faq"
+      />
 
       <FAQSchema faqs={ALL_FAQS} />
 

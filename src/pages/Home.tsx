@@ -1,3 +1,5 @@
+import { useMemo } from "react";
+import { Link } from "react-router-dom";
 import {
   ArrowRight,
   Check,
@@ -11,15 +13,13 @@ import {
   Zap
 } from "lucide-react";
 import { motion } from "motion/react";
-import { Helmet } from "react-helmet-async";
-import { Link } from "react-router-dom";
 import { Footer } from "../components/Footer";
 import { Navbar } from "../components/Navbar";
 import { OfferBanners } from "../components/OfferBanners";
 import { AggregateRatingSchema } from "../components/SchemaMarkup";
+import { SEO } from "../components/SEO";
 import { SocialProofTicker } from "../components/SocialProofTicker";
 import { useServices } from "../hooks/useServices";
-import { useMemo } from "react";
 
 const TRUST_BADGES = [
   { icon: Lock, title: "No Login Required", desc: "Order without creating an account or giving any password." },
@@ -100,16 +100,22 @@ export default function Home() {
   }, [services, loading]);
   return (
     <div className="min-h-screen bg-brand-primary text-text-main font-sans selection:bg-brand-accent selection:text-brand-primary">
-      <Helmet>
-        <title>Growplex – Cheapest SMM Panel Without Login | Instant Social Media Growth</title>
-        <meta name="description" content="Growplex is the cheapest SMM panel with NO LOGIN required. Get instant Instagram followers, likes, YouTube views & more. Start in seconds without password. Best prices guaranteed!" />
-        <link rel="canonical" href="https://growplex.sbs/" />
-        <meta property="og:title" content="Growplex – Cheapest SMM Panel Without Login | Instant Social Media Growth" />
-        <meta property="og:description" content="No login. No password. The cheapest SMM panel for Instagram, YouTube, Telegram & more. Instant delivery guaranteed." />
-        <meta property="og:url" content="https://growplex.sbs/" />
-        <meta property="og:type" content="website" />
-        <meta property="og:image" content="https://growplex.sbs/og-image.png" />
-      </Helmet>
+      <SEO 
+        title="Cheapest SMM Panel Without Login | Instant Social Media Growth"
+        description="Growplex is the cheapest SMM panel with NO LOGIN required. Get instant Instagram followers, likes, YouTube views & more. Start in seconds without password. Best prices guaranteed!"
+        keywords="SMM panel India, cheap Instagram followers panel, resell SMM services, Growplex SMM panel, SMM panel UPI payment, Telugu SMM panel, best SMM panel"
+        schema={JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          "name": "Growplex",
+          "url": "https://growplex.sbs",
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://growplex.sbs/services?q={search_term_string}",
+            "query-input": "required name=search_term_string"
+          }
+        })}
+      />
 
       <AggregateRatingSchema ratingValue={4.9} reviewCount={2847} />
 
