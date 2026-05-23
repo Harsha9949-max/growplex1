@@ -22,7 +22,8 @@ import {
   X,
   CreditCard,
   Check,
-  PowerOff
+  PowerOff,
+  Shield
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
