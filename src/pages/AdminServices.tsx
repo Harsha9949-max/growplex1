@@ -329,18 +329,18 @@ export default function AdminServices() {
     }
   };
 
-  const handleDeactivateSyncedServices = async () => {
-    const syncedServices = services.filter(s => s.type === "synced" && s.isActive);
+  const handleRemoveSyncedServices = async () => {
+    const syncedServices = services.filter(s => s.type === "synced");
     if (syncedServices.length === 0) {
-       toast.error("No active synced services found to deactivate");
+       toast.error("No synced services found to remove");
        return;
     }
     
-    if (!window.confirm(`Are you sure you want to deactivate all ${syncedServices.length} active synced services?`)) {
+    if (!window.confirm(`Are you sure you want to permanently remove all ${syncedServices.length} synced services? This action cannot be undone.`)) {
        return;
     }
 
-    toast.loading("Deactivating synced services...", { id: "deactivate-sync" });
+    toast.loading("Removing synced services...", { id: "remove-sync" });
     try {
        // Firestore batches support up to 500 operations. We need to chunk if there are more.
        const chunkArray = (arr: any[], size: number) =>
@@ -353,15 +353,15 @@ export default function AdminServices() {
        for (const chunk of chunks) {
           const batch = writeBatch(db);
           for (const srv of chunk) {
-             batch.update(doc(db, "services", srv.id), { isActive: false });
+             batch.delete(doc(db, "services", srv.id));
           }
           await batch.commit();
        }
        
-       toast.success(`Successfully deactivated ${syncedServices.length} synced services.`, { id: "deactivate-sync" });
+       toast.success(`Successfully removed ${syncedServices.length} synced services.`, { id: "remove-sync" });
     } catch (error: any) {
-       console.error("Deactivate synced services failed:", error);
-       toast.error(error.message || "Failed to deactivate synced services", { id: "deactivate-sync" });
+       console.error("Remove synced services failed:", error);
+       toast.error(error.message || "Failed to remove synced services", { id: "remove-sync" });
     }
   };
 
@@ -527,11 +527,11 @@ export default function AdminServices() {
                 <RefreshCw size={18} /> API Sync
               </button>
               <button
-                onClick={handleDeactivateSyncedServices}
+                onClick={handleRemoveSyncedServices}
                 className="bg-brand-surface border border-red-500/50 text-red-500 hover:bg-red-500/10 py-2 px-4 rounded-xl font-medium flex items-center gap-2 transition-all"
-                title="Deactivate all Synced Services"
+                title="Remove all Synced Services permanently"
               >
-                <PowerOff size={18} /> Deactivate Synced
+                <Trash2 size={18} /> Remove Synced
               </button>
               {services.length === 0 && !loading && (
                 <button
