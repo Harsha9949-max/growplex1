@@ -21,7 +21,8 @@ import {
   TrendingUp,
   X,
   CreditCard,
-  Shield
+  Check,
+  PowerOff
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
@@ -328,18 +329,18 @@ export default function AdminServices() {
     }
   };
 
-  const handleRemoveSyncedServices = async () => {
-    const syncedServices = services.filter(s => s.type === "synced");
+  const handleDeactivateSyncedServices = async () => {
+    const syncedServices = services.filter(s => s.type === "synced" && s.isActive);
     if (syncedServices.length === 0) {
-       toast.error("No synced services found to remove");
+       toast.error("No active synced services found to deactivate");
        return;
     }
     
-    if (!window.confirm(`Are you sure you want to remove all ${syncedServices.length} synced services? This action cannot be undone.`)) {
+    if (!window.confirm(`Are you sure you want to deactivate all ${syncedServices.length} active synced services?`)) {
        return;
     }
 
-    toast.loading("Removing synced services...", { id: "remove-sync" });
+    toast.loading("Deactivating synced services...", { id: "deactivate-sync" });
     try {
        // Firestore batches support up to 500 operations. We need to chunk if there are more.
        const chunkArray = (arr: any[], size: number) =>
@@ -352,15 +353,15 @@ export default function AdminServices() {
        for (const chunk of chunks) {
           const batch = writeBatch(db);
           for (const srv of chunk) {
-             batch.delete(doc(db, "services", srv.id));
+             batch.update(doc(db, "services", srv.id), { isActive: false });
           }
           await batch.commit();
        }
        
-       toast.success(`Successfully removed ${syncedServices.length} synced services.`, { id: "remove-sync" });
+       toast.success(`Successfully deactivated ${syncedServices.length} synced services.`, { id: "deactivate-sync" });
     } catch (error: any) {
-       console.error("Remove synced services failed:", error);
-       toast.error(error.message || "Failed to remove synced services", { id: "remove-sync" });
+       console.error("Deactivate synced services failed:", error);
+       toast.error(error.message || "Failed to deactivate synced services", { id: "deactivate-sync" });
     }
   };
 
@@ -526,11 +527,11 @@ export default function AdminServices() {
                 <RefreshCw size={18} /> API Sync
               </button>
               <button
-                onClick={handleRemoveSyncedServices}
+                onClick={handleDeactivateSyncedServices}
                 className="bg-brand-surface border border-red-500/50 text-red-500 hover:bg-red-500/10 py-2 px-4 rounded-xl font-medium flex items-center gap-2 transition-all"
-                title="Remove all Synced Services"
+                title="Deactivate all Synced Services"
               >
-                <Trash2 size={18} /> Remove Synced
+                <PowerOff size={18} /> Deactivate Synced
               </button>
               {services.length === 0 && !loading && (
                 <button
