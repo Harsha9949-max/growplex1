@@ -35,10 +35,15 @@ async function startServer() {
         return res.status(400).json({ error: 'Minimum amount is 100 paise' });
       }
 
+      if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+        console.error("Razorpay keys not found in environment variables");
+        return res.status(500).json({ error: 'Razorpay keys not configured' });
+      }
+
       const Razorpay = (await import('razorpay')).default;
       const razorpay = new Razorpay({
-        key_id: process.env.RAZORPAY_KEY_ID || '',
-        key_secret: process.env.RAZORPAY_KEY_SECRET || '',
+        key_id: process.env.RAZORPAY_KEY_ID,
+        key_secret: process.env.RAZORPAY_KEY_SECRET,
       });
       console.log("Creating Razorpay order with key:", process.env.RAZORPAY_KEY_ID);
 

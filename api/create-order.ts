@@ -11,13 +11,9 @@ export default async function handler(req: any, res: any) {
     const { amount, currency, receipt } = req.body;
 
     if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-      console.warn("Razorpay keys not found, using mock order.");
-      return res.status(200).json({
-        id: "mock_order_" + Date.now(),
-        amount: amount,
-        currency: currency || "INR",
-        receipt,
-        key_id: "rzp_test_mockkey"
+      console.error("Razorpay keys not found in environment variables");
+      return res.status(500).json({
+        error: "Razorpay keys not configured. Please add RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in Vercel Environment Variables."
       });
     }
 
