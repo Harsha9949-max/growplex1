@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import path from 'path';
 import crypto from 'crypto';
@@ -39,6 +40,7 @@ async function startServer() {
         key_id: process.env.RAZORPAY_KEY_ID || '',
         key_secret: process.env.RAZORPAY_KEY_SECRET || '',
       });
+      console.log("Creating Razorpay order with key:", process.env.RAZORPAY_KEY_ID);
 
       const order = await razorpay.orders.create({
         amount, // amount in paise
@@ -49,7 +51,8 @@ async function startServer() {
       res.status(200).json({
         order_id: order.id,
         amount: order.amount,
-        currency: order.currency
+        currency: order.currency,
+        key_id: process.env.RAZORPAY_KEY_ID
       });
     } catch (error: any) {
       console.error('Create order error:', error);

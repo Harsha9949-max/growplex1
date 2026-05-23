@@ -227,27 +227,32 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
 
     // Instead of setting step to "payment", launch Razorpay
     try {
+      console.log("Initiating payment...");
       setLoading(true);
       setError(null);
 
       // Create order
+      console.log("Fetching /api/create-order...");
       const orderResponse = await fetch("/api/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          amount: selectedPackage.price * 100, // paise
+          amount: Math.round(selectedPackage.price * 100), // paise
           currency: "INR",
           receipt: orderId
         })
       });
 
       const orderData = await orderResponse.json();
+      console.log("Create order response:", orderData);
+      
       if (!orderResponse.ok) {
         throw new Error(orderData.error || "Failed to create order");
       }
 
+      console.log("Setting up Razorpay options..");
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID || "",
+        key: orderData.key_id,
         amount: orderData.amount,
         currency: orderData.currency,
         name: "Growplex",
@@ -315,9 +320,31 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
         },
         theme: {
           color: "#E8B84B"
+        },
+        modal: {
+          ondismiss: function() {
+            setLoading(false);
+            console.log("Checkout form closed");
+          }
         }
       };
 
+      // Ensure script is loaded
+      if (!(window as any).Razorpay) {
+        console.log("Loading Razorpay script dynamically...");
+        await new Promise((resolve, reject) => {
+          const script = document.createElement("script");
+          script.src = "https://checkout.razorpay.com/v1/checkout.js";
+          script.onload = resolve;
+          script.onerror = reject;
+          document.body.appendChild(script);
+        });
+      }
+
+      if (!(window as any).Razorpay) {
+        throw new Error("Razorpay SDK not loaded. Please disable adblockers and try again.");
+      }
+      
       const rzp = new (window as any).Razorpay(options);
       rzp.on('payment.failed', function (response: any) {
         setError(response.error.description || "Payment failed");
@@ -325,8 +352,8 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
       });
       rzp.open();
     } catch (err: any) {
-      console.error(err);
-      setError(err.message || "Failed to initiate payment");
+      console.error('Full payment error logic:', err);
+      setError(err.message || "Failed to initiate payment. Please try again.");
       setLoading(false);
     }
   };
