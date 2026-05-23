@@ -14,7 +14,7 @@ export default async function handler(req: any, res: any) {
       console.warn("Razorpay keys not found, using mock order.");
       return res.status(200).json({
         id: "mock_order_" + Date.now(),
-        amount: amount * 100,
+        amount: amount,
         currency: currency || "INR",
         receipt,
         key_id: "rzp_test_mockkey"
@@ -27,12 +27,18 @@ export default async function handler(req: any, res: any) {
     });
 
     const order = await razorpay.orders.create({
-      amount: amount * 100,
+      amount: amount,
       currency: currency || "INR",
       receipt,
     });
 
-    res.status(200).json({ ...order, key_id: process.env.RAZORPAY_KEY_ID });
+    // Remap id to order_id for consistency with the prompt instructions
+    res.status(200).json({ 
+      order_id: order.id, 
+      amount: order.amount, 
+      currency: order.currency,
+      key_id: process.env.RAZORPAY_KEY_ID 
+    });
   } catch (error) {
     console.error("Create order error:", error);
     res.status(500).json({

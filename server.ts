@@ -1,5 +1,6 @@
 import express from 'express';
 import path from 'path';
+import crypto from 'crypto';
 
 import { createServer as createViteServer } from 'vite';
 
@@ -24,6 +25,60 @@ async function startServer() {
   // Dynamic routes removed; using static files in /public directory instead.
 
   app.use(express.json());
+
+  // Razorpay Integration
+  app.post('/api/create-order', async (req, res) => {
+    try {
+      const { amount, currency, receipt } = req.body;
+      if (!amount || amount < 100) {
+        return res.status(400).json({ error: 'Minimum amount is 100 paise' });
+      }
+
+      const Razorpay = (await import('razorpay')).default;
+      const razorpay = new Razorpay({
+        key_id: process.env.RAZORPAY_KEY_ID || '',
+        key_secret: process.env.RAZORPAY_KEY_SECRET || '',
+      });
+
+      const order = await razorpay.orders.create({
+        amount, // amount in paise
+        currency: currency || 'INR',
+        receipt: receipt || `receipt_${Date.now()}`
+      });
+
+      res.status(200).json({
+        order_id: order.id,
+        amount: order.amount,
+        currency: order.currency
+      });
+    } catch (error: any) {
+      console.error('Create order error:', error);
+      res.status(500).json({ error: error.message || 'Order creation failed' });
+    }
+  });
+
+  app.post('/api/verify-payment', (req, res) => {
+    try {
+      const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
+      
+      if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature) {
+        return res.status(400).json({ error: 'Missing required fields' });
+      }
+
+      const text = `${razorpay_order_id}|${razorpay_payment_id}`;
+      const secret = process.env.RAZORPAY_KEY_SECRET || '';
+      const generated_signature = crypto.createHmac('sha256', secret).update(text).digest('hex');
+
+      if (generated_signature === razorpay_signature) {
+        res.status(200).json({ success: true, message: 'Payment verified successfully' });
+      } else {
+        res.status(400).json({ error: 'Signature mismatch' });
+      }
+    } catch (error: any) {
+      console.error('Verify payment error:', error);
+      res.status(500).json({ error: error.message || 'Verification failed' });
+    }
+  });
 
   const handleTelegramMessage = async (message: any) => {
     if (message && message.text === '/start') {

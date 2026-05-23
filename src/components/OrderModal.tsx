@@ -203,7 +203,7 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
     setTimeout(() => setUpiCopied(false), 2000);
   }, []);
 
-  const proceedToPayment = () => {
+  const proceedToPayment = async () => {
     setError(null);
 
     // Easter Egg Backdoor to Admin Panel
@@ -225,62 +225,114 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
       return;
     }
 
-    setStep("payment");
+    // Instead of setting step to "payment", launch Razorpay
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Create order
+      const orderResponse = await fetch("/api/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: selectedPackage.price * 100, // paise
+          currency: "INR",
+          receipt: orderId
+        })
+      });
+
+      const orderData = await orderResponse.json();
+      if (!orderResponse.ok) {
+        throw new Error(orderData.error || "Failed to create order");
+      }
+
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || "",
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "Growplex",
+        description: `${selectedPackage.quantity} ${service.name}`,
+        order_id: orderData.order_id,
+        handler: async function(response: any) {
+          try {
+            setLoading(true);
+            setUploadProgress("Verifying payment...");
+            const verifyRes = await fetch("/api/verify-payment", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature
+              })
+            });
+
+            const verifyData = await verifyRes.json();
+            if (!verifyRes.ok) {
+              throw new Error(verifyData.error || "Payment verification failed");
+            }
+
+            // Save to Firestore
+            setUploadProgress("Completing order...");
+            const dbOrderData = {
+              orderId: orderData.order_id,
+              customerName: formData.customerName,
+              phone: formData.phone,
+              serviceLink: formData.serviceLink,
+              serviceName: service.name,
+              serviceCategory: service.category,
+              packageQuantity: selectedPackage.quantity,
+              price: selectedPackage.price,
+              paymentId: response.razorpay_payment_id,
+              paymentStatus: "paid",
+              orderStatus: "new",
+              createdAt: serverTimestamp(),
+            };
+
+            await addDoc(collection(db, "orders"), dbOrderData);
+
+            // Send Telegram notification
+            sendTelegramNotification({
+              orderId: orderData.order_id,
+              customerName: formData.customerName,
+              phone: formData.phone,
+              serviceName: service.name,
+              packageQuantity: selectedPackage.quantity,
+              price: selectedPackage.price,
+              serviceLink: formData.serviceLink,
+            });
+
+            navigate("/success", { state: { orderId: orderData.order_id } });
+          } catch (err: any) {
+             console.error("Verification error:", err);
+             setError(err.message || "Payment verification failed");
+             setLoading(false);
+          }
+        },
+        prefill: {
+          name: formData.customerName,
+          contact: formData.phone
+        },
+        theme: {
+          color: "#E8B84B"
+        }
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.on('payment.failed', function (response: any) {
+        setError(response.error.description || "Payment failed");
+        setLoading(false);
+      });
+      rzp.open();
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "Failed to initiate payment");
+      setLoading(false);
+    }
   };
 
   const submitOrder = async () => {
-    if (!screenshotPreview) {
-      setError("Please upload your payment screenshot");
-      return;
-    }
-
-    setError(null);
-    setLoading(true);
-
-    try {
-      // 1. Save order to Firestore
-      setUploadProgress("Creating order...");
-      const orderData = {
-        orderId,
-        customerName: formData.customerName,
-        phone: formData.phone,
-        serviceLink: formData.serviceLink,
-        serviceName: service.name,
-        serviceCategory: service.category,
-        packageQuantity: selectedPackage.quantity,
-        price: selectedPackage.price,
-        paymentId: `upi_${orderId}`,
-        paymentStatus: "pending_verification",
-        paymentScreenshotUrl: screenshotPreview,
-        orderStatus: "new",
-        upiId: UPI_ID,
-        createdAt: serverTimestamp(),
-      };
-
-      await addDoc(collection(db, "orders"), orderData);
-
-      // 3. Send Telegram notification (fire-and-forget)
-      setUploadProgress("Notifying admin...");
-      sendTelegramNotification({
-        orderId,
-        customerName: formData.customerName,
-        phone: formData.phone,
-        serviceName: service.name,
-        packageQuantity: selectedPackage.quantity,
-        price: selectedPackage.price,
-        serviceLink: formData.serviceLink,
-        screenshotUrl: screenshotPreview,
-      });
-
-      // 4. Navigate to success
-      navigate("/success", { state: { orderId } });
-    } catch (err: any) {
-      console.error("Order submission error:", err);
-      setError(err.message || "Failed to submit order. Please try again.");
-    } finally {
-      setLoading(false);
-      setUploadProgress("");
-    }
+    // Legacy QR code submission logic removed
   };
 
   return (
@@ -424,9 +476,14 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
 
                 <button 
                   onClick={proceedToPayment}
-                  className="w-full mt-auto bg-brand-accent text-brand-primary font-bold py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-brand-accent-hover hover:shadow-[0_0_20px_rgba(232,184,75,0.4)] transition-all duration-300"
+                  disabled={loading}
+                  className="w-full mt-auto bg-brand-accent text-brand-primary font-bold py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-brand-accent-hover hover:shadow-[0_0_20px_rgba(232,184,75,0.4)] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <IndianRupee size={20} /> Pay ₹{selectedPackage.price}
+                  {loading ? (
+                    <><Loader2 className="animate-spin" size={20} /> Processing...</>
+                  ) : (
+                    <><IndianRupee size={20} /> Pay ₹{selectedPackage.price}</>
+                  )}
                 </button>
               </motion.div>
             )}

@@ -2,5 +2,5 @@
   "name": "Growplex",
   "description": "Premium, modern service-selling website for social media growth, featuring Razorpay checkout, Telegram notifications, and secure Firestore integration.",
   "requestFramePermissions": [],
-  "majorCapabilities": []
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
