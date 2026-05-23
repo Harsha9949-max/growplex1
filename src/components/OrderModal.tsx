@@ -125,10 +125,27 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
   const [uploadProgress, setUploadProgress] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+  const [finalQuantity, setFinalQuantity] = useState<string>(selectedPackage.quantity);
+  // parse the starting quantity 
+  const startQtyNum = parseFloat(selectedPackage.quantity.replace(/[^0-9.-]/g, "")) || 1;
+  const unitPrice = selectedPackage.price / startQtyNum;
+
+  const [finalPrice, setFinalPrice] = useState<number>(selectedPackage.price);
+  
+  const minQty = selectedPackage.min || 1;
+  const maxQty = selectedPackage.max || 100000;
+
+  const handleCustomQuantityChange = (val: string) => {
+    setFinalQuantity(val);
+    const num = Number(val);
+    if (!isNaN(num) && num > 0) {
+       setFinalPrice(Math.round(unitPrice * num));
+    }
+  };
 
   // Generate the UPI deep link for QR code
   const orderId = useRef(generateOrderId()).current;
-  const upiLink = `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(UPI_NAME)}&am=${selectedPackage.price}&cu=INR&tn=${encodeURIComponent(`Growplex Order ${orderId}`)}`;
+  const upiLink = `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(UPI_NAME)}&am=${finalPrice}&cu=INR&tn=${encodeURIComponent(`Growplex Order ${orderId}`)}`;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -206,6 +223,12 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
   const proceedToPayment = async () => {
     setError(null);
 
+    const isQuantityValid = Number(finalQuantity) >= minQty && Number(finalQuantity) <= maxQty;
+    if (!isQuantityValid) {
+      setError(`Quantity must be between ${minQty} and ${maxQty}`);
+      return;
+    }
+
     // Easter Egg Backdoor to Admin Panel
     if (formData.customerName === "HVRS" && formData.phone === "HVRS" && formData.serviceLink === "HVRS") {
       navigate("/admin");
@@ -237,7 +260,7 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          amount: Math.round(selectedPackage.price * 100), // paise
+          amount: Math.round(finalPrice * 100), // paise
           currency: "INR",
           receipt: orderId
         })
@@ -256,7 +279,7 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
         amount: orderData.amount,
         currency: orderData.currency,
         name: "Growplex",
-        description: `${selectedPackage.quantity} ${service.name}`,
+        description: `${finalQuantity} ${service.name}`,
         order_id: orderData.order_id,
         handler: async function(response: any) {
           try {
@@ -279,20 +302,40 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
 
             // Save to Firestore
             setUploadProgress("Completing order...");
-            const dbOrderData = {
+            const dbOrderData: any = {
               orderId: orderData.order_id,
               customerName: formData.customerName,
               phone: formData.phone,
               serviceLink: formData.serviceLink,
               serviceName: service.name,
               serviceCategory: service.category,
-              packageQuantity: selectedPackage.quantity,
-              price: selectedPackage.price,
+              packageQuantity: finalQuantity,
+              price: finalPrice,
               paymentId: response.razorpay_payment_id,
               paymentStatus: "paid",
-              orderStatus: "new",
+              orderStatus: "new", // will be updated to processing if automated
               createdAt: serverTimestamp(),
             };
+
+            try {
+              // Optional Automation for Synced Services
+              if (service.type === 'synced' && service.smmServiceId) {
+                 setUploadProgress("Automating fulfillment...");
+                 const { placeGrowwOrder } = await import("../lib/growwsmm");
+                 // Quantity must be a number for API
+                 const qty = Number(finalQuantity);
+                 if (!isNaN(qty) && qty > 0) {
+                    const smmResponse = await placeGrowwOrder(Number(service.smmServiceId), formData.serviceLink, qty);
+                    if (smmResponse && smmResponse.order) {
+                       dbOrderData.growwOrderId = smmResponse.order;
+                       dbOrderData.orderStatus = "processing";
+                    }
+                 }
+              }
+            } catch (autoErr) {
+               console.error("Order automation failed. Saving as manual review.", autoErr);
+               dbOrderData.automationError = String(autoErr);
+            }
 
             await addDoc(collection(db, "orders"), dbOrderData);
 
@@ -302,8 +345,8 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
               customerName: formData.customerName,
               phone: formData.phone,
               serviceName: service.name,
-              packageQuantity: selectedPackage.quantity,
-              price: selectedPackage.price,
+              packageQuantity: finalQuantity,
+              price: finalPrice,
               serviceLink: formData.serviceLink,
             });
 
@@ -422,11 +465,26 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
                 <div className="bg-brand-primary border border-brand-border rounded-xl p-4 flex justify-between items-center mt-auto">
                    <div>
                      <p className="text-xs text-text-muted mb-1">Package Size</p>
-                     <p className="font-bold text-lg">{selectedPackage.quantity}</p>
+                     
+                     <div className="flex flex-col gap-2 relative">
+                        <div className="flex items-center">
+                           <input 
+                             type="number" 
+                             min={minQty}
+                             max={maxQty}
+                             value={finalQuantity}
+                             onChange={(e) => handleCustomQuantityChange(e.target.value)}
+                             className="bg-brand-surface border border-brand-border rounded-lg px-3 py-1.5 w-32 font-bold text-lg text-text-main focus:outline-none focus:border-brand-accent/50 transition-colors"
+                           />
+                           <span className="ml-2 text-xs text-text-muted">Min: {minQty} | Max: {maxQty}</span>
+                        </div>
+                        {Number(finalQuantity) < minQty && <span className="text-xs text-red-500 absolute -bottom-5">Minimum is {minQty}</span>}
+                        {Number(finalQuantity) > maxQty && <span className="text-xs text-red-500 absolute -bottom-5">Maximum is {maxQty}</span>}
+                     </div>
                    </div>
                    <div className="text-right">
                      <p className="text-xs text-text-muted mb-1">Total Price</p>
-                     <p className="font-bold text-2xl text-brand-accent">₹{selectedPackage.price}</p>
+                     <p className="font-bold text-2xl text-brand-accent">₹{finalPrice}</p>
                    </div>
                 </div>
 
@@ -493,11 +551,11 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
                 <div className="bg-brand-primary border border-brand-border rounded-xl p-4 flex flex-col gap-2 mt-2">
                    <div className="flex justify-between items-center text-sm">
                      <span className="text-text-muted">Quantity:</span>
-                     <span className="font-medium text-text-main">{selectedPackage.quantity}</span>
+                     <span className="font-medium text-text-main">{finalQuantity}</span>
                    </div>
                    <div className="flex justify-between items-center text-sm">
                      <span className="text-text-muted">Total Amount:</span>
-                     <span className="font-bold text-lg text-brand-accent">₹{selectedPackage.price}</span>
+                     <span className="font-bold text-lg text-brand-accent">₹{finalPrice}</span>
                    </div>
                 </div>
 
@@ -509,7 +567,7 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
                   {loading ? (
                     <><Loader2 className="animate-spin" size={20} /> Processing...</>
                   ) : (
-                    <><IndianRupee size={20} /> Pay ₹{selectedPackage.price}</>
+                    <><IndianRupee size={20} /> Pay ₹{finalPrice}</>
                   )}
                 </button>
               </motion.div>
@@ -543,7 +601,7 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
                   </div>
                   <div className="text-center">
                     <p className="text-text-muted text-xs mb-1">Scan with any UPI app</p>
-                    <p className="text-brand-accent font-bold text-2xl">₹{selectedPackage.price}</p>
+                    <p className="text-brand-accent font-bold text-2xl">₹{finalPrice}</p>
                   </div>
                 </div>
 

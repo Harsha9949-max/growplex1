@@ -3,6 +3,8 @@ export interface Package {
   quantity: string;
   price: number;
   basePrice?: number;
+  min?: number;
+  max?: number;
 }
 
 export interface Service {
@@ -14,6 +16,8 @@ export interface Service {
   description?: string;
   isActive?: boolean;
   displayRate?: number;
+  type?: "synced" | "special" | "standard";
+  smmServiceId?: string;
 }
 
 export interface Order {

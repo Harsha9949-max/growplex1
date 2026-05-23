@@ -97,6 +97,44 @@ async function startServer() {
     }
   });
 
+  // GrowwSMM API Access endpoint
+  app.post('/api/growwsmm', async (req, res) => {
+    try {
+      const { action, ...params } = req.body;
+      
+      const body = new URLSearchParams();
+      body.append('key', process.env.GROWWSMM_API_KEY || 'eb4551c8deb17e197d30508da488abd3');
+      body.append('action', action);
+      Object.entries(params).forEach(([k, v]) => 
+        body.append(k, String(v))
+      );
+
+      const response = await fetch(
+        process.env.GROWWSMM_API_URL || 'https://growwsmmpanel.com/api/v2',
+        {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/x-www-form-urlencoded' 
+          },
+          body: body.toString()
+        }
+      );
+
+      const text = await response.text();
+      try {
+        const data = JSON.parse(text);
+        return res.status(200).json(data);
+      } catch (e) {
+        return res.status(500).json({ 
+          error: 'Invalid response from provider: ' + text 
+        });
+      }
+    } catch (error: any) {
+      console.error('GrowwSMM error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+  });
+
   const handleTelegramMessage = async (message: any) => {
     if (message && message.text === '/start') {
       const chatId = message.chat.id.toString();

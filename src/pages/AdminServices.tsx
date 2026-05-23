@@ -14,11 +14,14 @@ import {
   Edit2,
   Percent,
   Plus,
+  RefreshCw,
   Search,
   Trash2,
   TrendingDown,
   TrendingUp,
-  X
+  X,
+  CreditCard,
+  Shield
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
@@ -26,12 +29,17 @@ import toast from "react-hot-toast";
 import { AdminLayout } from "../components/AdminLayout";
 import { db } from "../lib/firebase";
 import { Package } from "../types";
+import { fetchGrowwServices } from "../lib/growwsmm";
 
 interface ServiceDocument {
   id: string; // Document ID
   serviceId: string;
   category: "Instagram" | "YouTube" | "Telegram" | "Facebook" | string;
   serviceName: string;
+  type: "synced" | "special" | "standard";
+  smmServiceId?: string; 
+  baseRateUsd?: number; // SMM Rate per 1000
+  marginPercentage?: number; 
   packages: Package[];
   deliveryTime: string;
   status: "active" | "inactive";
@@ -63,11 +71,20 @@ export default function AdminServices() {
     serviceName: "",
     deliveryTime: "1-24 hours",
     description: "",
+    type: "standard" as "standard" | "synced" | "special",
     status: "active" as "active" | "inactive",
+    marginPercentage: 40,
     packages: [{ id: `pkg_${Date.now()}`, quantity: "", price: 0 }] as Package[]
   });
   const [bulkPercentage, setBulkPercentage] = useState("");
   const [bulkAction, setBulkAction] = useState<"increase" | "decrease">("increase");
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
+  const [smmCategories, setSmmCategories] = useState<string[]>([]);
+  const [selectedSmmCategory, setSelectedSmmCategory] = useState<string>("");
+  const [smmServices, setSmmServices] = useState<any[]>([]);
+  const [syncLoading, setSyncLoading] = useState(false);
+  const [syncSelectedId, setSyncSelectedId] = useState<string>("all");
+  const [syncMargin, setSyncMargin] = useState<string>("40");
 
   useEffect(() => {
     const q = query(collection(db, "services"));
@@ -103,6 +120,8 @@ export default function AdminServices() {
         serviceName: service.serviceName,
         deliveryTime: service.deliveryTime,
         description: service.description || "",
+        type: service.type || "standard",
+        marginPercentage: service.marginPercentage || 40,
         status: service.status,
         packages: [...service.packages]
       });
@@ -113,7 +132,9 @@ export default function AdminServices() {
         serviceName: "",
         deliveryTime: "1-24 hours",
         description: "",
+        type: "standard",
         status: "active",
+        marginPercentage: 40,
         packages: [{ id: `pkg_${Date.now()}`, quantity: "", price: 0 }]
       });
     }
@@ -173,6 +194,173 @@ export default function AdminServices() {
     } catch (error) {
       console.error("Error saving service:", error);
       toast.error("Failed to save service");
+    }
+  };
+
+  const handleOpenSyncModal = async () => {
+    setIsSyncModalOpen(true);
+    setSyncLoading(true);
+    try {
+      const fetchedServices = await fetchGrowwServices();
+      if (!fetchedServices || fetchedServices.length === 0) {
+        toast.error("No valid services returned from provider.", { id: "sync-fetch" });
+        setIsSyncModalOpen(false);
+        return;
+      }
+      setSmmServices(fetchedServices);
+      const cats = Array.from(new Set(fetchedServices.map(s => s.category || "Uncategorized"))) as string[];
+      setSmmCategories(cats);
+      if (cats.length > 0) {
+        setSelectedSmmCategory(cats[0]);
+      }
+    } catch (err: any) {
+       toast.error(err.message || "Failed to fetch services", { id: "sync-fetch" });
+       setIsSyncModalOpen(false);
+    } finally {
+       setSyncLoading(false);
+    }
+  };
+
+  const handlePerformSync = async () => {
+    toast.loading("Activating services...", { id: "sync" });
+    try {
+      if (!smmServices || smmServices.length === 0) return;
+      
+      const batch = writeBatch(db);
+      let newCount = 0;
+      let updatedCount = 0;
+      
+      const existingMap = new Map();
+      services.forEach(s => {
+        if (s.smmServiceId) existingMap.set(s.smmServiceId, s);
+      });
+      
+      const USD_TO_INR = 84;
+      const margin = Number(syncMargin);
+      if (isNaN(margin)) {
+         toast.error("Invalid margin value", { id: "sync" });
+         return;
+      }
+
+      // Filter services based on selection
+      let servicesToSync = smmServices.filter(s => (s.category || "Uncategorized") === selectedSmmCategory);
+      if (syncSelectedId !== "all") {
+         servicesToSync = servicesToSync.filter(s => String(s.growwServiceId) === syncSelectedId);
+      }
+      
+      if (servicesToSync.length === 0) {
+         toast.error("No services selected to sync", { id: "sync" });
+         return;
+      }
+
+      servicesToSync.forEach((s) => {
+         const smmId = String(s.growwServiceId);
+         const basePriceInr = s.providerRate * USD_TO_INR; // Price per 1000
+         const defaultMargin = margin; 
+         const retailPrice = basePriceInr * (1 + defaultMargin / 100);
+         
+         // we map API min qty to the default package
+         const startQty = s.minQuantity > 0 ? String(s.minQuantity) : "1000";
+         
+         const packages = [{
+            id: `pkg_${Date.now()}_${Math.random()}`,
+            quantity: startQty,
+            price: Math.round(retailPrice * (Number(startQty)/1000)), // scale price by starting qty
+            basePrice: basePriceInr, 
+            min: s.minQuantity,
+            max: s.maxQuantity
+         }];
+         
+         if (existingMap.has(smmId)) {
+            const existing = existingMap.get(smmId);
+            const docRef = doc(db, "services", existing.id);
+            // when admin re-syncs manually from this modal, override margin
+            const updatedRetailPrice = basePriceInr * (1 + margin / 100);
+            
+            // if existing has multiple packages, let's just update the baseRate and let margin apply
+            // To keep it simple, we don't wipe existing packages here, but if the user requested a full overwrite...
+            // It's safer to update margin and base price, but keep existing packages.
+            // Wait, we need to update minimum quantities too.
+            const updatedPackages = existing.packages.map((ep: any) => ({
+               ...ep,
+               basePrice: basePriceInr,
+               min: s.minQuantity,
+               max: s.maxQuantity,
+               price: Math.round((basePriceInr * (1 + margin / 100)) * (Number(ep.quantity) / 1000))
+            }));
+
+            batch.update(docRef, {
+               serviceName: s.name,
+               category: s.category || "Instagram",
+               baseRateUsd: s.providerRate,
+               marginPercentage: margin,
+               packages: updatedPackages,
+               updatedAt: serverTimestamp()
+            });
+            updatedCount++;
+         } else {
+            const docRef = doc(collection(db, "services"));
+            batch.set(docRef, {
+               serviceId: `SRV-${Math.floor(1000 + Math.random() * 9000)}-SYNC`,
+               serviceName: s.name,
+               category: s.category || "Instagram",
+               type: "synced",
+               smmServiceId: smmId,
+               baseRateUsd: s.providerRate,
+               marginPercentage: defaultMargin,
+               packages: packages,
+               deliveryTime: "1-24 hours",
+               status: "active",
+               createdAt: serverTimestamp(),
+               updatedAt: serverTimestamp()
+            });
+            newCount++;
+         }
+      });
+      
+      await batch.commit();
+      toast.success(`Activation complete! ${newCount} added, ${updatedCount} updated.`, { id: "sync" });
+      setIsSyncModalOpen(false);
+      
+    } catch (error: any) {
+       console.error("GrowwSMM Activation Failed", error);
+       toast.error(error.message || "Failed to activate services", { id: "sync" });
+    }
+  };
+
+  const handleRemoveSyncedServices = async () => {
+    const syncedServices = services.filter(s => s.type === "synced");
+    if (syncedServices.length === 0) {
+       toast.error("No synced services found to remove");
+       return;
+    }
+    
+    if (!window.confirm(`Are you sure you want to remove all ${syncedServices.length} synced services? This action cannot be undone.`)) {
+       return;
+    }
+
+    toast.loading("Removing synced services...", { id: "remove-sync" });
+    try {
+       // Firestore batches support up to 500 operations. We need to chunk if there are more.
+       const chunkArray = (arr: any[], size: number) =>
+          Array.from({ length: Math.ceil(arr.length / size) }, (v, i) =>
+             arr.slice(i * size, i * size + size)
+          );
+
+       const chunks = chunkArray(syncedServices, 450);
+       
+       for (const chunk of chunks) {
+          const batch = writeBatch(db);
+          for (const srv of chunk) {
+             batch.delete(doc(db, "services", srv.id));
+          }
+          await batch.commit();
+       }
+       
+       toast.success(`Successfully removed ${syncedServices.length} synced services.`, { id: "remove-sync" });
+    } catch (error: any) {
+       console.error("Remove synced services failed:", error);
+       toast.error(error.message || "Failed to remove synced services", { id: "remove-sync" });
     }
   };
 
@@ -330,15 +518,28 @@ export default function AdminServices() {
             <p className="text-text-muted mt-1">Manage Growplex services and dynamic pricing</p>
           </div>
           
-          <div className="flex items-center gap-3 w-full md:w-auto">
-            {services.length === 0 && !loading && (
+            <div className="flex items-center gap-3 w-full md:w-auto">
               <button
-                onClick={handleImportDefaults}
-                className="bg-brand-surface border border-brand-accent text-brand-accent hover:bg-brand-accent/10 py-2 px-4 rounded-xl font-medium transition-all"
+                onClick={handleOpenSyncModal}
+                className="bg-brand-surface border border-[#3b82f6] text-[#3b82f6] hover:bg-[#3b82f6]/10 py-2 px-4 rounded-xl font-medium flex items-center gap-2 transition-all"
               >
-                Import Default Services
+                <RefreshCw size={18} /> API Sync
               </button>
-            )}
+              <button
+                onClick={handleRemoveSyncedServices}
+                className="bg-brand-surface border border-red-500/50 text-red-500 hover:bg-red-500/10 py-2 px-4 rounded-xl font-medium flex items-center gap-2 transition-all"
+                title="Remove all Synced Services"
+              >
+                <Trash2 size={18} /> Remove Synced
+              </button>
+              {services.length === 0 && !loading && (
+                <button
+                  onClick={handleImportDefaults}
+                  className="bg-brand-surface border border-brand-accent text-brand-accent hover:bg-brand-accent/10 py-2 px-4 rounded-xl font-medium transition-all"
+                >
+                  Import Default Services
+                </button>
+              )}
             <button
                onClick={() => setIsBulkUpdateOpen(true)}
                className="bg-brand-surface border border-brand-border hover:border-brand-accent/50 text-text-main py-2 px-4 rounded-xl font-medium flex items-center gap-2 transition-all"
@@ -420,8 +621,12 @@ export default function AdminServices() {
                     <tr key={service.id} className={`hover:bg-brand-primary/30 transition-colors ${service.status === 'inactive' ? 'opacity-60' : ''}`}>
                       <td className="px-6 py-4 font-medium font-mono text-text-muted">{service.serviceId}</td>
                       <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-2 py-1 rounded-md bg-brand-primary border border-brand-border text-xs">
-                          {service.category}
+                        <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold ${
+                          service.type === 'synced' ? 'bg-[#3b82f6]/10 text-[#3b82f6] border border-[#3b82f6]/30' : 
+                          service.type === 'special' ? 'bg-purple-500/10 text-purple-500 border border-purple-500/30' :
+                          'bg-brand-primary border border-brand-border text-brand-accent'
+                        }`}>
+                          {service.type === 'synced' ? 'API Synced' : service.type === 'special' ? 'Special' : 'Standard'}
                         </span>
                       </td>
                       <td className="px-6 py-4 font-medium text-text-main">
@@ -568,6 +773,20 @@ export default function AdminServices() {
                     </div>
                     
                     <div className="space-y-1.5">
+                       <label className="text-sm font-medium text-text-muted">Type</label>
+                       <select 
+                         value={formData.type}
+                         onChange={(e) => setFormData({...formData, type: e.target.value as any})}
+                         className="w-full bg-brand-primary border border-brand-border rounded-xl px-4 py-2.5 text-text-main focus:outline-none focus:border-brand-accent/50 appearance-none"
+                         disabled={editingService?.type === 'synced'}
+                       >
+                         <option value="standard">Standard</option>
+                         <option value="special">Special (Manual Approval)</option>
+                         <option value="synced" disabled>API Synced</option>
+                       </select>
+                    </div>
+
+                    <div className="space-y-1.5">
                        <label className="text-sm font-medium text-text-muted">Status</label>
                        <select 
                          value={formData.status}
@@ -579,6 +798,47 @@ export default function AdminServices() {
                        </select>
                     </div>
                  </div>
+
+                 {formData.type === 'synced' && (
+                    <div className="bg-[#3b82f6]/10 border border-[#3b82f6]/30 rounded-xl p-4 mt-2">
+                       <div className="flex items-center gap-2 text-[#3b82f6] font-medium mb-3">
+                          <Shield size={18} /> API Margin Pricing
+                       </div>
+                       <p className="text-sm text-text-muted mb-4 text-white">This service is synchronized with GrowwSMM API. Update its margin here to automatically generate the retail price.</p>
+                       <div className="space-y-1.5">
+                          <label className="text-sm font-medium text-text-muted">Margin (%) applied to API Base Rate</label>
+                          <div className="flex items-center gap-3">
+                            <input 
+                              type="number"
+                              min="0"
+                              value={formData.marginPercentage}
+                              onChange={(e) => {
+                                 const margin = Number(e.target.value);
+                                 setFormData(prev => {
+                                    // Also recalculate retail price inside packages instantly
+                                    const USD_TO_INR = 84;
+                                    const basePriceInr = (editingService?.baseRateUsd || 0) * USD_TO_INR; // Price per 1000
+                                    const newRetail = basePriceInr * (1 + margin / 100);
+                                    
+                                    const newPackages = prev.packages.map(p => ({
+                                       ...p,
+                                       price: Math.round(newRetail * (Number(p.quantity) / 1000))
+                                    }));
+                                    
+                                    return { 
+                                       ...prev, 
+                                       marginPercentage: margin,
+                                       packages: newPackages 
+                                    };
+                                 });
+                              }}
+                              className="w-32 bg-brand-primary border border-[#3b82f6]/50 rounded-xl px-4 py-2 text-text-main focus:outline-none"
+                            />
+                            <span className="text-sm text-[#3b82f6] font-bold">% Margin</span>
+                          </div>
+                       </div>
+                    </div>
+                 )}
                  
                  <div className="space-y-1.5">
                     <label className="text-sm font-medium text-text-muted">Description (Optional)</label>
@@ -661,6 +921,120 @@ export default function AdminServices() {
         )}
       </AnimatePresence>
       
+      {/* Sync from API Modal */}
+      <AnimatePresence>
+        {isSyncModalOpen && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsSyncModalOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-lg bg-brand-surface border border-brand-border rounded-2xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[90vh]"
+            >
+              <div className="p-5 border-b border-brand-border flex justify-between items-center bg-[#3b82f6]/10 shrink-0">
+                <h3 className="font-heading font-bold text-xl text-[#3b82f6] flex items-center gap-2">
+                  <RefreshCw size={20} /> GrowwSMM Sync
+                </h3>
+                <button onClick={() => setIsSyncModalOpen(false)} className="text-text-muted hover:text-white transition-colors">
+                  <X size={20} />
+                </button>
+              </div>
+              
+              <div className="p-6 overflow-y-auto custom-scrollbar flex-grow space-y-5">
+                 {syncLoading ? (
+                    <div className="flex flex-col items-center justify-center py-10">
+                       <div className="w-8 h-8 border-2 border-[#3b82f6] border-t-transparent rounded-full animate-spin mb-4" />
+                       <p className="text-text-muted">Fetching services from API...</p>
+                    </div>
+                 ) : (
+                    <>
+                       <div className="space-y-1.5">
+                          <label className="text-sm font-medium text-text-muted">Choose Category</label>
+                          <select 
+                            value={selectedSmmCategory}
+                            onChange={(e) => {
+                               setSelectedSmmCategory(e.target.value);
+                               setSyncSelectedId("all");
+                            }}
+                            className="w-full bg-brand-primary border border-brand-border rounded-xl px-4 py-2.5 text-text-main focus:outline-none focus:border-[#3b82f6]/50 appearance-none"
+                          >
+                             {smmCategories.map(cat => (
+                                <option key={cat} value={cat}>{cat}</option>
+                             ))}
+                          </select>
+                       </div>
+
+                       <div className="space-y-1.5">
+                          <label className="text-sm font-medium text-text-muted">Select Services</label>
+                          <select 
+                            value={syncSelectedId}
+                            onChange={(e) => setSyncSelectedId(e.target.value)}
+                            className="w-full bg-brand-primary border border-brand-border rounded-xl px-4 py-2.5 text-text-main focus:outline-none focus:border-[#3b82f6]/50 appearance-none"
+                          >
+                             <option value="all">Export All in Category ({smmServices.filter(s => (s.category || "Uncategorized") === selectedSmmCategory).length})</option>
+                             {smmServices.filter(s => (s.category || "Uncategorized") === selectedSmmCategory).map(s => (
+                                <option key={s.growwServiceId} value={s.growwServiceId}>
+                                   ID: {s.growwServiceId} - {s.name.substring(0, 50)}
+                                </option>
+                             ))}
+                          </select>
+                       </div>
+                       
+                       <div className="border-t border-brand-border pt-4 mt-2">
+                       <div className="bg-[#3b82f6]/10 border border-[#3b82f6]/30 rounded-xl p-4">
+                          <div className="flex items-center gap-2 text-[#3b82f6] font-medium mb-3">
+                             <Shield size={18} /> API Margin Pricing
+                          </div>
+                          <p className="text-sm text-text-muted mb-4 text-white">
+                             Set the profit margin percentage for the selected services. This calculates retail price relative to the API's base rate.
+                          </p>
+                          <div className="space-y-1.5">
+                             <div className="relative w-32">
+                               <input 
+                                 type="number"
+                                 min="0"
+                                 value={syncMargin}
+                                 onChange={(e) => setSyncMargin(e.target.value)}
+                                 className="w-full bg-brand-primary border border-[#3b82f6]/50 rounded-xl pl-4 pr-8 py-2.5 text-lg font-bold text-text-main focus:outline-none"
+                               />
+                               <span className="absolute right-3 top-3 text-[#3b82f6] font-bold">%</span>
+                             </div>
+                          </div>
+                       </div>
+                       </div>
+                    </>
+                 )}
+              </div>
+
+              {!syncLoading && (
+                 <div className="p-5 border-t border-brand-border bg-brand-primary/50 flex justify-end gap-3 shrink-0">
+                    <button 
+                      onClick={() => setIsSyncModalOpen(false)}
+                      className="px-5 py-2.5 bg-brand-surface border border-brand-border text-text-main hover:bg-brand-border rounded-xl font-medium transition-all"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={handlePerformSync}
+                      className="px-6 py-2.5 bg-[#3b82f6] text-white hover:bg-[#2563eb] rounded-xl font-bold transition-all flex items-center gap-2"
+                    >
+                      <RefreshCw size={18} /> Activate on Web
+                    </button>
+                 </div>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* Bulk Price Update Modal */}
       <AnimatePresence>
         {isBulkUpdateOpen && (

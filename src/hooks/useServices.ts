@@ -4,31 +4,44 @@ import { db } from "../lib/firebase";
 import { Service } from "../types";
 import { BASE_SERVICES } from "../pages/Services";
 
-function applyMargin(services: Service[], marginPercent: number): Service[] {
-  return services.map(s => ({
-    ...s,
-    packages: s.packages.map(pkg => {
-      // 1. Get the best base value
-      let base: any = pkg.basePrice !== undefined && pkg.basePrice !== null ? pkg.basePrice : pkg.price;
-      
-      // 2. Strip any non-numeric characters if it's stored as a string like "₹8" or "8"
-      if (typeof base === "string") {
-        base = parseFloat(base.replace(/[^0-9.-]/g, "")) || 0;
-      }
-      
-      // 3. Fallback to 0 if still invalid
-      base = Number(base) || 0;
+function applyMargin(services: Service[], globalMargin: number): Service[] {
+  return services.map(s => {
+    // Determine the margin for this specific service
+    let serviceMargin = globalMargin;
+    if ((s as any).type === 'synced' && (s as any).marginPercentage !== undefined) {
+      serviceMargin = Number((s as any).marginPercentage);
+    }
 
-      // 4. Ensure margin is a valid number
-      const margin = typeof marginPercent === "number" ? marginPercent : Number(marginPercent) || 40;
+    return {
+      ...s,
+      packages: s.packages.map(pkg => {
+        // 1. Get the best base value
+        let base: any = pkg.basePrice !== undefined && pkg.basePrice !== null ? pkg.basePrice : pkg.price;
+        
+        // 2. Strip any non-numeric characters if it's stored as a string like "₹8" or "8"
+        if (typeof base === "string") {
+          base = parseFloat(base.replace(/[^0-9.-]/g, "")) || 0;
+        }
+        
+        // 3. Fallback to 0 if still invalid
+        base = Number(base) || 0;
 
-      return {
-        ...pkg,
-        basePrice: base,
-        price: Math.max(0, Math.ceil(base * (1 + margin / 100)))
-      };
-    })
-  }));
+        // 4. Calculate final retail price based on base price + margin
+        // But for synced services, they are synced with base values as per 1000 quantity. 
+        // AdminServices already stored `basePriceInr` in `pkg.basePrice` correctly for 1000 items.
+        // Wait, packages quantity might not be 1000. So we need to calculate: price = (base / 1000) * quantity * (1 + margin / 100)
+        // Wait, `AdminServices.tsx` uses `baseRateUsd` to generate basePrice for the package. 
+        // For simplicity, we just apply the margin on `pkg.basePrice` because `pkg.basePrice` represents the cost for the package's specific quantity.
+        const margin = Number(serviceMargin) || 0;
+
+        return {
+          ...pkg,
+          basePrice: base,
+          price: Math.max(0, Math.ceil(base * (1 + margin / 100)))
+        };
+      })
+    };
+  });
 }
 
 export function useServices() {
