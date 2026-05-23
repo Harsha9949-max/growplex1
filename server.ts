@@ -35,17 +35,20 @@ async function startServer() {
         return res.status(400).json({ error: 'Minimum amount is 100 paise' });
       }
 
-      if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+      const key_id = process.env.RAZORPAY_KEY_ID?.trim();
+      const key_secret = process.env.RAZORPAY_KEY_SECRET?.trim();
+
+      if (!key_id || !key_secret) {
         console.error("Razorpay keys not found in environment variables");
         return res.status(500).json({ error: 'Razorpay keys not configured' });
       }
 
       const Razorpay = (await import('razorpay')).default;
       const razorpay = new Razorpay({
-        key_id: process.env.RAZORPAY_KEY_ID,
-        key_secret: process.env.RAZORPAY_KEY_SECRET,
+        key_id,
+        key_secret,
       });
-      console.log("Creating Razorpay order with key:", process.env.RAZORPAY_KEY_ID);
+      console.log("Creating Razorpay order with key:", key_id);
 
       const order = await razorpay.orders.create({
         amount, // amount in paise
@@ -61,7 +64,13 @@ async function startServer() {
       });
     } catch (error: any) {
       console.error('Create order error:', error);
-      res.status(500).json({ error: error.message || 'Order creation failed' });
+      let errorMessage = 'Order creation failed';
+      if (error?.error?.description) {
+        errorMessage = error.error.description;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      res.status(500).json({ error: errorMessage });
     }
   });
 
