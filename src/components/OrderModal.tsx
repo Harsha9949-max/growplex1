@@ -126,9 +126,17 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const [finalQuantity, setFinalQuantity] = useState<string>(selectedPackage.quantity);
-  // parse the starting quantity 
+  
+  // calculate the rate cleanly to avoid compounding rounding errors
+  const isSynced = service.type === 'synced' && service.baseRateUsd !== undefined;
+  
+  const ratePer1000 = isSynced 
+    ? (service.baseRateUsd || 0) * 84 * (1 + (service.marginPercentage || 0) / 100)
+    : undefined;
+    
+  // parse the starting quantity for non-synced fallback
   const startQtyNum = parseFloat(selectedPackage.quantity.replace(/[^0-9.-]/g, "")) || 1;
-  const unitPrice = selectedPackage.price / startQtyNum;
+  const unitPrice = ratePer1000 !== undefined ? (ratePer1000 / 1000) : (selectedPackage.price / startQtyNum);
 
   const [finalPrice, setFinalPrice] = useState<number>(selectedPackage.price);
   
@@ -482,8 +490,15 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
                         {Number(finalQuantity) > maxQty && <span className="text-xs text-red-500 absolute -bottom-5">Maximum is {maxQty}</span>}
                      </div>
                    </div>
-                   <div className="text-right">
-                     <p className="text-xs text-text-muted mb-1">Total Price</p>
+                   <div className="text-right flex flex-col justify-end">
+                     <p className="text-xs text-text-muted mb-1 flex items-center justify-end gap-2">
+                       Total Price
+                       {ratePer1000 !== undefined && (
+                         <span className="text-[10px] text-brand-accent/70 font-normal uppercase tracking-wider">
+                           (₹{ratePer1000.toFixed(2)} per 1000)
+                         </span>
+                       )}
+                     </p>
                      <p className="font-bold text-2xl text-brand-accent">₹{finalPrice}</p>
                    </div>
                 </div>

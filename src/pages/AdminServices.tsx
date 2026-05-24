@@ -146,13 +146,34 @@ export default function AdminServices() {
   const handlePackageChange = (index: number, field: keyof Package, value: string | number) => {
     const newPkgs = [...formData.packages];
     newPkgs[index] = { ...newPkgs[index], [field]: value };
+    
+    // Auto-calculate the price if it's a synced service and we're changing the quantity.
+    if (formData.type === 'synced' && editingService?.baseRateUsd !== undefined && field === 'quantity') {
+      const margin = formData.marginPercentage || 0;
+      const USD_TO_INR = 84;
+      const basePriceInr = editingService.baseRateUsd * USD_TO_INR;
+      const newRetail = basePriceInr * (1 + margin / 100);
+      newPkgs[index].price = Math.round(newRetail * (Number(value) / 1000));
+    }
+
     setFormData({ ...formData, packages: newPkgs });
   };
 
   const addPackageRow = () => {
+    let newQty = "1000";
+    let newPrice = 0;
+    
+    if (formData.type === 'synced' && editingService?.baseRateUsd !== undefined) {
+      const margin = formData.marginPercentage || 0;
+      const USD_TO_INR = 84;
+      const basePriceInr = editingService.baseRateUsd * USD_TO_INR;
+      const newRetail = basePriceInr * (1 + margin / 100);
+      newPrice = Math.round(newRetail);
+    }
+    
     setFormData({
       ...formData,
-      packages: [...formData.packages, { id: `pkg_${Date.now()}_${Math.random()}`, quantity: "", price: 0 }]
+      packages: [...formData.packages, { id: `pkg_${Date.now()}_${Math.random()}`, quantity: newQty, price: newPrice }]
     });
   };
 
@@ -635,8 +656,17 @@ export default function AdminServices() {
                         {service.serviceName}
                       </td>
                       <td className="px-6 py-4 text-xs text-text-muted">
-                        {service.packages?.length || 0} Packages<br/>
-                        <span className="text-brand-accent">Starting ₹{service.packages && service.packages.length > 0 ? Math.min(...service.packages.map(p => Number(p.price))) : 0}</span>
+                        {service.type === 'synced' && service.baseRateUsd !== undefined ? (
+                           <div className="flex flex-col gap-0.5">
+                              <span className="text-text-muted">Base: ₹{((service.baseRateUsd || 0) * 84).toFixed(3)} <span className="text-[10px]">/ 1000</span></span>
+                              <span className="text-[#3b82f6] font-semibold">Retail: ₹{(((service.baseRateUsd || 0) * 84) * (1 + (service.marginPercentage || 0) / 100)).toFixed(3)} <span className="text-[10px] font-normal text-text-muted">/ 1000</span></span>
+                           </div>
+                        ) : (
+                           <>
+                             {service.packages?.length || 0} Packages<br/>
+                             <span className="text-brand-accent">Starting ₹{service.packages && service.packages.length > 0 ? Math.min(...service.packages.map(p => Number(p.price))) : 0}</span>
+                           </>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-text-muted">{service.deliveryTime}</td>
                       <td className="px-6 py-4">
@@ -838,6 +868,19 @@ export default function AdminServices() {
                             />
                             <span className="text-sm text-[#3b82f6] font-bold">% Margin</span>
                           </div>
+                          
+                          {editingService?.baseRateUsd !== undefined && (
+                             <div className="mt-4 p-3 bg-brand-primary/80 rounded-lg border border-[#3b82f6]/20 text-sm flex justify-between">
+                                <div className="flex flex-col">
+                                   <span className="text-text-muted text-xs uppercase tracking-wider">API Base Rate</span>
+                                   <span className="font-medium text-white mt-1">₹{((editingService.baseRateUsd || 0) * 84).toFixed(3)} <span className="text-text-muted text-xs">/ 1000</span></span>
+                                </div>
+                                <div className="flex flex-col text-right">
+                                   <span className="text-text-muted text-xs uppercase tracking-wider">Retail Rate</span>
+                                   <span className="font-bold text-[#3b82f6] mt-1">₹{(((editingService.baseRateUsd || 0) * 84) * (1 + (formData.marginPercentage || 0) / 100)).toFixed(3)} <span className="text-text-muted text-xs font-normal">/ 1000</span></span>
+                                </div>
+                             </div>
+                          )}
                        </div>
                     </div>
                  )}
@@ -856,49 +899,71 @@ export default function AdminServices() {
                  {/* Packages Section */}
                  <div className="pt-4 border-t border-brand-border">
                     <div className="flex justify-between items-center mb-4">
-                       <h4 className="font-heading font-medium text-text-main">Packages</h4>
-                       <button 
-                         onClick={addPackageRow}
-                         className="text-sm text-brand-accent hover:text-brand-accent-hover font-medium flex items-center gap-1"
-                       >
-                         <Plus size={14} /> Add Package
-                       </button>
+                       <div>
+                         <h4 className="font-heading font-medium text-text-main">{formData.type === 'synced' ? 'Service Limits' : 'Packages'}</h4>
+                         {formData.type === 'synced' && (
+                           <p className="text-xs text-text-muted mt-1">This is an API service. Pricing is auto-calculated per 1000 quantity.</p>
+                         )}
+                       </div>
+                       {formData.type !== 'synced' && (
+                         <button 
+                           onClick={addPackageRow}
+                           className="text-sm text-brand-accent hover:text-brand-accent-hover font-medium flex items-center gap-1"
+                         >
+                           <Plus size={14} /> Add Package
+                         </button>
+                       )}
                     </div>
                     
-                    <div className="space-y-3">
-                       {formData.packages.map((pkg, index) => (
-                         <div key={pkg.id || index} className="flex gap-3 items-center bg-brand-primary/50 p-2 pl-3 rounded-lg border border-brand-border">
-                            <div className="flex-grow">
-                               <input 
-                                 type="text"
-                                 placeholder="Quantity (e.g. 1000)"
-                                 value={pkg.quantity}
-                                 onChange={(e) => handlePackageChange(index, "quantity", e.target.value)}
-                                 className="w-full bg-transparent text-sm focus:outline-none"
-                               />
-                            </div>
-                            <div className="w-[1px] h-6 bg-brand-border"></div>
-                            <div className="w-24 relative">
-                               <span className="absolute left-2 top-1.5 text-text-muted text-sm">₹</span>
-                               <input 
-                                 type="number"
-                                 placeholder="Price"
-                                 value={pkg.price}
-                                 onChange={(e) => handlePackageChange(index, "price", Number(e.target.value))}
-                                 className="w-full bg-transparent text-sm focus:outline-none pl-6"
-                               />
-                            </div>
-                            {formData.packages.length > 1 && (
-                              <button 
-                                onClick={() => removePackageRow(index)}
-                                className="p-1.5 text-text-muted hover:text-red-500 hover:bg-brand-primary rounded-md transition-colors"
-                              >
-                                <X size={14} />
-                              </button>
-                            )}
+                    {formData.type === 'synced' ? (
+                       <div className="bg-brand-primary/30 p-4 rounded-xl border border-brand-border">
+                         <div className="grid grid-cols-2 gap-4">
+                           <div>
+                             <p className="text-xs text-text-muted uppercase tracking-wider mb-1">Minimum Order</p>
+                             <p className="font-medium">{formData.packages[0]?.min || 100}</p>
+                           </div>
+                           <div>
+                             <p className="text-xs text-text-muted uppercase tracking-wider mb-1">Maximum Order</p>
+                             <p className="font-medium">{formData.packages[0]?.max || 10000}</p>
+                           </div>
                          </div>
-                       ))}
-                    </div>
+                       </div>
+                    ) : (
+                       <div className="space-y-3">
+                          {formData.packages.map((pkg, index) => (
+                            <div key={pkg.id || index} className="flex gap-3 items-center bg-brand-primary/50 p-2 pl-3 rounded-lg border border-brand-border">
+                               <div className="flex-grow">
+                                  <input 
+                                    type="text"
+                                    placeholder="Quantity (e.g. 1000)"
+                                    value={pkg.quantity}
+                                    onChange={(e) => handlePackageChange(index, "quantity", e.target.value)}
+                                    className="w-full bg-transparent text-sm focus:outline-none"
+                                  />
+                               </div>
+                               <div className="w-[1px] h-6 bg-brand-border"></div>
+                               <div className="w-24 relative">
+                                  <span className="absolute left-2 top-1.5 text-text-muted text-sm">₹</span>
+                                  <input 
+                                    type="number"
+                                    placeholder="Price"
+                                    value={pkg.price}
+                                    onChange={(e) => handlePackageChange(index, "price", Number(e.target.value))}
+                                    className="w-full bg-transparent text-sm focus:outline-none pl-6"
+                                  />
+                               </div>
+                               {formData.packages.length > 1 && (
+                                 <button 
+                                   onClick={() => removePackageRow(index)}
+                                   className="p-1.5 text-text-muted hover:text-red-500 hover:bg-brand-primary rounded-md transition-colors"
+                                 >
+                                   <X size={14} />
+                                 </button>
+                               )}
+                            </div>
+                          ))}
+                       </div>
+                    )}
                  </div>
 
               </div>

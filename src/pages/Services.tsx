@@ -464,19 +464,42 @@ export default function Services() {
   );
 }
 
-// Expandable Service Card Component
 function ExpandableServiceCard({ service, onBuy, getCategoryIcon }: { service: Service, onBuy: (pkg: Package) => void, getCategoryIcon: (cat: string) => React.ReactNode, key?: React.Key }) {
-  const [selectedPkgId, setSelectedPkgId] = useState<string>(service.packages[0].id);
+  const isSynced = service.type === "synced" && service.baseRateUsd !== undefined;
   
-  const selectedPkg = service.packages.find(p => p.id === selectedPkgId) || service.packages[0];
+  // Normal state
+  const [selectedPkgId, setSelectedPkgId] = useState<string>(service.packages?.length > 0 ? service.packages[0].id : '');
+  
+  const defaultPkg = service.packages?.[0] || {} as Package;
+  const minQty = defaultPkg.min || 100;
+  const maxQty = defaultPkg.max || 10000;
+  
+  const [dynamicQtyStr, setDynamicQtyStr] = useState<string>(String(minQty));
+  const dynamicQty = parseInt(dynamicQtyStr) || 0;
+  
+  const selectedPkg = service.packages?.find(p => p.id === selectedPkgId) || defaultPkg;
+
+  let currentPkg: Package;
+  if (isSynced) {
+     const retailRatePer1000 = (service.baseRateUsd || 0) * 84 * (1 + (service.marginPercentage || 0) / 100);
+     const price = Math.round(retailRatePer1000 * (dynamicQty / 1000));
+     currentPkg = {
+        id: `dynamic_${dynamicQty}`,
+        quantity: String(dynamicQty),
+        price: price,
+        basePrice: defaultPkg.basePrice || price
+     };
+  } else {
+     currentPkg = selectedPkg;
+  }
 
   // Specific popularity rule from requirements
   const isMostPopular = 
-    (service.category === "Instagram Followers" && (selectedPkg.quantity === "1000" || selectedPkg.quantity === "5000")) ||
-    (service.category === "YouTube Subscribers" && (selectedPkg.quantity === "1000 Subscribers" || selectedPkg.quantity === "5000 Subscribers")) ||
-    (service.category === "YouTube Views" && selectedPkg.quantity === "10000 Views") ||
-    (service.category === "Telegram Group Members" && (selectedPkg.quantity === "1000 Members" || selectedPkg.quantity === "5000 Members")) ||
-    (service.category === "Telegram Post Views" && selectedPkg.quantity === "10000 Views");
+    (service.category === "Instagram Followers" && (currentPkg.quantity === "1000" || currentPkg.quantity === "5000")) ||
+    (service.category === "YouTube Subscribers" && (currentPkg.quantity === "1000 Subscribers" || currentPkg.quantity === "5000 Subscribers")) ||
+    (service.category === "YouTube Views" && currentPkg.quantity === "10000 Views") ||
+    (service.category === "Telegram Group Members" && (currentPkg.quantity === "1000 Members" || currentPkg.quantity === "5000 Members")) ||
+    (service.category === "Telegram Post Views" && currentPkg.quantity === "10000 Views");
 
   return (
     <motion.div 
@@ -511,35 +534,63 @@ function ExpandableServiceCard({ service, onBuy, getCategoryIcon }: { service: S
       
       {/* Package Selector */}
       <div className="mb-4 sm:mb-6 flex-grow flex flex-col">
-        <label className="text-[11px] sm:text-xs text-text-muted mb-1.5 sm:mb-2 font-medium">Select Package</label>
-        <div className="relative">
-          <select 
-            value={selectedPkgId}
-            onChange={(e) => setSelectedPkgId(e.target.value)}
-            className="w-full appearance-none bg-brand-primary border border-brand-border rounded-xl pl-4 pr-10 py-3 text-text-main font-semibold focus:outline-none focus:border-brand-accent/50 cursor-pointer text-sm"
-          >
-            {service.packages.map((pkg) => {
-              const label = pkg.quantity.match(/[A-Za-z]/) && !pkg.quantity.endsWith('K') && !pkg.quantity.endsWith('M')
-                ? pkg.quantity
-                : `${pkg.quantity} ${service.name.replace(/Instagram |YouTube |Telegram /g, '')}`;
-              return (
-                <option key={pkg.id} value={pkg.id}>
-                  {label}
-                </option>
-              );
-            })}
-          </select>
-          <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-text-muted">
-            <ChevronDown size={16} />
+        <label className="text-[11px] sm:text-xs text-text-muted mb-1.5 sm:mb-2 font-medium">
+          {isSynced ? "Quantity" : "Select Package"}
+        </label>
+        
+        {isSynced ? (
+            <div>
+               <input 
+                  type="number" 
+                  min={minQty}
+                  max={maxQty}
+                  value={dynamicQtyStr}
+                  onChange={(e) => setDynamicQtyStr(e.target.value)}
+                  onBlur={() => {
+                     let val = parseInt(dynamicQtyStr) || minQty;
+                     if (val < minQty) val = minQty;
+                     if (val > maxQty) val = maxQty;
+                     setDynamicQtyStr(String(val));
+                  }}
+                  className="w-full bg-brand-primary border border-brand-border rounded-xl px-4 py-3 text-text-main font-semibold focus:outline-none focus:border-brand-accent/50 text-sm"
+               />
+               <p className="text-[10px] text-text-muted mt-1.5">Min: {minQty} • Max: {maxQty}</p>
+            </div>
+        ) : (
+          <div className="relative">
+            <select 
+              value={selectedPkgId}
+              onChange={(e) => setSelectedPkgId(e.target.value)}
+              className="w-full appearance-none bg-brand-primary border border-brand-border rounded-xl pl-4 pr-10 py-3 text-text-main font-semibold focus:outline-none focus:border-brand-accent/50 cursor-pointer text-sm"
+            >
+              {service.packages?.map((pkg) => {
+                const label = pkg.quantity.match(/[A-Za-z]/) && !pkg.quantity.endsWith('K') && !pkg.quantity.endsWith('M')
+                  ? pkg.quantity
+                  : `${pkg.quantity} ${service.name.replace(/Instagram |YouTube |Telegram /g, '')}`;
+                return (
+                  <option key={pkg.id} value={pkg.id}>
+                    {label}
+                  </option>
+                );
+              })}
+            </select>
+            <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-text-muted">
+              <ChevronDown size={16} />
+            </div>
           </div>
-        </div>
+        )}
       </div>
       
       <div className="flex items-center justify-between mb-4 sm:mb-6 pt-3 sm:pt-4 border-t border-brand-border/50 w-full overflow-hidden">
         <div className="pr-2">
           <p className="text-[11px] sm:text-xs text-text-muted mb-0.5 sm:mb-1">Total Price</p>
-          <p className="text-xl sm:text-2xl font-bold text-text-main group-hover:text-brand-accent transition-colors">
-            ₹{selectedPkg.price}
+          <p className="text-xl sm:text-2xl font-bold text-text-main group-hover:text-brand-accent transition-colors flex items-end gap-2">
+            ₹{currentPkg.price}
+            {isSynced && (
+              <span className="text-[10px] text-text-muted font-normal uppercase tracking-wider mb-1">
+                (₹{(((service.baseRateUsd || 0) * 84) * (1 + (service.marginPercentage || 0) / 100)).toFixed(2)} per 1000)
+              </span>
+            )}
           </p>
         </div>
         <div className="text-right">
@@ -549,7 +600,7 @@ function ExpandableServiceCard({ service, onBuy, getCategoryIcon }: { service: S
       </div>
       
       <button 
-        onClick={() => onBuy(selectedPkg)}
+        onClick={() => onBuy(currentPkg)}
         className="w-full bg-brand-primary border border-brand-border text-text-main py-2.5 sm:py-3 rounded-xl font-bold text-sm sm:text-base group-hover:bg-brand-accent group-hover:text-brand-primary group-hover:border-brand-accent transition-all duration-300 min-h-[44px]"
       >
         Buy Now

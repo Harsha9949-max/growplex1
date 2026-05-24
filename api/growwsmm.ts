@@ -12,7 +12,7 @@ export default async function handler(
     const { action, ...params } = req.body;
     
     const body = new URLSearchParams();
-    body.append('key', process.env.GROWWSMM_API_KEY || '6713a86288db6a88c0b7d28cbc60068b');
+    body.append('key', process.env.GROWWSMM_API_KEY || 'eb4551c8deb17e197d30508da488abd3');
     body.append('action', action);
     Object.entries(params).forEach(([k, v]) => 
       body.append(k, String(v))

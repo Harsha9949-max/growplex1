@@ -18,6 +18,8 @@ export interface Service {
   displayRate?: number;
   type?: "synced" | "special" | "standard";
   smmServiceId?: string;
+  baseRateUsd?: number;
+  marginPercentage?: number;
 }
 
 export interface Order {
