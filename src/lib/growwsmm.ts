@@ -1,5 +1,5 @@
 const MARKUP = Number((import.meta as any).env.VITE_MARKUP_PERCENT || '40') / 100;
-const USD_TO_INR = 84;
+
 
 async function callAPI(params: Record<string, any>) {
   console.log('GrowwSMM callAPI request:', params);
@@ -50,7 +50,7 @@ export async function fetchGrowwServices() {
     type: s.type,
     category: s.category,
     providerRate: parseFloat(s.rate),
-    displayRate: parseFloat((parseFloat(s.rate) * (1 + MARKUP) * USD_TO_INR).toFixed(2)),
+    displayRate: parseFloat((parseFloat(s.rate) * (1 + MARKUP)).toFixed(2)),
     minQuantity: parseInt(s.min),
     maxQuantity: parseInt(s.max),
     refill: s.refill === '1' || s.refill === true,

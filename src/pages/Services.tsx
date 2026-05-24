@@ -481,7 +481,7 @@ function ExpandableServiceCard({ service, onBuy, getCategoryIcon }: { service: S
 
   let currentPkg: Package;
   if (isSynced) {
-     const retailRatePer1000 = (service.baseRateUsd || 0) * 84 * (1 + (service.marginPercentage || 0) / 100);
+     const retailRatePer1000 = (service.baseRateUsd || 0) * (1 + (service.marginPercentage || 0) / 100);
      const price = Math.round(retailRatePer1000 * (dynamicQty / 1000));
      currentPkg = {
         id: `dynamic_${dynamicQty}`,
@@ -588,7 +588,7 @@ function ExpandableServiceCard({ service, onBuy, getCategoryIcon }: { service: S
             ₹{currentPkg.price}
             {isSynced && (
               <span className="text-[10px] text-text-muted font-normal uppercase tracking-wider mb-1">
-                (₹{(((service.baseRateUsd || 0) * 84) * (1 + (service.marginPercentage || 0) / 100)).toFixed(2)} per 1000)
+                (₹{(((service.baseRateUsd || 0)) * (1 + (service.marginPercentage || 0) / 100)).toFixed(2)} per 1000)
               </span>
             )}
           </p>

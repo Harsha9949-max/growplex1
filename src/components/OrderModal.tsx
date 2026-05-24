@@ -131,7 +131,7 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
   const isSynced = service.type === 'synced' && service.baseRateUsd !== undefined;
   
   const ratePer1000 = isSynced 
-    ? (service.baseRateUsd || 0) * 84 * (1 + (service.marginPercentage || 0) / 100)
+    ? (service.baseRateUsd || 0) * (1 + (service.marginPercentage || 0) / 100)
     : undefined;
     
   // parse the starting quantity for non-synced fallback

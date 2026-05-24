@@ -150,8 +150,7 @@ export default function AdminServices() {
     // Auto-calculate the price if it's a synced service and we're changing the quantity.
     if (formData.type === 'synced' && editingService?.baseRateUsd !== undefined && field === 'quantity') {
       const margin = formData.marginPercentage || 0;
-      const USD_TO_INR = 84;
-      const basePriceInr = editingService.baseRateUsd * USD_TO_INR;
+      const basePriceInr = editingService.baseRateUsd;
       const newRetail = basePriceInr * (1 + margin / 100);
       newPkgs[index].price = Math.round(newRetail * (Number(value) / 1000));
     }
@@ -165,8 +164,7 @@ export default function AdminServices() {
     
     if (formData.type === 'synced' && editingService?.baseRateUsd !== undefined) {
       const margin = formData.marginPercentage || 0;
-      const USD_TO_INR = 84;
-      const basePriceInr = editingService.baseRateUsd * USD_TO_INR;
+      const basePriceInr = editingService.baseRateUsd;
       const newRetail = basePriceInr * (1 + margin / 100);
       newPrice = Math.round(newRetail);
     }
@@ -258,7 +256,6 @@ export default function AdminServices() {
         if (s.smmServiceId) existingMap.set(s.smmServiceId, s);
       });
       
-      const USD_TO_INR = 84;
       const margin = Number(syncMargin);
       if (isNaN(margin)) {
          toast.error("Invalid margin value", { id: "sync" });
@@ -278,7 +275,7 @@ export default function AdminServices() {
 
       servicesToSync.forEach((s) => {
          const smmId = String(s.growwServiceId);
-         const basePriceInr = s.providerRate * USD_TO_INR; // Price per 1000
+         const basePriceInr = s.providerRate; // Price per 1000
          const defaultMargin = margin; 
          const retailPrice = basePriceInr * (1 + defaultMargin / 100);
          
@@ -658,8 +655,8 @@ export default function AdminServices() {
                       <td className="px-6 py-4 text-xs text-text-muted">
                         {service.type === 'synced' && service.baseRateUsd !== undefined ? (
                            <div className="flex flex-col gap-0.5">
-                              <span className="text-text-muted">Base: ₹{((service.baseRateUsd || 0) * 84).toFixed(3)} <span className="text-[10px]">/ 1000</span></span>
-                              <span className="text-[#3b82f6] font-semibold">Retail: ₹{(((service.baseRateUsd || 0) * 84) * (1 + (service.marginPercentage || 0) / 100)).toFixed(3)} <span className="text-[10px] font-normal text-text-muted">/ 1000</span></span>
+                              <span className="text-text-muted">Base: ₹{((service.baseRateUsd || 0)).toFixed(3)} <span className="text-[10px]">/ 1000</span></span>
+                              <span className="text-[#3b82f6] font-semibold">Retail: ₹{(((service.baseRateUsd || 0)) * (1 + (service.marginPercentage || 0) / 100)).toFixed(3)} <span className="text-[10px] font-normal text-text-muted">/ 1000</span></span>
                            </div>
                         ) : (
                            <>
@@ -848,8 +845,7 @@ export default function AdminServices() {
                                  const margin = Number(e.target.value);
                                  setFormData(prev => {
                                     // Also recalculate retail price inside packages instantly
-                                    const USD_TO_INR = 84;
-                                    const basePriceInr = (editingService?.baseRateUsd || 0) * USD_TO_INR; // Price per 1000
+                                    const basePriceInr = editingService?.baseRateUsd || 0; // Price per 1000
                                     const newRetail = basePriceInr * (1 + margin / 100);
                                     
                                     const newPackages = prev.packages.map(p => ({
@@ -873,11 +869,11 @@ export default function AdminServices() {
                              <div className="mt-4 p-3 bg-brand-primary/80 rounded-lg border border-[#3b82f6]/20 text-sm flex justify-between">
                                 <div className="flex flex-col">
                                    <span className="text-text-muted text-xs uppercase tracking-wider">API Base Rate</span>
-                                   <span className="font-medium text-white mt-1">₹{((editingService.baseRateUsd || 0) * 84).toFixed(3)} <span className="text-text-muted text-xs">/ 1000</span></span>
+                                   <span className="font-medium text-white mt-1">₹{((editingService.baseRateUsd || 0)).toFixed(3)} <span className="text-text-muted text-xs">/ 1000</span></span>
                                 </div>
                                 <div className="flex flex-col text-right">
                                    <span className="text-text-muted text-xs uppercase tracking-wider">Retail Rate</span>
-                                   <span className="font-bold text-[#3b82f6] mt-1">₹{(((editingService.baseRateUsd || 0) * 84) * (1 + (formData.marginPercentage || 0) / 100)).toFixed(3)} <span className="text-text-muted text-xs font-normal">/ 1000</span></span>
+                                   <span className="font-bold text-[#3b82f6] mt-1">₹{(((editingService.baseRateUsd || 0)) * (1 + (formData.marginPercentage || 0) / 100)).toFixed(3)} <span className="text-text-muted text-xs font-normal">/ 1000</span></span>
                                 </div>
                              </div>
                           )}
@@ -1063,7 +1059,7 @@ export default function AdminServices() {
                           <p className="text-sm text-text-muted mb-4 text-white">
                              Set the profit margin percentage for the selected services. This calculates retail price relative to the API's base rate.
                           </p>
-                          <div className="space-y-1.5">
+                          <div className="space-y-1.5 flex flex-col gap-4">
                              <div className="relative w-32">
                                <input 
                                  type="number"
@@ -1074,9 +1070,31 @@ export default function AdminServices() {
                                />
                                <span className="absolute right-3 top-3 text-[#3b82f6] font-bold">%</span>
                              </div>
+
+                             {syncSelectedId !== "all" && (() => {
+                               const selectedService = smmServices.find(s => String(s.growwServiceId) === syncSelectedId);
+                               if (selectedService) {
+                                  const baseRateInr = selectedService.providerRate;
+                                  const retailRate = baseRateInr * (1 + Number(syncMargin) / 100);
+                                  return (
+                                     <div className="p-3 bg-brand-primary/80 rounded-lg border border-[#3b82f6]/20 text-sm flex justify-between">
+                                        <div className="flex flex-col">
+                                           <span className="text-text-muted text-xs uppercase tracking-wider">API Base Rate</span>
+                                           <span className="font-medium text-white mt-1">₹{baseRateInr.toFixed(3)} <span className="text-text-muted text-xs">/ 1000</span></span>
+                                        </div>
+                                        <div className="flex flex-col text-right">
+                                           <span className="text-text-muted text-xs uppercase tracking-wider">Retail Rate</span>
+                                           <span className="font-bold text-[#3b82f6] mt-1">₹{retailRate.toFixed(3)} <span className="text-text-muted text-xs font-normal">/ 1000</span></span>
+                                        </div>
+                                     </div>
+                                  );
+                               }
+                               return null;
+                             })()}
                           </div>
                        </div>
                        </div>
+
                     </>
                  )}
               </div>
