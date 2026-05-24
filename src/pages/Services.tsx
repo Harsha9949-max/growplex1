@@ -5,8 +5,10 @@ import {
   Instagram,
   Search,
   Send,
+  Sparkles,
   X,
-  Youtube
+  Youtube,
+  Zap
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import React, { useEffect, useMemo, useState } from "react";
@@ -466,6 +468,7 @@ export default function Services() {
 
 function ExpandableServiceCard({ service, onBuy, getCategoryIcon }: { service: Service, onBuy: (pkg: Package) => void, getCategoryIcon: (cat: string) => React.ReactNode, key?: React.Key }) {
   const isSynced = service.type === "synced" && service.baseRateUsd !== undefined;
+  const isSpecial = service.type === "special";
   
   // Normal state
   const [selectedPkgId, setSelectedPkgId] = useState<string>(service.packages?.length > 0 ? service.packages[0].id : '');
@@ -482,7 +485,7 @@ function ExpandableServiceCard({ service, onBuy, getCategoryIcon }: { service: S
   let currentPkg: Package;
   if (isSynced) {
      const retailRatePer1000 = (service.baseRateUsd || 0) * (1 + (service.marginPercentage || 0) / 100);
-     const price = Math.round(retailRatePer1000 * (dynamicQty / 1000));
+     const price = Math.max(1, Math.round(retailRatePer1000 * (dynamicQty / 1000)));
      currentPkg = {
         id: `dynamic_${dynamicQty}`,
         quantity: String(dynamicQty),
@@ -507,17 +510,59 @@ function ExpandableServiceCard({ service, onBuy, getCategoryIcon }: { service: S
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9 }}
-      className="bg-brand-surface border border-brand-border p-4 sm:p-6 rounded-2xl shadow-lg flex flex-col transition-all hover:shadow-[0_10px_30px_rgba(0,0,0,0.5)] hover:border-brand-accent/50 group relative overflow-hidden"
+      className={`p-5 sm:p-6 rounded-2xl flex flex-col transition-all duration-500 relative overflow-hidden group ${
+        isSpecial 
+          ? "bg-[#0c051e] shadow-[0_20px_50px_rgba(0,0,0,0.8),_0_0_40px_rgba(255,0,127,0.25)] hover:shadow-[0_30px_60px_rgba(0,240,255,0.4),_0_0_50px_rgba(236,72,153,0.4)] hover:-translate-y-2 cursor-pointer"
+          : "bg-brand-surface border border-brand-border shadow-lg hover:shadow-[0_10px_30px_rgba(0,0,0,0.5)] hover:border-brand-accent/50 hover:-translate-y-1"
+      }`}
     >
-      <div className="flex justify-between items-start mb-4">
-        <div className="inline-flex items-center px-2 py-1 rounded bg-brand-primary border border-brand-border text-xs font-medium text-text-muted uppercase tracking-wider group-hover:border-brand-accent/30 transition-colors">
+      {isSpecial && (
+         <>
+            {/* 3D Multicolour mesh gradient background (shines through glass) */}
+            <div className="absolute inset-0 bg-gradient-to-br from-[#ff007f] via-[#7928ca] to-[#00f0ff] opacity-45 group-hover:opacity-75 transition-opacity duration-500 pointer-events-none z-0" />
+            
+            {/* Colourful Multicolour 3D Background Blobs (pulsing/moving mesh lights) */}
+            <div className="absolute top-[-10%] left-[-15%] w-[80%] h-[80%] bg-gradient-to-tr from-[#ff1493]/35 to-[#ff7700]/30 rounded-full blur-[60px] pointer-events-none mix-blend-screen animate-pulse z-0" style={{ animationDuration: '5s' }} />
+            <div className="absolute bottom-[-10%] right-[-15%] w-[80%] h-[80%] bg-gradient-to-bl from-[#00f0ff]/30 to-[#7928ca]/35 rounded-full blur-[60px] pointer-events-none mix-blend-screen animate-pulse z-0" style={{ animationDuration: '7s' }} />
+            <div className="absolute top-[30%] left-[20%] w-[50%] h-[50%] bg-gradient-to-r from-purple-500/25 to-pink-500/25 rounded-full blur-[55px] pointer-events-none mix-blend-screen animate-pulse z-0" style={{ animationDuration: '9s' }} />
+            
+            {/* Premium Translucent Deep Glass overlay (gives stunning 3D glassmorphism depth) */}
+            <div className="absolute inset-[1.5px] bg-[#0c051a]/70 backdrop-blur-2xl rounded-[15px] z-0 pointer-events-none" />
+            
+            {/* Glowing 3D Multicolor neon outer border */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-[#ff007f] via-[#7928ca] to-[#00f0ff] opacity-70 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl pointer-events-none p-[1.5px] z-0">
+               <div className="w-full h-full bg-transparent rounded-[15px]" />
+            </div>
+            
+            {/* Inner neon ambient glow */}
+            <div className="absolute inset-0 shadow-[inset_0_0_30px_rgba(236,72,153,0.25)] rounded-2xl pointer-events-none z-0" />
+            
+            {/* Dynamic Glass Sweep Light effect */}
+            <div className="absolute top-0 left-[-150%] w-[400%] h-full bg-gradient-to-r from-transparent via-white/15 to-transparent transform -skew-x-12 transition-all duration-1000 group-hover:left-[100%] pointer-events-none z-0" />
+         </>
+      )}
+
+      <div className="flex justify-between items-start mb-4 relative z-10">
+        <div className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium uppercase tracking-wider transition-colors ${
+          isSpecial
+            ? "bg-purple-950/60 border border-purple-700/50 text-purple-300"
+            : "bg-brand-primary border border-brand-border text-text-muted group-hover:border-brand-accent/30"
+        }`}>
           {getCategoryIcon(service.category)}
           {service.category.replace(/Instagram |YouTube |Telegram /g, "")}
         </div>
         
-        {/* Popular Badge */}
+        {/* Popular / Special Badge */}
         <AnimatePresence>
-          {isMostPopular && (
+          {isSpecial ? (
+             <motion.span 
+               initial={{ opacity: 0, scale: 0.8 }}
+               animate={{ opacity: 1, scale: 1 }}
+               className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-widest text-white bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-500 px-2.5 py-1 rounded-full shadow-[0_0_15px_rgba(236,72,153,0.4)] border border-white/20 animate-pulse"
+             >
+               <Sparkles size={10} className="fill-white" /> Special Pack
+             </motion.span>
+          ) : isMostPopular && (
              <motion.span 
                initial={{ opacity: 0, scale: 0.8 }}
                animate={{ opacity: 1, scale: 1 }}
@@ -530,11 +575,17 @@ function ExpandableServiceCard({ service, onBuy, getCategoryIcon }: { service: S
         </AnimatePresence>
       </div>
       
-      <h3 className="font-heading font-bold text-lg sm:text-xl mb-3 sm:mb-4 group-hover:text-brand-accent transition-colors">{service.name}</h3>
+      <h3 className={`font-heading font-extrabold text-lg sm:text-xl xl:text-2xl mb-3 sm:mb-4 tracking-tight transition-colors relative z-10 ${
+        isSpecial
+          ? "text-transparent bg-clip-text bg-gradient-to-r from-pink-300 via-purple-300 via-indigo-300 to-cyan-300 group-hover:from-white group-hover:via-pink-100 group-hover:to-cyan-200"
+          : "text-text-main group-hover:text-brand-accent"
+      }`}>
+        {service.name}
+      </h3>
       
       {/* Package Selector */}
-      <div className="mb-4 sm:mb-6 flex-grow flex flex-col">
-        <label className="text-[11px] sm:text-xs text-text-muted mb-1.5 sm:mb-2 font-medium">
+      <div className="mb-4 sm:mb-6 flex-grow flex flex-col relative z-10">
+        <label className={`text-[11px] sm:text-xs mb-1.5 sm:mb-2 font-medium ${isSpecial ? 'text-purple-300' : 'text-text-muted'}`}>
           {isSynced ? "Quantity" : "Select Package"}
         </label>
         
@@ -561,7 +612,11 @@ function ExpandableServiceCard({ service, onBuy, getCategoryIcon }: { service: S
             <select 
               value={selectedPkgId}
               onChange={(e) => setSelectedPkgId(e.target.value)}
-              className="w-full appearance-none bg-brand-primary border border-brand-border rounded-xl pl-4 pr-10 py-3 text-text-main font-semibold focus:outline-none focus:border-brand-accent/50 cursor-pointer text-sm"
+              className={`w-full appearance-none rounded-xl pl-4 pr-10 py-3 font-semibold cursor-pointer text-sm focus:outline-none transition-colors duration-200 ${
+                isSpecial
+                  ? "bg-[#110926] border border-purple-500/40 text-purple-100 focus:border-purple-400 shadow-[0_0_15px_rgba(139,92,246,0.1)]"
+                  : "bg-brand-primary border border-brand-border text-text-main focus:border-brand-accent/50"
+              }`}
             >
               {service.packages?.map((pkg) => {
                 const label = pkg.quantity.match(/[A-Za-z]/) && !pkg.quantity.endsWith('K') && !pkg.quantity.endsWith('M')
@@ -574,17 +629,23 @@ function ExpandableServiceCard({ service, onBuy, getCategoryIcon }: { service: S
                 );
               })}
             </select>
-            <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-text-muted">
+            <div className={`absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none ${isSpecial ? 'text-purple-400' : 'text-text-muted'}`}>
               <ChevronDown size={16} />
             </div>
           </div>
         )}
       </div>
       
-      <div className="flex items-center justify-between mb-4 sm:mb-6 pt-3 sm:pt-4 border-t border-brand-border/50 w-full overflow-hidden">
+      <div className={`flex items-center justify-between mb-4 sm:mb-6 pt-3 sm:pt-4 border-t w-full overflow-hidden relative z-10 ${
+         isSpecial ? "border-purple-500/20" : "border-brand-border/50"
+      }`}>
         <div className="pr-2">
           <p className="text-[11px] sm:text-xs text-text-muted mb-0.5 sm:mb-1">Total Price</p>
-          <p className="text-xl sm:text-2xl font-bold text-text-main group-hover:text-brand-accent transition-colors flex items-end gap-2">
+          <p className={`text-xl sm:text-2xl font-extrabold transition-all duration-300 flex items-end gap-2 ${
+            isSpecial
+              ? "text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-400 to-cyan-400 group-hover:from-pink-350 group-hover:to-cyan-350 drop-shadow-[0_2px_8px_rgba(236,72,153,0.3)]"
+              : "text-text-main group-hover:text-brand-accent"
+          }`}>
             ₹{currentPkg.price}
             {isSynced && (
               <span className="text-[10px] text-text-muted font-normal uppercase tracking-wider mb-1">
@@ -595,15 +656,22 @@ function ExpandableServiceCard({ service, onBuy, getCategoryIcon }: { service: S
         </div>
         <div className="text-right">
           <p className="text-xs text-text-muted mb-1 flex items-center gap-1 justify-end"><Clock size={12}/> Delivery</p>
-          <p className="text-sm font-medium">{service.deliveryTime}</p>
+          <p className={`text-sm font-semibold ${isSpecial ? "text-purple-200" : ""}`}>{service.deliveryTime}</p>
         </div>
       </div>
       
       <button 
         onClick={() => onBuy(currentPkg)}
-        className="w-full bg-brand-primary border border-brand-border text-text-main py-2.5 sm:py-3 rounded-xl font-bold text-sm sm:text-base group-hover:bg-brand-accent group-hover:text-brand-primary group-hover:border-brand-accent transition-all duration-300 min-h-[44px]"
+        className={`w-full py-2.5 sm:py-3 rounded-xl font-bold text-sm sm:text-base transition-all duration-300 min-h-[44px] relative z-10 ${
+          isSpecial
+            ? "bg-gradient-to-r from-pink-600 via-purple-600 to-cyan-500 text-white font-black uppercase tracking-wider shadow-[0_4px_25px_rgba(236,72,153,0.45)] hover:shadow-[0_4px_35px_rgba(6,182,212,0.6)] hover:scale-[1.03] active:scale-[0.98] border-none"
+            : "bg-brand-primary border border-brand-border text-text-main group-hover:bg-brand-accent group-hover:text-brand-primary group-hover:border-brand-accent"
+        }`}
       >
-        Buy Now
+        <span className="flex items-center justify-center gap-1.5 font-bold uppercase tracking-wider">
+          {isSpecial && <Zap size={14} className="fill-white animate-pulse" />}
+          Buy Now
+        </span>
       </button>
     </motion.div>
   );

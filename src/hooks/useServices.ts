@@ -29,15 +29,22 @@ function applyMargin(services: Service[], globalMargin: number): Service[] {
         // 4. Calculate final retail price based on base price + margin
         // But for synced services, they are synced with base values as per 1000 quantity. 
         // AdminServices already stored `basePriceInr` in `pkg.basePrice` correctly for 1000 items.
-        // Wait, packages quantity might not be 1000. So we need to calculate: price = (base / 1000) * quantity * (1 + margin / 100)
-        // Wait, `AdminServices.tsx` uses `baseRateUsd` to generate basePrice for the package. 
-        // For simplicity, we just apply the margin on `pkg.basePrice` because `pkg.basePrice` represents the cost for the package's specific quantity.
+        // Packages quantity might not be 1000. So we calculate: price = (base / 1000) * quantity * (1 + margin / 100)
         const margin = Number(serviceMargin) || 0;
+
+        if ((s as any).type === 'synced') {
+          const qtyVal = parseFloat(pkg.quantity.replace(/[^0-9.-]/g, "")) || 1000;
+          return {
+            ...pkg,
+            basePrice: base,
+            price: Math.max(1, Math.ceil(base * (qtyVal / 1000) * (1 + margin / 100)))
+          };
+        }
 
         return {
           ...pkg,
           basePrice: base,
-          price: Math.max(0, Math.ceil(base * (1 + margin / 100)))
+          price: Math.max(1, Math.ceil(base * (1 + margin / 100)))
         };
       })
     };

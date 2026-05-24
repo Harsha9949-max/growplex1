@@ -147,7 +147,7 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
     setFinalQuantity(val);
     const num = Number(val);
     if (!isNaN(num) && num > 0) {
-       setFinalPrice(Math.round(unitPrice * num));
+       setFinalPrice(Math.max(1, Math.round(unitPrice * num)));
     }
   };
 

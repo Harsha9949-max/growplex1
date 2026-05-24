@@ -152,7 +152,7 @@ export default function AdminServices() {
       const margin = formData.marginPercentage || 0;
       const basePriceInr = editingService.baseRateUsd;
       const newRetail = basePriceInr * (1 + margin / 100);
-      newPkgs[index].price = Math.round(newRetail * (Number(value) / 1000));
+      newPkgs[index].price = Math.max(1, Math.round(newRetail * (Number(value) / 1000)));
     }
 
     setFormData({ ...formData, packages: newPkgs });
@@ -166,7 +166,7 @@ export default function AdminServices() {
       const margin = formData.marginPercentage || 0;
       const basePriceInr = editingService.baseRateUsd;
       const newRetail = basePriceInr * (1 + margin / 100);
-      newPrice = Math.round(newRetail);
+      newPrice = Math.max(1, Math.round(newRetail));
     }
     
     setFormData({
@@ -850,7 +850,7 @@ export default function AdminServices() {
                                     
                                     const newPackages = prev.packages.map(p => ({
                                        ...p,
-                                       price: Math.round(newRetail * (Number(p.quantity) / 1000))
+                                       price: Math.max(1, Math.round(newRetail * (Number(p.quantity) / 1000)))
                                     }));
                                     
                                     return { 
