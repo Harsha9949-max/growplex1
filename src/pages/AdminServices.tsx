@@ -205,7 +205,9 @@ export default function AdminServices() {
         ...formData,
         packages: formData.packages.map(pkg => ({
           ...pkg,
-          basePrice: Number(pkg.price) // Reset baseline to whatever admin manually typed
+          // Only reset baseline from retail price if it's NOT a synced service. 
+          // For synced services, preserve the existing basePrice from the API.
+          basePrice: formData.type === 'synced' && pkg.basePrice !== undefined ? pkg.basePrice : Number(pkg.price) 
         })),
       };
 
