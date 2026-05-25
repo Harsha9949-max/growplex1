@@ -257,8 +257,14 @@ export default function Services() {
       );
     }
 
-    // Sort by checking the minimum package price for each service
+    // Sort by checking the special status first, then the selected sub-sort parameter
     result = result.sort((a, b) => {
+      const aIsSpecial = a.type === "special";
+      const bIsSpecial = b.type === "special";
+
+      if (aIsSpecial && !bIsSpecial) return -1;
+      if (!aIsSpecial && bIsSpecial) return 1;
+
       const aPkgs = a.packages || [];
       const bPkgs = b.packages || [];
       const aMinPrice = aPkgs.length > 0 ? Math.min(...aPkgs.map(p => p.price || 0)) : 0;
@@ -483,6 +489,18 @@ function ExpandableServiceCard({ service, onBuy, getCategoryIcon }: { service: S
   // Normal state
   const [selectedPkgId, setSelectedPkgId] = useState<string>(service.packages?.length > 0 ? service.packages[0].id : '');
   
+  // Real-time synchronization guard: ensure selected package ID is valid when the service is updated in real-time
+  useEffect(() => {
+    if (service.packages && service.packages.length > 0) {
+      const exists = service.packages.some(p => p.id === selectedPkgId);
+      if (!exists) {
+        setSelectedPkgId(service.packages[0].id);
+      }
+    } else {
+      setSelectedPkgId('');
+    }
+  }, [service.packages, selectedPkgId]);
+
   const defaultPkg = service.packages?.[0] || {} as Package;
   const minQty = defaultPkg.min || 100;
   const maxQty = defaultPkg.max || 10000;

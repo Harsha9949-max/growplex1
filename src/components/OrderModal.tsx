@@ -1,10 +1,11 @@
 import { addDoc, collection, doc, getDoc, serverTimestamp } from "firebase/firestore";
+import { getDownloadURL, ref as sRef, uploadString } from "firebase/storage";
 import { ArrowLeft, Camera, Check, CheckCircle, Clock, Copy, IndianRupee, Info, Loader2, Upload, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { QRCodeSVG } from "qrcode.react";
 import React, { useCallback, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { db } from "../lib/firebase";
+import { db, storage } from "../lib/firebase";
 import { generateOrderId } from "../lib/utils";
 import { Package, Service } from "../types";
 
@@ -256,6 +257,12 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
       return;
     }
 
+    // Special packages must bypass automated Razorpay payment and show the classic manual QR payment system
+    if (service.type === "special") {
+      setStep("payment");
+      return;
+    }
+
     // Instead of setting step to "payment", launch Razorpay
     try {
       console.log("Initiating payment...");
@@ -410,7 +417,67 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
   };
 
   const submitOrder = async () => {
-    // Legacy QR code submission logic removed
+    if (!screenshotPreview) {
+      setError("Please upload an image of your payment confirmation.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      setUploadProgress("Uploading payment screenshot...");
+
+      // Generate a clean target path in Firebase Storage for the uploaded screenshot
+      const pathSuffix = Date.now();
+      const screenshotPath = `screenshots/${orderId}_${pathSuffix}.jpg`;
+      const storageReference = sRef(storage, screenshotPath);
+
+      // Upload the compressed base64 image data-url string directly
+      const uploadResult = await uploadString(storageReference, screenshotPreview, "data_url");
+      const screenshotUrl = await getDownloadURL(uploadResult.ref);
+
+      setUploadProgress("Recording order in system...");
+      const dbOrderData: any = {
+        orderId: orderId,
+        customerName: formData.customerName.trim(),
+        phone: formData.phone.trim(),
+        serviceLink: formData.serviceLink.trim(),
+        serviceName: service.name,
+        serviceCategory: service.category,
+        packageQuantity: finalQuantity,
+        price: finalPrice,
+        paymentStatus: "pending_verification", // Admin will manual verify this screenshot
+        orderStatus: "new",
+        paymentScreenshotUrl: screenshotUrl,
+        paymentScreenshotPath: screenshotPath,
+        createdAt: serverTimestamp(),
+      };
+
+      await addDoc(collection(db, "orders"), dbOrderData);
+
+      setUploadProgress("Sending confirmation notification...");
+      try {
+        await sendTelegramNotification({
+          orderId: orderId,
+          customerName: formData.customerName,
+          phone: formData.phone,
+          serviceName: service.name,
+          packageQuantity: finalQuantity,
+          price: finalPrice,
+          serviceLink: formData.serviceLink,
+          screenshotUrl: screenshotUrl,
+        });
+      } catch (tgErr) {
+        console.warn("Could not dispatch Telegram alert message:", tgErr);
+      }
+
+      // Smooth progression to the success screen
+      navigate("/success", { state: { orderId: orderId } });
+    } catch (err: any) {
+      console.error("Manual QR payment flow submission execution failed:", err);
+      setError(err.message || "An error occurred while confirming your order. Please try again.");
+      setLoading(false);
+    }
   };
 
   return (
