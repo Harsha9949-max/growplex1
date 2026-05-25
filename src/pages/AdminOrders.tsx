@@ -1,4 +1,4 @@
-import { collection, deleteField, doc, onSnapshot, orderBy, query, updateDoc } from "firebase/firestore";
+import { collection, deleteField, doc, onSnapshot, orderBy, query, updateDoc, deleteDoc } from "firebase/firestore";
 import { deleteObject, ref } from "firebase/storage";
 import {
   Camera,
@@ -7,7 +7,8 @@ import {
   Filter,
   Search,
   ShieldCheck,
-  X
+  X,
+  Trash2
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
@@ -134,6 +135,50 @@ export default function AdminOrders() {
     }
   };
 
+  const [deletingFailed, setDeletingFailed] = useState(false);
+
+  const handleDeleteFailedOrders = async () => {
+    const failedOrders = orders.filter(o => o.orderStatus === 'failed');
+    if (failedOrders.length === 0) {
+      alert("No failed orders to delete.");
+      return;
+    }
+    
+    if (!window.confirm(`Are you sure you want to delete ${failedOrders.length} failed order(s)? This action cannot be undone.`)) {
+      return;
+    }
+    
+    setDeletingFailed(true);
+    try {
+      let deletedCount = 0;
+      for (const order of failedOrders) {
+        if (order.id) {
+          // Delete screenshot if exists to clear storage space
+          if (order.paymentScreenshotPath) {
+            try {
+              const screenshotRef = ref(storage, order.paymentScreenshotPath);
+              await deleteObject(screenshotRef);
+            } catch (err) {
+              console.warn("Screenshot deletion failed or already deleted", err);
+            }
+          }
+          await deleteDoc(doc(db, "orders", order.id));
+          deletedCount++;
+        }
+      }
+      alert(`Successfully deleted ${deletedCount} failed order(s).`);
+      
+      if (selectedOrder && selectedOrder.orderStatus === 'failed') {
+          setSelectedOrder(null);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("An error occurred while deleting some orders.");
+    } finally {
+      setDeletingFailed(false);
+    }
+  };
+
   const filteredAndSortedOrders = useMemo(() => {
     let result = [...orders];
 
@@ -244,17 +289,28 @@ export default function AdminOrders() {
               );
             })}
           </div>
-          <div className="flex items-center gap-2 text-sm text-text-muted">
-            <Filter size={14} />
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="bg-brand-surface border border-brand-border rounded-lg px-3 py-1.5 text-xs sm:text-sm focus:outline-none focus:border-brand-accent/50 cursor-pointer flex-1 sm:flex-initial sm:w-40"
+          <div className="flex flex-col sm:flex-row justify-between gap-3 items-start sm:items-center">
+            <div className="flex items-center gap-2 text-sm text-text-muted">
+              <Filter size={14} />
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="bg-brand-surface border border-brand-border rounded-lg px-3 py-1.5 text-xs sm:text-sm focus:outline-none focus:border-brand-accent/50 cursor-pointer w-full sm:w-40"
+              >
+                <option value="Date">Sort by Date</option>
+                <option value="Price">Sort by Price</option>
+                <option value="Status">Sort by Status</option>
+              </select>
+            </div>
+
+            <button
+              onClick={handleDeleteFailedOrders}
+              disabled={deletingFailed}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium bg-red-500/10 text-red-500 hover:bg-red-500/20 border border-red-500/20 transition-colors disabled:opacity-50 w-full sm:w-auto justify-center"
             >
-              <option value="Date">Sort by Date</option>
-              <option value="Price">Sort by Price</option>
-              <option value="Status">Sort by Status</option>
-            </select>
+              <Trash2 size={14} />
+              {deletingFailed ? "Deleting..." : "Delete Failed Orders"}
+            </button>
           </div>
         </div>
 

@@ -2,6 +2,7 @@ import { collection, doc, getDoc, onSnapshot, query, where } from "firebase/fire
 import {
   ChevronDown,
   Clock,
+  Facebook,
   Instagram,
   Search,
   Send,
@@ -189,7 +190,7 @@ export const BASE_SERVICES: Service[] = [
   }
 ];
 
-const CATEGORIES = ["All", "Followers", "Likes", "Comments", "Views", "YouTube", "Telegram"];
+const CATEGORIES = ["All", "Instagram", "YouTube", "Telegram", "Facebook"];
 const SORT_OPTIONS = [
   { id: "default", label: "Default Order" },
   { id: "price-asc", label: "Starting Price: Low to High" },
@@ -239,7 +240,12 @@ export default function Services() {
     let result = [...servicesWithMargin];
 
     if (selectedCategory !== "All") {
-      result = result.filter(s => s.category.toLowerCase().includes(selectedCategory.toLowerCase()));
+      const catLower = selectedCategory.toLowerCase();
+      result = result.filter(s => {
+        const nameLower = (s.name || "").toLowerCase();
+        const categoryLower = (s.category || "").toLowerCase();
+        return nameLower.includes(catLower) || categoryLower.includes(catLower);
+      });
     }
 
     if (searchQuery.trim()) {
@@ -280,11 +286,15 @@ export default function Services() {
   }, [searchQuery, selectedCategory, sortBy, servicesWithMargin]);
 
   const getCategoryIcon = (category: string) => {
-    if (category.toLowerCase().includes("youtube")) {
+    const catLower = (category || "").toLowerCase();
+    if (catLower.includes("youtube")) {
       return <Youtube size={14} className="mr-1.5" />;
     }
-    if (category.toLowerCase().includes("telegram")) {
+    if (catLower.includes("telegram")) {
       return <Send size={14} className="mr-1.5" />;
+    }
+    if (catLower.includes("facebook")) {
+      return <Facebook size={14} className="mr-1.5" />;
     }
     return <Instagram size={14} className="mr-1.5" />;
   };
