@@ -14,6 +14,7 @@ function applyMargin(services: Service[], globalMargin: number): Service[] {
 
     return {
       ...s,
+      marginPercentage: serviceMargin,
       packages: s.packages.map(pkg => {
         // 1. Get the best base value
         let base: any = pkg.basePrice !== undefined && pkg.basePrice !== null ? pkg.basePrice : pkg.price;
@@ -37,14 +38,16 @@ function applyMargin(services: Service[], globalMargin: number): Service[] {
           return {
             ...pkg,
             basePrice: base,
-            price: Math.max(1, Math.ceil(base * (qtyVal / 1000) * (1 + margin / 100)))
+            price: Math.max(1, Math.ceil(base * (qtyVal / 1000) * (1 + margin / 100))) // apply markup only for API synced 
           };
         }
 
+        // For manual "standard" and "special" packages, DO NOT apply global margin. 
+        // The admin manually typed exactly what they want to charge (the retail price).
         return {
           ...pkg,
           basePrice: base,
-          price: Math.max(1, Math.ceil(base * (1 + margin / 100)))
+          price: base
         };
       })
     };

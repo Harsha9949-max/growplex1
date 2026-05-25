@@ -542,19 +542,29 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
                      <p className="text-xs text-text-muted mb-1">Package Size</p>
                      
                      <div className="flex flex-col gap-2 relative">
-                        <div className="flex items-center">
-                           <input 
-                             type="number" 
-                             min={minQty}
-                             max={maxQty}
-                             value={finalQuantity}
-                             onChange={(e) => handleCustomQuantityChange(e.target.value)}
-                             className="bg-brand-surface border border-brand-border rounded-lg px-3 py-1.5 w-32 font-bold text-lg text-text-main focus:outline-none focus:border-brand-accent/50 transition-colors"
-                           />
-                           <span className="ml-2 text-xs text-text-muted">Min: {minQty} | Max: {maxQty}</span>
-                        </div>
-                        {Number(finalQuantity) < minQty && <span className="text-xs text-red-500 absolute -bottom-5">Minimum is {minQty}</span>}
-                        {Number(finalQuantity) > maxQty && <span className="text-xs text-red-500 absolute -bottom-5">Maximum is {maxQty}</span>}
+                        {isSynced ? (
+                          <>
+                            <div className="flex items-center">
+                               <input 
+                                 type="number" 
+                                 min={minQty}
+                                 max={maxQty}
+                                 value={finalQuantity}
+                                 onChange={(e) => handleCustomQuantityChange(e.target.value)}
+                                 className="bg-brand-surface border border-brand-border rounded-lg px-3 py-1.5 w-32 font-bold text-lg text-text-main focus:outline-none focus:border-brand-accent/50 transition-colors"
+                               />
+                               <span className="ml-2 text-xs text-text-muted">Min: {minQty} | Max: {maxQty}</span>
+                            </div>
+                            {Number(finalQuantity) < minQty && <span className="text-xs text-red-500 absolute -bottom-5">Minimum is {minQty}</span>}
+                            {Number(finalQuantity) > maxQty && <span className="text-xs text-red-500 absolute -bottom-5">Maximum is {maxQty}</span>}
+                          </>
+                        ) : (
+                          <div className="flex items-center">
+                             <div className="bg-brand-surface border border-brand-border rounded-lg px-4 py-2 font-bold text-lg text-text-main line-clamp-1 max-w-[200px] truncate" title={selectedPackage.quantity}>
+                               {selectedPackage.quantity}
+                             </div>
+                          </div>
+                        )}
                      </div>
                    </div>
                    <div className="text-right flex flex-col justify-end">

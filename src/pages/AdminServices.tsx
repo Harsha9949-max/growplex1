@@ -87,8 +87,18 @@ export default function AdminServices() {
   const [syncLoading, setSyncLoading] = useState(false);
   const [syncSelectedId, setSyncSelectedId] = useState<string>("all");
   const [syncMargin, setSyncMargin] = useState<string>("40");
+  const [globalMargin, setGlobalMargin] = useState<number>(40);
 
   useEffect(() => {
+    const unsubMargin = onSnapshot(doc(db, "system", "settings"), (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (typeof data.defaultMarkupMargin === "number") {
+          setGlobalMargin(data.defaultMarkupMargin);
+        }
+      }
+    });
+
     const q = query(collection(db, "services"));
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -111,7 +121,10 @@ export default function AdminServices() {
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      unsubMargin();
+    };
   }, []);
 
   const handleOpenForm = (service?: ServiceDocument) => {
@@ -656,7 +669,7 @@ export default function AdminServices() {
                         {service.type === 'synced' && service.baseRateUsd !== undefined ? (
                            <div className="flex flex-col gap-0.5">
                               <span className="text-text-muted">Base: ₹{((service.baseRateUsd || 0)).toFixed(3)} <span className="text-[10px]">/ 1000</span></span>
-                              <span className="text-[#3b82f6] font-semibold">Retail: ₹{(((service.baseRateUsd || 0)) * (1 + (service.marginPercentage || 0) / 100)).toFixed(3)} <span className="text-[10px] font-normal text-text-muted">/ 1000</span></span>
+                              <span className="text-[#3b82f6] font-semibold">Retail: ₹{(((service.baseRateUsd || 0)) * (1 + ((service.marginPercentage !== undefined ? service.marginPercentage : globalMargin) || 0) / 100)).toFixed(3)} <span className="text-[10px] font-normal text-text-muted">/ 1000</span></span>
                            </div>
                         ) : (
                            <>
