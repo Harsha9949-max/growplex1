@@ -144,17 +144,19 @@ export default function AdminOrders() {
 
     try {
       if (order.id) {
-        if (order.paymentScreenshotPath) {
-          try {
-            const screenshotRef = ref(storage, order.paymentScreenshotPath);
-            await deleteObject(screenshotRef);
-          } catch (err) {
-            console.warn("Screenshot deletion failed or already deleted", err);
-          }
-        }
-        await deleteDoc(doc(db, "orders", order.id));
-        alert('Order deleted successfully.');
+        // Optimistic UI update: Close modal immediately
         setSelectedOrder(null);
+        
+        // Delete document instantly for optimistic local UI sync
+        await deleteDoc(doc(db, "orders", order.id));
+
+        // Delete screenshot in background
+        if (order.paymentScreenshotPath) {
+          const screenshotRef = ref(storage, order.paymentScreenshotPath);
+          deleteObject(screenshotRef).catch(err => {
+            console.warn("Screenshot deletion failed or already deleted", err);
+          });
+        }
       }
     } catch(err) {
       console.error(err);
@@ -174,28 +176,29 @@ export default function AdminOrders() {
     }
     
     setDeletingFailed(true);
+    
+    if (selectedOrder && selectedOrder.orderStatus === 'failed') {
+        setSelectedOrder(null);
+    }
+
     try {
-      let deletedCount = 0;
-      for (const order of failedOrders) {
+      // Run deletions in parallel with background screenshot deletion
+      const deletePromises = failedOrders.map(async (order) => {
         if (order.id) {
-          // Delete screenshot if exists to clear storage space
+          const docPromise = deleteDoc(doc(db, "orders", order.id));
+          
           if (order.paymentScreenshotPath) {
-            try {
-              const screenshotRef = ref(storage, order.paymentScreenshotPath);
-              await deleteObject(screenshotRef);
-            } catch (err) {
+            const screenshotRef = ref(storage, order.paymentScreenshotPath);
+            deleteObject(screenshotRef).catch(err => {
               console.warn("Screenshot deletion failed or already deleted", err);
-            }
+            });
           }
-          await deleteDoc(doc(db, "orders", order.id));
-          deletedCount++;
+          
+          return docPromise;
         }
-      }
-      alert(`Successfully deleted ${deletedCount} failed order(s).`);
+      });
       
-      if (selectedOrder && selectedOrder.orderStatus === 'failed') {
-          setSelectedOrder(null);
-      }
+      await Promise.all(deletePromises);
     } catch (err) {
       console.error(err);
       alert("An error occurred while deleting some orders.");
