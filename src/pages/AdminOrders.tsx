@@ -137,6 +137,31 @@ export default function AdminOrders() {
 
   const [deletingFailed, setDeletingFailed] = useState(false);
 
+  const handleDeleteSingleOrder = async (order: any) => {
+    if (!window.confirm(`Are you sure you want to delete order ${order.orderId}? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      if (order.id) {
+        if (order.paymentScreenshotPath) {
+          try {
+            const screenshotRef = ref(storage, order.paymentScreenshotPath);
+            await deleteObject(screenshotRef);
+          } catch (err) {
+            console.warn("Screenshot deletion failed or already deleted", err);
+          }
+        }
+        await deleteDoc(doc(db, "orders", order.id));
+        alert('Order deleted successfully.');
+        setSelectedOrder(null);
+      }
+    } catch(err) {
+      console.error(err);
+      alert('An error occurred while deleting the order.');
+    }
+  };
+
   const handleDeleteFailedOrders = async () => {
     const failedOrders = orders.filter(o => o.orderStatus === 'failed');
     if (failedOrders.length === 0) {
@@ -592,6 +617,13 @@ export default function AdminOrders() {
                      className="flex-1 bg-brand-surface border border-brand-border text-text-main hover:bg-brand-border py-2.5 rounded-xl font-medium transition-all"
                    >
                      Close Card
+                   </button>
+                   <button
+                     onClick={() => handleDeleteSingleOrder(selectedOrder)}
+                     title="Delete Order"
+                     className="bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 py-2.5 px-4 rounded-xl flex items-center justify-center transition-all"
+                   >
+                     <Trash2 size={18} />
                    </button>
                  </div>
               </div>
