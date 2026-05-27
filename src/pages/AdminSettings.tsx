@@ -1,5 +1,5 @@
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { Database, Globe, Key, Save, Send, Shield, Wrench } from "lucide-react";
+import { Database, Globe, Key, Save, Send, Shield, Wrench, MessageSquare } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AdminLayout } from "../components/AdminLayout";
 import { db } from "../lib/firebase";
@@ -32,6 +32,7 @@ export default function AdminSettings() {
     disableRegistrations: false,
     telegramBotToken: "",
     telegramChatId: "",
+    googleChatWebhookUrl: "",
   });
 
   useEffect(() => {
@@ -140,7 +141,7 @@ export default function AdminSettings() {
                     </div>
                   </div>
 
-                  <h3 className="text-lg font-bold font-heading mb-4 mt-6 border-b border-brand-border pb-3 flex items-center gap-2">
+                   <h3 className="text-lg font-bold font-heading mb-4 mt-6 border-b border-brand-border pb-3 flex items-center gap-2">
                     <Send size={18} className="text-brand-accent"/> Telegram Notifications
                   </h3>
                   <div className="space-y-4">
@@ -153,6 +154,17 @@ export default function AdminSettings() {
                       <label className="text-sm font-medium text-text-muted mb-1 block">Telegram Chat ID</label>
                       <input type="text" value={settings.telegramChatId} onChange={e => handleChange('telegramChatId', e.target.value)} placeholder="e.g., 6376644545" className="w-full bg-brand-primary border border-brand-border rounded-lg px-4 py-2 text-text-main focus:outline-none focus:border-brand-accent/50" />
                       <p className="text-xs text-text-muted mt-1">Your personal or group chat ID for receiving order alerts</p>
+                    </div>
+                  </div>
+
+                  <h3 className="text-lg font-bold font-heading mb-4 mt-6 border-b border-brand-border pb-3 flex items-center gap-2">
+                    <MessageSquare size={18} className="text-brand-accent"/> Google Chat Integration
+                  </h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium text-text-muted mb-1 block">Google Chat Webhook URL</label>
+                      <input type="text" value={settings.googleChatWebhookUrl || ""} onChange={e => handleChange('googleChatWebhookUrl', e.target.value)} placeholder="https://chat.googleapis.com/v1/spaces/.../webhooks/..." className="w-full bg-brand-primary border border-brand-border rounded-lg px-4 py-2 text-text-main focus:outline-none focus:border-brand-accent/50" />
+                      <p className="text-xs text-text-muted mt-1">Incoming webhook URL to publish team conversations directly to a Google Chat space.</p>
                     </div>
                   </div>
                 </div>

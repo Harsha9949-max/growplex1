@@ -73,7 +73,13 @@ export function Navbar() {
             {currentUser ? (
               <>
                 <Link
-                  to={isAdmin ? "/admin/dashboard" : "/dashboard"}
+                  to={
+                    isAdmin 
+                      ? "/admin/dashboard" 
+                      : (userProfile?.role === 'team_member' || userProfile?.role === 'influencer')
+                        ? "/team/dashboard"
+                        : "/dashboard"
+                  }
                   className="text-text-muted hover:text-brand-accent px-3 py-2 text-sm font-bold transition-colors"
                 >
                   Dashboard
@@ -140,7 +146,13 @@ export function Navbar() {
                 {currentUser ? (
                   <>
                     <Link
-                      to={isAdmin ? "/admin/dashboard" : "/dashboard"}
+                      to={
+                        isAdmin 
+                          ? "/admin/dashboard" 
+                          : (userProfile?.role === 'team_member' || userProfile?.role === 'influencer')
+                            ? "/team/dashboard"
+                            : "/dashboard"
+                      }
                       onClick={() => setMobileMenuOpen(false)}
                       className="px-4 py-3 rounded-lg font-medium text-brand-accent bg-brand-accent/10 min-h-[48px] flex items-center mt-3"
                     >

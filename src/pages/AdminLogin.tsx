@@ -1,8 +1,8 @@
 import { collection, getDocs, query, where } from "firebase/firestore";
-import { ArrowRight, Loader2, ShieldCheck } from "lucide-react";
+import { ArrowRight, Loader2, ShieldCheck, ArrowLeft } from "lucide-react";
 import { motion } from "motion/react";
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { db } from "../lib/firebase";
 
 export default function AdminLogin() {
@@ -71,6 +71,14 @@ export default function AdminLogin() {
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center p-4 md:p-6 relative overflow-hidden font-sans">
+      {/* Back to Home/Login Button */}
+      <Link 
+        to="/login" 
+        className="absolute top-6 left-6 z-20 flex items-center gap-2 text-slate-400 hover:text-white transition-colors py-2 px-4 bg-white/[0.03] border border-white/5 rounded-full backdrop-blur-md text-sm font-medium"
+      >
+        <ArrowLeft size={16} /> User Portal
+      </Link>
+
       <div className="absolute top-0 left-0 w-full h-full">
         <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-[#E8B84B]/5 rounded-full blur-[150px] animate-pulse" />
       </div>

@@ -1,4 +1,4 @@
-import { ArrowRight, Lock, ShieldCheck, Mail } from 'lucide-react';
+import { ArrowRight, Lock, ShieldCheck, Mail, ArrowLeft } from 'lucide-react';
 import { motion } from 'motion/react';
 import React, { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
@@ -59,6 +59,14 @@ const Login: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center p-4 md:p-6 relative overflow-hidden font-sans">
       <SEO title="Login | Growplex" description="Login securely to your Growplex account." noindex={true} />
+      {/* Back to Home Button */}
+      <Link 
+        to="/" 
+        className="absolute top-6 left-6 z-20 flex items-center gap-2 text-slate-400 hover:text-white transition-colors py-2 px-4 bg-white/[0.03] border border-white/5 rounded-full backdrop-blur-md text-sm font-medium"
+      >
+        <ArrowLeft size={16} /> Back to Home
+      </Link>
+
       {/* Dynamic Background */}
       <div className="absolute top-0 left-0 w-full h-full">
         <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-[#E8B84B]/5 rounded-full blur-[150px] animate-pulse" />

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { db, auth } from '../lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -14,85 +15,105 @@ export const AdminProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, a
 
   useEffect(() => {
     const authData = localStorage.getItem('adminAuth');
-    if (!authData) {
-      setAuthStatus({ isAllowed: false, role: null });
-      return;
+
+    // If we have an adminAuth in localStorage, handle it first
+    if (authData) {
+      try {
+        const cachedUser = JSON.parse(authData);
+        if (cachedUser && cachedUser.id) {
+          if (cachedUser.id === "super-admin-bypass") {
+            const role = cachedUser.role || "Super Admin";
+            const allowed = !allowedRoles || allowedRoles.includes(role);
+            setAuthStatus({ isAllowed: allowed, role });
+            return;
+          }
+
+          // Realtime watch the admin/support/sub-admin user doc
+          const unsubscribe = onSnapshot(doc(db, "users", cachedUser.id), (docSnap) => {
+            if (docSnap.exists()) {
+              const userData = docSnap.data();
+              const currentRole = userData.role;
+              if (currentRole) {
+                const updatedUser = { ...cachedUser, ...userData, id: docSnap.id };
+                localStorage.setItem('adminAuth', JSON.stringify(updatedUser));
+
+                const isClonedPage = userData.clonedPages?.includes(location.pathname);
+                const isRoleAllowed = !allowedRoles || allowedRoles.includes(currentRole);
+
+                if (isRoleAllowed || isClonedPage) {
+                  setAuthStatus({ isAllowed: true, role: currentRole });
+                } else {
+                  setAuthStatus({ isAllowed: false, role: currentRole });
+                }
+              } else {
+                localStorage.removeItem('adminAuth');
+                setAuthStatus({ isAllowed: false, role: null });
+              }
+            } else {
+              localStorage.removeItem('adminAuth');
+              setAuthStatus({ isAllowed: false, role: null });
+            }
+          }, (err) => {
+            console.error("Error monitoring admin user doc:", err);
+            // Fallback to cache
+            const role = cachedUser.role;
+            const isClonedPage = cachedUser.clonedPages?.includes(location.pathname);
+            const isRoleAllowed = !allowedRoles || allowedRoles.includes(role);
+            setAuthStatus({ isAllowed: isRoleAllowed || isClonedPage, role });
+          });
+
+          return () => unsubscribe();
+        }
+      } catch (e) {
+        console.error("Failed to parse adminAuth:", e);
+      }
     }
 
-    try {
-      const cachedUser = JSON.parse(authData);
-      if (!cachedUser || !cachedUser.id) {
-        setAuthStatus({ isAllowed: false, role: null });
-        return;
+    // Otherwise, check Firebase Auth for Team members with clonedPages access
+    let unsubUserSnap: (() => void) | null = null;
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      // Clean up previous user snapshot if auth state changes
+      if (unsubUserSnap) {
+        unsubUserSnap();
+        unsubUserSnap = null;
       }
 
-      // If it is the hardcoded super-admin bypass, proceed directly with cache
-      if (cachedUser.id === "super-admin-bypass") {
-        const role = cachedUser.role || "Super Admin";
-        if (allowedRoles && !allowedRoles.includes(role)) {
-          setAuthStatus({ isAllowed: false, role });
-        } else {
-          setAuthStatus({ isAllowed: true, role });
-        }
-        return;
-      }
-
-      // Realtime subscription to the user doc in firestore for immediate reflection of new roles, status, and permissions
-      const userDocRef = doc(db, "users", cachedUser.id);
-      const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
-        if (docSnap.exists()) {
-          const userData = docSnap.data();
-          const currentRole = userData.role;
-
-          if (currentRole) {
-            // Update localStorage in case roles/names are updated on the fly to keep active sessions in sync
-            const updatedUser = { ...cachedUser, ...userData, id: docSnap.id };
-            localStorage.setItem('adminAuth', JSON.stringify(updatedUser));
-
-            if (allowedRoles && !allowedRoles.includes(currentRole)) {
-              setAuthStatus({ isAllowed: false, role: currentRole });
+      if (user) {
+        unsubUserSnap = onSnapshot(doc(db, "users", user.uid), (docSnap) => {
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            const isClonedPage = data.clonedPages?.includes(location.pathname);
+            if (isClonedPage) {
+              setAuthStatus({ isAllowed: true, role: data.role });
             } else {
-              setAuthStatus({ isAllowed: true, role: currentRole });
+              setAuthStatus({ isAllowed: false, role: data.role });
             }
           } else {
-            // User exists but has no role assigned, revoke access immediately
-            localStorage.removeItem('adminAuth');
             setAuthStatus({ isAllowed: false, role: null });
           }
-        } else {
-          // Admin account was deleted from the system, revoke access immediately
-          localStorage.removeItem('adminAuth');
+        }, (error) => {
+          console.error("Error watching user document in checkFirebaseAuth:", error);
           setAuthStatus({ isAllowed: false, role: null });
-        }
-      }, (err) => {
-        console.error("Error monitoring admin status:", err);
-        // Fallback to cached role if Firestore is temporarily offline
-        const role = cachedUser.role;
-        if (role) {
-          if (allowedRoles && !allowedRoles.includes(role)) {
-            setAuthStatus({ isAllowed: false, role });
-          } else {
-            setAuthStatus({ isAllowed: true, role });
-          }
-        } else {
-          setAuthStatus({ isAllowed: false, role: null });
-        }
-      });
+        });
+      } else {
+        setAuthStatus({ isAllowed: false, role: null });
+      }
+    });
 
-      return () => unsubscribe();
-    } catch (err) {
-      setAuthStatus({ isAllowed: false, role: null });
-    }
+    return () => {
+      unsubscribeAuth();
+      if (unsubUserSnap) unsubUserSnap();
+    };
   }, [location.pathname, allowedRoles]);
 
   if (authStatus === null) {
-      return null;
+    return null; // Prevents flashing while verifying status
   }
 
   if (!authStatus.isAllowed) {
     if (authStatus.role === "Support") {
       return <Navigate to="/admin/orders" replace />;
-    } else if (authStatus.role) {
+    } else if (authStatus.role === "Super Admin" || authStatus.role === "Sub-Admin") {
       return <Navigate to="/admin/dashboard" replace />;
     }
     return <Navigate to="/admin/login" state={{ from: location }} replace />;
@@ -100,4 +121,3 @@ export const AdminProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, a
 
   return <>{children}</>;
 };
-

@@ -44,6 +44,9 @@ const Settings = React.lazy(() => import("./pages/Settings"));
 const TeamDashboard = React.lazy(() => import("./pages/TeamDashboard"));
 const UserOrders = React.lazy(() => import("./pages/UserOrders"));
 
+const AdminTasks = React.lazy(() => import("./pages/AdminTasks"));
+const TeamTasks = React.lazy(() => import("./pages/TeamTasks"));
+const TeamChat = React.lazy(() => import("./pages/TeamChat"));
 const AdminLogin = React.lazy(() => import("./pages/AdminLogin"));
 const AdminDashboard = React.lazy(() => import("./pages/AdminDashboard"));
 const AdminOrders = React.lazy(() => import("./pages/AdminOrders"));
@@ -89,6 +92,9 @@ export default function App() {
             <Route path="/orders" element={<ProtectedRoute><UserOrders /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/team/dashboard" element={<ProtectedRoute allowedRoles={['team_member', 'influencer']}><TeamDashboard /></ProtectedRoute>} />
+            <Route path="/team/tasks" element={<ProtectedRoute allowedRoles={['team_member', 'influencer']}><TeamTasks /></ProtectedRoute>} />
+            <Route path="/team/chat" element={<ProtectedRoute allowedRoles={['team_member', 'influencer', 'admin', 'user']}><TeamChat /></ProtectedRoute>} />
+            <Route path="/admin/chat" element={<AdminProtectedRoute allowedRoles={["Super Admin", "Sub-Admin", "Support"]}><TeamChat /></AdminProtectedRoute>} />
 
             {/* Admin Auth Route */}
             <Route path="/admin/login" element={<AdminLogin />} />
@@ -105,6 +111,7 @@ export default function App() {
             <Route path="/admin/reports" element={<AdminProtectedRoute allowedRoles={["Super Admin"]}><AdminReports /></AdminProtectedRoute>} />
             <Route path="/admin/settings" element={<AdminProtectedRoute allowedRoles={["Super Admin"]}><AdminSettings /></AdminProtectedRoute>} />
             <Route path="/admin/roles" element={<AdminProtectedRoute allowedRoles={["Super Admin"]}><AdminRoles /></AdminProtectedRoute>} />
+            <Route path="/admin/tasks" element={<AdminProtectedRoute allowedRoles={["Super Admin", "Sub-Admin", "Support"]}><AdminTasks /></AdminProtectedRoute>} />
             <Route path="/admin/logs" element={<AdminProtectedRoute allowedRoles={["Super Admin"]}><AdminLogs /></AdminProtectedRoute>} />
             <Route path="/admin/content" element={<AdminProtectedRoute allowedRoles={["Super Admin", "Sub-Admin"]}><AdminContent /></AdminProtectedRoute>} />
             <Route path="/admin/backup" element={<AdminProtectedRoute allowedRoles={["Super Admin"]}><AdminBackup /></AdminProtectedRoute>} />

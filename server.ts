@@ -186,6 +186,47 @@ async function startServer() {
     }
   });
 
+  // Google Chat Webhook Relay Endpoint
+  app.post('/api/google-chat/send', async (req, res) => {
+    try {
+      const { text, senderName, senderRole } = req.body;
+      if (!text) {
+        return res.status(400).json({ error: 'Message is empty' });
+      }
+
+      // Fetch webhook URL dynamically from Firestore settings document
+      const settingsUrl = "https://firestore.googleapis.com/v1/projects/educantpro1/databases/ai-studio-2517a055-ba39-4325-adaa-13bf1adca537/documents/system/settings";
+      const settingsResponse = await fetch(settingsUrl);
+      if (settingsResponse.ok) {
+         const settingsData = await settingsResponse.json();
+         const googleChatWebhookUrl = settingsData.fields?.googleChatWebhookUrl?.stringValue;
+         
+         if (googleChatWebhookUrl) {
+            console.log("Relaying message to Google Chat webhook:", googleChatWebhookUrl);
+            const chatPayload = {
+              text: `💬 *${senderName}* (${senderRole?.toUpperCase()}): ${text}`
+            };
+            const chatRes = await fetch(googleChatWebhookUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(chatPayload)
+            });
+            if (!chatRes.ok) {
+               console.error("Google Chat webhook response error:", await chatRes.text());
+            }
+         } else {
+            console.log("Google Chat Webhook URL is not configured. Skipping relay.");
+         }
+      } else {
+         console.error("Failed to fetch system settings in Google Chat webhook proxy router.");
+      }
+      res.status(200).json({ success: true });
+    } catch (error: any) {
+      console.error('Google Chat relay API error:', error);
+      res.status(500).json({ error: error.message || 'Relay failed' });
+    }
+  });
+
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
       server: { middlewareMode: true },

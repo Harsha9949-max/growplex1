@@ -33,6 +33,18 @@ const Sidebar: React.FC = () => {
 
   const teamLinks = [
     { to: '/team/dashboard', icon: LayoutDashboard, label: 'Team Dashboard' },
+    { to: '/team/tasks', icon: ListOrdered, label: 'My Tasks' },
+    { to: '/team/chat', icon: MessageSquare, label: 'Team Chat' },
+    ...(userProfile?.clonedPages?.map((path: string) => {
+       const pageNames: Record<string, string> = {
+         '/admin/orders': 'Orders',
+         '/admin/services': 'Services',
+         '/admin/payments': 'Payments',
+         '/admin/customers': 'Customers',
+         '/admin/offers': 'Offers'
+       };
+       return { to: path, icon: ShieldCheck, label: pageNames[path] || 'Admin Page' };
+    }) || []),
     { to: '/settings', icon: Settings, label: 'Settings' },
   ];
 

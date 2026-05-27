@@ -30,8 +30,17 @@ export default function AdminRoles() {
     email: "",
     password: "",
     commissionPercentage: 10,
-    role: "team_member" as "admin" | "team_member" | "influencer"
+    role: "team_member" as "admin" | "team_member" | "influencer",
+    clonedPages: [] as string[]
   });
+
+  const availableAdminPages = [
+    { name: "Orders", path: "/admin/orders" },
+    { name: "Services", path: "/admin/services" },
+    { name: "Payments", path: "/admin/payments" },
+    { name: "Customers", path: "/admin/customers" },
+    { name: "Offers", path: "/admin/offers" },
+  ];
 
   useEffect(() => {
     // Fetch users with roles
@@ -60,7 +69,8 @@ export default function AdminRoles() {
         email: user.email || "",
         password: "", // do not show password edit
         commissionPercentage: user.commissionPercentage || 10,
-        role: (user.role as any) || "team_member"
+        role: (user.role as any) || "team_member",
+        clonedPages: (user as any).clonedPages || []
       });
     } else {
       setFormData({
@@ -69,7 +79,8 @@ export default function AdminRoles() {
         email: "",
         password: "",
         commissionPercentage: 10,
-        role: "team_member"
+        role: "team_member",
+        clonedPages: []
       });
     }
     setIsModalOpen(true);
@@ -133,6 +144,7 @@ export default function AdminRoles() {
         email: formData.email,
         role: formData.role,
         commissionPercentage: formData.commissionPercentage,
+        clonedPages: formData.clonedPages,
         updatedAt: serverTimestamp(),
         ...(!formData.id && { 
             createdAt: serverTimestamp(),
@@ -353,6 +365,33 @@ export default function AdminRoles() {
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">%</span>
                   </div>
                   <p className="text-xs text-text-muted mt-1">Their cut of the net profit generated.</p>
+                </div>
+              )}
+
+              {/* Cloned Admin Pages Checkboxes */}
+              {(formData.role === 'team_member' || formData.role === 'influencer' || formData.role === 'admin') && (
+                <div className="pt-2 border-t border-brand-border/50">
+                  <label className="text-sm font-medium text-text-muted mb-2 block">Clone Admin Pages to Team Panel</label>
+                  <p className="text-xs text-slate-500 mb-3">Ticked pages will instantly reflect under their team sidebar.</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {availableAdminPages.map(page => (
+                      <label key={page.path} className="flex items-center gap-2 p-2 hover:bg-white/[0.02] rounded cursor-pointer transition-colors border border-brand-border/30">
+                        <input 
+                          type="checkbox"
+                          checked={(formData.clonedPages || []).includes(page.path)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFormData(prev => ({ ...prev, clonedPages: [...(prev.clonedPages || []), page.path] }));
+                            } else {
+                              setFormData(prev => ({ ...prev, clonedPages: (prev.clonedPages || []).filter(p => p !== page.path) }));
+                            }
+                          }}
+                          className="rounded border-brand-border bg-brand-surface text-brand-accent focus:ring-brand-accent focus:ring-offset-brand-primary"
+                        />
+                        <span className="text-sm text-slate-300">{page.name}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

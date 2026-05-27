@@ -21,6 +21,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles,
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  if ((userProfile?.role === 'team_member' || userProfile?.role === 'influencer') && (location.pathname === '/dashboard' || location.pathname === '/orders')) {
+    return <Navigate to="/team/dashboard" replace />;
+  }
+
   if (adminOnly && !isAdmin && userProfile?.role !== 'admin') {
     return <Navigate to="/" replace />;
   }
