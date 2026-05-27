@@ -1,11 +1,10 @@
 import {
-  ConfirmationResult,
   GoogleAuthProvider,
   onAuthStateChanged,
-  RecaptchaVerifier,
-  signInWithPhoneNumber,
   signInWithPopup,
   signOut,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
   User
 } from 'firebase/auth';
 import {
@@ -25,10 +24,9 @@ interface AuthContextType {
   userProfile: UserProfile | null;
   loading: boolean;
   isAdmin: boolean;
-  sendOTP: (phoneNumber: string) => Promise<void>;
-  verifyOTP: (otp: string) => Promise<void>;
+  loginWithEmail: (email: string, password: string) => Promise<void>;
+  registerWithEmail: (email: string, password: string, username?: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
-  updateOnboarding: (data: Partial<UserProfile>) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -38,7 +36,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
 
   useEffect(() => {
     let unsubProfile: (() => void) | null = null;
@@ -76,105 +73,88 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const setupRecaptcha = (containerId: string) => {
-    if ((window as any).recaptchaVerifier) {
-      (window as any).recaptchaVerifier.clear();
-    }
-    (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
-      'size': 'invisible',
-    });
-  };
-
-  const sendOTP = async (phoneNumber: string) => {
+  const loginWithEmail = async (email: string, password: string) => {
     try {
-      setupRecaptcha('recaptcha-container');
-      const appVerifier = (window as any).recaptchaVerifier;
-      const result = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
-      setConfirmationResult(result);
-    } catch (error) {
-      console.error('Error sending OTP:', error);
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (error: any) {
+      console.error('Error logging in with email:', error);
+      if (error.code === 'auth/operation-not-allowed') {
+        throw new Error('Email/Password sign-in is not enabled in Firebase Console.');
+      }
       throw error;
     }
   };
 
-  const verifyOTP = async (otp: string) => {
+  const registerWithEmail = async (email: string, password: string, username?: string) => {
     try {
-      if (!confirmationResult) throw new Error('No confirmation result found');
-      const result = await confirmationResult.confirm(otp);
+      const result = await createUserWithEmailAndPassword(auth, email, password);
       const user = result.user;
-
-      // Check if profile exists
+      
       const userDocRef = doc(db, 'users', user.uid);
-      const userDoc = await getDoc(userDocRef);
-
-      if (!userDoc.exists()) {
-        const profile: UserProfile = {
+      const profile: UserProfile = {
           uid: user.uid,
           email: user.email || '',
-          phone: user.phoneNumber || '',
-          username: user.phoneNumber || 'User',
+          phone: '',
+          username: username || email.split('@')[0],
           role: 'user',
-          onboardingStatus: 'not_started',
-          onboardingStep: 0,
-          isDigitalAgreementSigned: false,
           wallets: { earned: 0, pending: 27, bonus: 0, savings: 0 },
           signingBonus: 27,
           createdAt: Timestamp.now(),
-        };
-        await setDoc(userDocRef, profile);
+      };
+      await setDoc(userDocRef, profile);
+    } catch (error: any) {
+      console.error('Error registering with email:', error);
+      if (error.code === 'auth/operation-not-allowed') {
+        throw new Error('Email/Password sign-in is not enabled in Firebase Console.');
+      } else if (error.code === 'auth/weak-password') {
+        throw new Error('Password should be at least 6 characters');
       }
-    } catch (error) {
-      console.error('Error verifying OTP:', error);
       throw error;
     }
   };
 
   const signInWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
-    const result = await signInWithPopup(auth, provider);
-    const user = result.user;
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
 
-    const userDocRef = doc(db, 'users', user.uid);
-    const userDoc = await getDoc(userDocRef);
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
 
-    // Special Admin Detection
-    const adminEmail = import.meta.env.VITE_ADMIN_EMAIL || 'marateyh@gmail.com';
-    const isAdminEmail = user.email === adminEmail;
-    const role = isAdminEmail ? 'admin' : 'user';
+      // Special Admin Detection
+      const adminEmail = import.meta.env.VITE_ADMIN_EMAIL || 'marateyh@gmail.com';
+      const isAdminEmail = user.email === adminEmail;
+      const role = isAdminEmail ? 'admin' : 'user';
 
-    if (!userDoc.exists()) {
-      const profile: UserProfile = {
-        uid: user.uid,
-        email: user.email!,
-        fullName: user.displayName || '',
-        username: user.email!.split('@')[0],
-        role: role as 'user' | 'admin',
-        onboardingStatus: isAdminEmail ? 'completed' : 'not_started',
-        onboardingStep: isAdminEmail ? 6 : 0,
-        isDigitalAgreementSigned: isAdminEmail,
-        wallets: {
-            earned: 0,
-            pending: isAdminEmail ? 0 : 27,
-            bonus: 0,
-            savings: 0
-        },
-        signingBonus: isAdminEmail ? 0 : 27,
-        createdAt: Timestamp.now(),
-      };
-      await setDoc(userDocRef, profile);
-    } else if (isAdminEmail && userDoc.data()?.role !== 'admin') {
-      // Update role if user is the designated admin but profile says otherwise
-      await updateDoc(userDocRef, { role: 'admin' });
+      if (!userDoc.exists()) {
+        const profile: UserProfile = {
+          uid: user.uid,
+          email: user.email!,
+          fullName: user.displayName || '',
+          username: user.email!.split('@')[0],
+          role: role as 'user' | 'admin',
+          wallets: {
+              earned: 0,
+              pending: isAdminEmail ? 0 : 27,
+              bonus: 0,
+              savings: 0
+          },
+          signingBonus: isAdminEmail ? 0 : 27,
+          createdAt: Timestamp.now(),
+        };
+        await setDoc(userDocRef, profile);
+      } else if (isAdminEmail && userDoc.data()?.role !== 'admin') {
+        // Update role if user is the designated admin but profile says otherwise
+        await updateDoc(userDocRef, { role: 'admin' });
+      }
+    } catch (error: any) {
+      console.error('Error with Google sign in:', error);
+      if (error.code === 'auth/operation-not-allowed') {
+        throw new Error('Google sign-in is not enabled in Firebase Console.');
+      }
+      throw error;
     }
-  };
-
-  const updateOnboarding = async (data: Partial<UserProfile>) => {
-    if (!currentUser) return;
-    const userDocRef = doc(db, 'users', currentUser.uid);
-    await setDoc(userDocRef, {
-      ...data,
-      onboardingStatus: data.onboardingStep === 7 ? 'completed' : 'in_progress'
-    }, { merge: true });
   };
 
   const logout = async () => {
@@ -191,16 +171,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     userProfile,
     loading,
     isAdmin,
-    sendOTP,
-    verifyOTP,
+    loginWithEmail,
+    registerWithEmail,
     signInWithGoogle,
-    updateOnboarding,
     logout,
   }), [currentUser, userProfile, loading, isAdmin]);
 
   return (
     <AuthContext.Provider value={value}>
-      <div id="recaptcha-container"></div>
       {!loading && children}
     </AuthContext.Provider>
   );

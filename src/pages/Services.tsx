@@ -309,7 +309,7 @@ export default function Services() {
     <div className="min-h-screen bg-brand-primary text-text-main font-sans selection:bg-brand-accent selection:text-brand-primary">
       <SEO 
         title="Buy Social Media Services – Instant & No Password Needed"
-        description="Browse Growplex's complete catalog of cheap SMM services. Buy Instagram followers, YouTube subscribers, Telegram members & more. No login required. Instant delivery guaranteed."
+        description="Browse Growplex's complete catalog of cheap SMM services. Buy Instagram followers, YouTube subscribers, Telegram members & more. Instant delivery guaranteed."
         url="https://growplex.sbs/services"
         schema={JSON.stringify({
           "@context": "https://schema.org",
@@ -356,7 +356,7 @@ export default function Services() {
             transition={{ delay: 0.1 }}
             className="text-sm sm:text-lg md:text-xl text-text-muted px-2"
           >
-            The cheapest SMM services online. No login required — just paste your link, pay, and grow instantly.
+            The cheapest SMM services online. Just paste your link, pay, and grow instantly.
           </motion.p>
         </div>
       </header>

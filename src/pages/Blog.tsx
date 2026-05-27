@@ -53,7 +53,7 @@ export default function Blog() {
     <div className="min-h-screen bg-brand-primary text-text-main font-sans">
       <SEO 
         title="Blog – Social Media Growth Tips & SMM Guides"
-        description="Read Growplex's blog for expert tips on social media growth, SMM panel guides, safety advice, and pricing comparisons. Grow smarter with no login needed."
+        description="Read Growplex's blog for expert tips on social media growth, SMM panel guides, safety advice, and pricing comparisons. Grow smarter."
         url="https://growplex.sbs/blog"
       />
 

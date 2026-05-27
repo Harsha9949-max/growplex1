@@ -86,7 +86,7 @@ export function AggregateRatingSchema({ ratingValue, reviewCount, bestRating = 5
     "@context": "https://schema.org",
     "@type": "Product",
     "name": "Growplex SMM Panel",
-    "description": "India's cheapest SMM panel with no login required. Buy instant Instagram followers, YouTube subscribers, Telegram members at the lowest prices. Instant delivery guaranteed.",
+    "description": "India's cheapest SMM panel. Buy instant Instagram followers, YouTube subscribers, Telegram members at the lowest prices. Instant delivery guaranteed.",
     "brand": { "@type": "Brand", "name": "Growplex" },
     "url": "https://growplex.sbs",
     "image": "https://growplex.sbs/og-image.png",
@@ -102,7 +102,7 @@ export function AggregateRatingSchema({ ratingValue, reviewCount, bestRating = 5
         "@type": "Review",
         "author": { "@type": "Person", "name": "Rahul S." },
         "datePublished": "2026-04-15",
-        "reviewBody": "Excellent service and fast delivery. Got 5K Instagram followers in under 12 hours. No login asked — very safe!",
+        "reviewBody": "Excellent service and fast delivery. Got 5K Instagram followers in under 12 hours. Very safe!",
         "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5 }
       },
       {
@@ -130,7 +130,7 @@ export function HowToSchema() {
     "@context": "https://schema.org",
     "@type": "HowTo",
     "name": "How to Buy Instagram Followers Without Login on Growplex",
-    "description": "A step-by-step guide to ordering social media growth services on Growplex — the cheapest SMM panel with no login required.",
+    "description": "A step-by-step guide to ordering social media growth services on Growplex — the cheapest SMM panel.",
     "totalTime": "PT1M",
     "estimatedCost": {
       "@type": "MonetaryAmount",
@@ -156,7 +156,7 @@ export function HowToSchema() {
         "@type": "HowToStep",
         "position": 3,
         "name": "Watch It Grow",
-        "text": "Your order starts processing instantly. Track progress with your unique order ID — no login needed. Most orders complete within minutes.",
+        "text": "Your order starts processing instantly. Track progress with your unique order ID. Most orders complete within minutes.",
         "url": "https://growplex.sbs/services"
       }
     ]

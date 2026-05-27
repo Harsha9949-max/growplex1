@@ -47,7 +47,7 @@ export default function TermsOfService() {
                 <li>Delivery times vary by service type and are indicated on each service page</li>
                 <li>Most orders begin processing within minutes of payment confirmation</li>
                 <li>Delivery times are estimates and may vary due to factors beyond our control</li>
-                <li>Orders are tracked via unique order IDs — no login required</li>
+                <li>Orders are tracked via unique order IDs</li>
               </ul>
             </div>
 

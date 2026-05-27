@@ -14,7 +14,7 @@ const FAQS = [
   { question: "What if my followers drop? Do you have a refill warranty?", answer: "Yes! Every order on Growplex comes with a 30-day refill guarantee. If your followers, likes, views, or subscribers drop within 30 days of delivery, simply contact our support team with your order ID and we will refill the difference at no extra cost. No questions asked." },
   { question: "Is it safe to use Growplex? Will my account get banned?", answer: "Growplex uses industry-standard methods that comply with social media platform guidelines. Since we never ask for your password or access your account directly, there is zero risk of account compromise. Our services use gradual, drip-feed delivery to mimic organic growth patterns, keeping your account safe." },
   { question: "What payment methods do you accept?", answer: "We accept payments through Razorpay, which supports UPI, credit cards, debit cards, net banking, and popular wallets like Paytm and PhonePe. All payments are protected with SSL encryption for maximum security. We never store your payment details." },
-  { question: "How can I track my order without an account?", answer: "After placing an order, you receive a unique order ID and a direct tracking link. Simply visit the link or enter your order ID on our website to check real-time status, delivery progress, and estimated completion time. No login needed — ever." },
+  { question: "How can I track my order without an account?", answer: "After placing an order, you receive a unique order ID and a direct tracking link. Simply visit the link or enter your order ID on our website to check real-time status, delivery progress, and estimated completion time." },
   { question: "Do you offer services for all social media platforms?", answer: "Currently, Growplex offers premium services for Instagram (followers, likes, comments, Reel views, story views), YouTube (subscribers, views, likes, comments), and Telegram (premium, group members, channel subscribers, post views, reactions). We are constantly adding new platforms and services." },
   { question: "Can I get a refund if the service is not delivered?", answer: "Yes! If we fail to deliver the promised service within the agreed timeline, you are entitled to a full refund. Please contact our support team within 7 days of the order with your order ID and we will process your refund promptly. See our Refund Policy page for complete details." },
   { question: "Is Growplex available worldwide?", answer: "Yes! Growplex serves customers in over 50 countries including India, USA, UK, Brazil, Nigeria, UAE, Canada, Australia, and more. Our services work for accounts from any region. Prices are displayed in INR but we accept international payments through all major cards." }
@@ -45,7 +45,7 @@ export default function Support() {
           <div className="text-center mb-16">
             <h1 className="font-heading text-4xl md:text-5xl font-bold mb-6">How Can We <span className="text-brand-accent">Help You</span>?</h1>
             <p className="text-xl text-text-muted max-w-2xl mx-auto">
-              Our support team is online 24/7 to ensure your experience is smooth and successful. No login needed to get help.
+              Our support team is online 24/7 to ensure your experience is smooth and successful.
             </p>
           </div>
 

@@ -23,15 +23,20 @@ const Sidebar: React.FC = () => {
   const { isAdmin, logout, userProfile } = useAuth();
   const [isOpen, setIsOpen] = React.useState(false);
 
-  const userLinks = [
+  const casualLinks = [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { to: '/new-order', icon: PlusCircle, label: 'New Order' },
     { to: '/services', icon: Package, label: 'Services' },
     { to: '/orders', icon: ListOrdered, label: 'My Orders' },
-    { to: '/wallet', icon: Wallet, label: 'Wallet' },
     { to: '/support', icon: MessageSquare, label: 'Support' },
     { to: '/settings', icon: Settings, label: 'Settings' },
   ];
+
+  const teamLinks = [
+    { to: '/team/dashboard', icon: LayoutDashboard, label: 'Team Dashboard' },
+    { to: '/settings', icon: Settings, label: 'Settings' },
+  ];
+
+  const userLinks = userProfile?.role === 'team_member' || userProfile?.role === 'influencer' ? teamLinks : casualLinks;
 
   const adminLinks = [
     { to: '/admin', icon: LayoutDashboard, label: 'Admin Dashboard' },
@@ -102,7 +107,7 @@ const Sidebar: React.FC = () => {
               <ShieldCheck className="text-[#0A0A0A]" size={24} strokeWidth={2.5} />
             </div>
             <h1 className="text-2xl font-display font-black tracking-tighter text-white italic uppercase">
-              WORK<span className="text-brand-accent">PLEX</span>
+              GROW<span className="text-brand-accent">PLEX</span>
             </h1>
           </div>
           <p className="text-[10px] text-slate-500 uppercase tracking-[0.3em] font-black">Performance & Growth</p>
@@ -130,10 +135,10 @@ const Sidebar: React.FC = () => {
         <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-white/5 bg-brand-card/50 backdrop-blur-sm space-y-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-accent to-brand-teal flex items-center justify-center text-[#0A0A0A] font-black shadow-lg shadow-brand-accent/10">
-              {userProfile?.username?.[0]?.toUpperCase() || 'W'}
+              {userProfile?.username?.[0]?.toUpperCase() || 'G'}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-white truncate">{userProfile?.username || 'WORKPLEX User'}</p>
+              <p className="text-xs font-bold text-white truncate">{userProfile?.username || 'GROWPLEX User'}</p>
               <p className="text-[10px] text-slate-500 truncate uppercase tracking-widest font-mono font-bold">{userProfile?.role || 'Premium Member'}</p>
             </div>
           </div>

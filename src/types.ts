@@ -45,10 +45,21 @@ export interface Order {
 
 export interface UserProfile {
   id?: string;
+  uid?: string;
   name?: string;
+  fullName?: string;
+  username?: string;
   email?: string;
+  phone?: string;
   balance?: number;
-  role?: string;
+  role?: 'admin' | 'user' | 'team_member' | 'influencer' | 'support' | string;
+  commissionPercentage?: number;
+  wallets?: { earned: number; pending: number; bonus: number; savings: number };
+  onboardingStatus?: string;
+  onboardingStep?: number;
+  isDigitalAgreementSigned?: boolean;
+  signingBonus?: number;
+  createdAt?: any;
   [key: string]: any;
 }
 

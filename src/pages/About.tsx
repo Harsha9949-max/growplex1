@@ -40,7 +40,7 @@ export default function About() {
 
             <div className="bg-brand-surface border border-brand-border rounded-2xl p-8">
               <h2 className="font-heading font-bold text-2xl text-text-main mb-4 flex items-center gap-3">
-                <Lock size={24} className="text-brand-accent" /> Why No Login is Safer
+                <Lock size={24} className="text-brand-accent" /> Why We Are Safer
               </h2>
               <p className="mb-4">
                 Traditional SMM panels require you to create an account, log in, and sometimes even share your social media password. This creates serious security risks — your credentials can be stored, leaked, or misused.

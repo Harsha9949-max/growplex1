@@ -41,7 +41,7 @@ const VentureHeader: React.FC<VentureHeaderProps> = ({ userProfile }) => {
       <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start justify-between gap-8 text-center md:text-left">
         <div className="flex-1">
           <div className={`inline-flex items-center gap-2 px-3 py-1 ${config.bg} border ${config.border} rounded-full ${config.color} text-[10px] font-black uppercase tracking-widest mb-4`}>
-            <Icon size={12} /> WorkPlex {venture}
+            <Icon size={12} /> Growplex {venture}
           </div>
           <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter italic mb-3">
             Hustle Hard, <br className="hidden md:block" />

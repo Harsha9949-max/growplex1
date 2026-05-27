@@ -29,7 +29,7 @@ const FAQ_CATEGORIES = [
     title: "Orders & Delivery",
     faqs: [
       { question: "How fast is the delivery?", answer: "Most services begin within seconds of payment. Services marked 'Instant' typically show results within minutes. Larger orders (e.g., 10K+ followers) may take 24-48 hours for complete delivery to ensure natural-looking growth." },
-      { question: "How do I track my order without an account?", answer: "After payment, you'll receive a unique order ID and tracking link. Visit the link or enter your order ID on our website to see real-time status, delivery progress, and estimated completion time — no login needed." },
+      { question: "How do I track my order without an account?", answer: "After payment, you'll receive a unique order ID and tracking link. Visit the link or enter your order ID on our website to see real-time status, delivery progress, and estimated completion time." },
       { question: "What happens if my order fails to deliver?", answer: "If your order is not delivered within the promised timeframe, you're entitled to a full refund. Contact support@growplex.sbs with your order ID and we'll resolve it within 24 hours." }
     ]
   },

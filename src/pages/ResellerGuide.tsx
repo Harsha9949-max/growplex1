@@ -23,7 +23,7 @@ const BENEFITS = [
   },
   {
     icon: Users,
-    title: "No Login Overhead",
+    title: "Zero Overhead",
     desc: "Since we only require public URLs to process orders, you never have to ask your clients for sensitive passwords."
   }
 ];
@@ -33,7 +33,7 @@ export default function ResellerGuide() {
     <div className="min-h-screen bg-brand-primary text-text-main font-sans">
       <SEO 
         title="Reseller Guide: Start Your SMM Business"
-        description="Learn how to resell SMM services with Growplex. High margins, zero setup cost, white-label delivery, and no login required. Ultimate guide for Indian marketers."
+        description="Learn how to resell SMM services with Growplex. High margins, zero setup cost, white-label delivery,. Ultimate guide for Indian marketers."
         keywords="resell SMM services, start SMM business, SMM reseller panel India, SMM white label"
         url="https://growplex.sbs/reseller-guide"
       />
@@ -47,7 +47,7 @@ export default function ResellerGuide() {
             The Ultimate Guide to <span className="text-brand-accent">Reselling SMM Services</span>
           </h1>
           <p className="text-xl text-text-muted leading-relaxed max-w-3xl mx-auto">
-            Turn your social network into a money-making engine. Discover how to start an SMM retail business with <strong className="text-text-main">zero inventory</strong> using India's cheapest NO LOGIN panel.
+            Turn your social network into a money-making engine. Discover how to start an SMM retail business with <strong className="text-text-main">zero inventory</strong> using India's cheapest PREMIUM panel.
           </p>
         </div>
       </section>

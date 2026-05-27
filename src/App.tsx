@@ -2,6 +2,7 @@ import { HelmetProvider } from "react-helmet-async";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import React, { Suspense } from "react";
 import { AdminProtectedRoute } from "./components/AdminProtectedRoute";
+import ProtectedRoute from "./components/ProtectedRoute";
 import { FloatingBadge } from "./components/FloatingBadge";
 
 import {
@@ -35,6 +36,13 @@ const RefundPolicy = React.lazy(() => import("./pages/RefundPolicy"));
 const OrderSuccess = React.lazy(() => import("./pages/OrderSuccess"));
 const OrderFailed = React.lazy(() => import("./pages/OrderFailed"));
 const ReceiptViewer = React.lazy(() => import("./pages/ReceiptViewer"));
+
+const Login = React.lazy(() => import("./pages/Login"));
+const Register = React.lazy(() => import("./pages/Register"));
+const Dashboard = React.lazy(() => import("./pages/Dashboard"));
+const Settings = React.lazy(() => import("./pages/Settings"));
+const TeamDashboard = React.lazy(() => import("./pages/TeamDashboard"));
+const UserOrders = React.lazy(() => import("./pages/UserOrders"));
 
 const AdminLogin = React.lazy(() => import("./pages/AdminLogin"));
 const AdminDashboard = React.lazy(() => import("./pages/AdminDashboard"));
@@ -72,6 +80,16 @@ export default function App() {
             <Route path="/failed" element={<OrderFailed />} />
             <Route path="/receipt/:orderId" element={<ReceiptViewer />} />
             
+            {/* User Auth Routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            
+            {/* Protected User Routes */}
+            <Route path="/dashboard" element={<ProtectedRoute><UserOrders /></ProtectedRoute>} />
+            <Route path="/orders" element={<ProtectedRoute><UserOrders /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/team/dashboard" element={<ProtectedRoute allowedRoles={['team_member', 'influencer']}><TeamDashboard /></ProtectedRoute>} />
+
             {/* Admin Auth Route */}
             <Route path="/admin/login" element={<AdminLogin />} />
 
@@ -91,6 +109,9 @@ export default function App() {
             <Route path="/admin/content" element={<AdminProtectedRoute allowedRoles={["Super Admin", "Sub-Admin"]}><AdminContent /></AdminProtectedRoute>} />
             <Route path="/admin/backup" element={<AdminProtectedRoute allowedRoles={["Super Admin"]}><AdminBackup /></AdminProtectedRoute>} />
             <Route path="/admin/growplex-orders" element={<AdminProtectedRoute allowedRoles={["Super Admin", "Sub-Admin", "Support"]}><AdminOrders /></AdminProtectedRoute>} />
+            
+            {/* Catch-all Route */}
+            <Route path="*" element={<Home />} />
           </Routes>
         </Suspense>
         <FloatingBadge />

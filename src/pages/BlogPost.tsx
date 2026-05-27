@@ -43,7 +43,7 @@ const BLOG_CONTENT: Record<string, string> = {
 <li>Choose "Instagram Followers" or any other service</li>
 <li>Paste your public Instagram profile URL</li>
 <li>Select your package and pay securely</li>
-<li>Watch your follower count grow — no login needed!</li>
+<li>Watch your follower count grow!</li>
 </ol>
 <p>Ready to grow your Instagram safely? <a href="/services">Browse our Instagram services now →</a></p>
 `,
@@ -76,7 +76,7 @@ const BLOG_CONTENT: Record<string, string> = {
 <h2>The Growplex Safety Standard</h2>
 <p>At Growplex, safety is built into every aspect of our service:</p>
 <ul>
-<li><strong>No login required — ever.</strong> We never ask for your password or account credentials.</li>
+
 <li><strong>SSL-encrypted payments</strong> through Razorpay (PCI-DSS Level 1 certified).</li>
 <li><strong>30-day refill guarantee</strong> on all eligible services.</li>
 <li><strong>24/7 human support</strong> — not bots, not automated responses.</li>
@@ -186,7 +186,7 @@ const BLOG_CONTENT: Record<string, string> = {
 <p>We compared Growplex against 5 popular SMM panels across these categories: login requirements, pricing, delivery speed, refill guarantee, customer support quality, payment security, and service variety.</p>
 
 <h2>Login Requirements</h2>
-<p><strong>Growplex: No login required.</strong> You can order any service without creating an account, depositing funds, or sharing credentials. Most competitors require full account registration with email verification, and some even ask for your social media password for certain services. Growplex is the only major panel offering a completely account-free experience.</p>
+<p>Growplex provides a secure tracking experience and simple deposits so you can manage your growth at scale.</p>
 
 <h2>Pricing Comparison</h2>
 <p>We compared prices for the most popular service — 1000 Instagram followers:</p>
@@ -214,7 +214,7 @@ const BLOG_CONTENT: Record<string, string> = {
 
 <h2>The Verdict</h2>
 <p>Growplex leads in every category that matters: cheapest prices, fastest delivery, strongest guarantee, best support, and — most importantly — the only no-login option. If you're looking for the safest, cheapest, and most convenient SMM panel, Growplex is the clear winner.</p>
-<p><a href="/services">Try Growplex now — no login needed →</a></p>
+<p><a href="/services">Try Growplex now →</a></p>
 `
 };
 
@@ -276,7 +276,7 @@ export default function BlogPost() {
           {/* CTA */}
           <div className="mt-16 bg-brand-surface border border-brand-border rounded-2xl p-8 text-center">
             <h2 className="font-heading font-bold text-2xl mb-3">Ready to Start Growing?</h2>
-            <p className="text-text-muted mb-6">No login. No password. Just results.</p>
+            <p className="text-text-muted mb-6">Simple to use. Just results.</p>
             <Link to="/services" className="inline-flex items-center gap-2 bg-brand-accent text-brand-primary px-8 py-3 rounded-xl font-bold hover:bg-brand-accent-hover transition-all">
               Browse Services <ArrowRight size={18} />
             </Link>

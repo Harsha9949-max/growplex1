@@ -62,8 +62,8 @@ export default function Pricing() {
   return (
     <div className="min-h-screen bg-brand-primary text-text-main font-sans">
       <SEO 
-        title="Cheapest SMM Panel Pricing – No Login Required"
-        description="View Growplex's unbeatable pricing for Instagram, YouTube, Telegram & more. Starting from ₹10. No login, no password, instant delivery. Cheapest price guarantee!"
+        title="Cheapest SMM Panel Pricing"
+        description="View Growplex's unbeatable pricing for Instagram, YouTube, Telegram & more. Starting from ₹10. Instant delivery. Cheapest price guarantee!"
         url="https://growplex.sbs/pricing"
         keywords="cheapest SMM panel, SMM reseller pricing, India SMM panel, cheap Instagram followers"
       />
@@ -82,7 +82,7 @@ export default function Pricing() {
               Cheapest SMM Panel <span className="text-brand-accent">Pricing</span>
             </h1>
             <p className="text-xl text-text-muted max-w-3xl mx-auto leading-relaxed">
-              Transparent, affordable, and the <strong className="text-text-main">lowest prices in the market</strong>. Every service comes with instant delivery, a 30-day refill guarantee, and absolutely <strong className="text-text-main">no login required</strong>. We challenge you to find a cheaper, safer panel anywhere.
+              Transparent, affordable, and the <strong className="text-text-main">lowest prices in the market</strong>. Every service comes with instant delivery, a 30-day refill guarantee. We challenge you to find a cheaper, safer panel anywhere.
             </p>
           </div>
         </div>
@@ -116,7 +116,7 @@ export default function Pricing() {
                   Package: <span className="text-text-main font-medium">{service.qty}</span>
                 </p>
                 <ul className="space-y-2 mb-6 flex-grow text-sm text-text-muted">
-                  <li className="flex items-center gap-2"><Check size={14} className="text-brand-success flex-shrink-0" /> No login required</li>
+                  
                   <li className="flex items-center gap-2"><Check size={14} className="text-brand-success flex-shrink-0" /> {service.time} delivery</li>
                   <li className="flex items-center gap-2"><Check size={14} className="text-brand-success flex-shrink-0" /> 30-day refill guarantee</li>
                   <li className="flex items-center gap-2"><Check size={14} className="text-brand-success flex-shrink-0" /> 24/7 support</li>

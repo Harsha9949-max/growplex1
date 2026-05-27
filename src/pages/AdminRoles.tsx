@@ -3,36 +3,39 @@ import { Edit2, Plus, Shield, ShieldAlert, Trash2, Users, X } from "lucide-react
 import { useEffect, useState } from "react";
 import { AdminLayout } from "../components/AdminLayout";
 import { db } from "../lib/firebase";
+import firebaseConfig from "../../firebase-applet-config.json";
+import { toast } from "react-hot-toast";
 
 interface AdminUser {
   id: string;
   name: string;
-  passwordPart1: string;
-  passwordPart2: string;
-  passwordPart3: string;
-  role: "Super Admin" | "Sub-Admin" | "Support";
+  fullName: string;
+  email?: string;
+  role: "admin" | "team_member" | "influencer" | string;
+  commissionPercentage?: number;
   createdAt?: any;
 }
 
-const ROLE_OPTIONS = ["Super Admin", "Sub-Admin", "Support"];
+const ROLE_OPTIONS = ["admin", "team_member", "influencer"];
 
 export default function AdminRoles() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
   
   const [formData, setFormData] = useState({
     id: "",
-    name: "",
-    passwordPart1: "",
-    passwordPart2: "",
-    passwordPart3: "",
-    role: "Support" as "Super Admin" | "Sub-Admin" | "Support"
+    fullName: "",
+    email: "",
+    password: "",
+    commissionPercentage: 10,
+    role: "team_member" as "admin" | "team_member" | "influencer"
   });
 
   useEffect(() => {
     // Fetch users with roles
-    const q = query(collection(db, "users"), where("role", "in", ["Super Admin", "Sub-Admin", "Support"]));
+    const q = query(collection(db, "users"), where("role", "in", ["admin", "team_member", "influencer"]));
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const fetched: AdminUser[] = [];
@@ -52,80 +55,131 @@ export default function AdminRoles() {
   const handleOpenModal = (user?: AdminUser) => {
     if (user) {
       setFormData({
-        id: user.id,
-        name: user.name || "",
-        passwordPart1: user.passwordPart1 || "",
-        passwordPart2: user.passwordPart2 || "",
-        passwordPart3: user.passwordPart3 || "",
-        role: user.role
+        id: user.id || "",
+        fullName: user.fullName || user.name || "",
+        email: user.email || "",
+        password: "", // do not show password edit
+        commissionPercentage: user.commissionPercentage || 10,
+        role: (user.role as any) || "team_member"
       });
     } else {
       setFormData({
         id: "",
-        name: "",
-        passwordPart1: "",
-        passwordPart2: "",
-        passwordPart3: "",
-        role: "Support"
+        fullName: "",
+        email: "",
+        password: "",
+        commissionPercentage: 10,
+        role: "team_member"
       });
     }
     setIsModalOpen(true);
   };
 
   const handleSaveUser = async () => {
-    if (!formData.passwordPart1 || !formData.passwordPart2 || !formData.passwordPart3) return alert("All 3 password parts are required");
+    if (!formData.fullName || !formData.email || !formData.role) return toast.error("Name, email and role are required");
     
+    setIsCreating(true);
     try {
-      // In a real app, you would also need to create a Firebase Auth user if they don't exist.
-      // Here we just manage the roles in the Firestore collection.
-      const docId = formData.id || Date.now().toString(); // Generate unique ID
-      const docRef = doc(db, "users", docId);
+      let uid = formData.id;
+
+      if (!uid) {
+        if (!formData.password) {
+           toast.error("Password is required for new accounts");
+           setIsCreating(false);
+           return;
+        }
+        if (formData.password.length < 6) {
+           toast.error("Password should be at least 6 characters");
+           setIsCreating(false);
+           return;
+        }
+
+        // Create user via identitytoolkit REST API to avoid signing out the current admin
+        const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${firebaseConfig.apiKey}`, {
+           method: "POST",
+           headers: { "Content-Type": "application/json" },
+           body: JSON.stringify({
+             email: formData.email,
+             password: formData.password,
+             returnSecureToken: false
+           })
+        });
+
+        const data = await res.json();
+        
+        if (!res.ok) {
+           let errMsg = "Failed to create user account";
+           if (data.error?.message?.includes("WEAK_PASSWORD")) {
+             errMsg = "Password should be at least 6 characters";
+           } else if (data.error?.message?.includes("OPERATION_NOT_ALLOWED")) {
+             errMsg = "Email/Password sign-in is not enabled in Firebase Console.";
+           } else if (data.error?.message?.includes("EMAIL_EXISTS")) {
+             errMsg = "The email address is already in use by another account.";
+           } else if (data.error?.message) {
+             errMsg = data.error.message;
+           }
+           throw new Error(errMsg);
+        }
+        
+        uid = data.localId;
+      }
+      
+      const docRef = doc(db, "users", uid);
       
       await setDoc(docRef, {
-        name: formData.name,
-        passwordPart1: formData.passwordPart1,
-        passwordPart2: formData.passwordPart2,
-        passwordPart3: formData.passwordPart3,
+        uid: uid,
+        fullName: formData.fullName,
+        username: formData.email.split('@')[0],
+        email: formData.email,
         role: formData.role,
+        commissionPercentage: formData.commissionPercentage,
         updatedAt: serverTimestamp(),
-        ...(!formData.id && { createdAt: serverTimestamp() })
+        ...(!formData.id && { 
+            createdAt: serverTimestamp(),
+            wallets: { earned: 0, pending: 0, bonus: 0, savings: 0 }
+        })
       }, { merge: true });
       
+      toast.success("User saved successfully");
       setIsModalOpen(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving user:", error);
-      alert("Failed to save user role");
+      toast.error(error.message || "Failed to save user");
+    } finally {
+      setIsCreating(false);
     }
   };
 
   const handleDeleteUser = async (id: string) => {
-    if (confirm("Are you sure you want to remove this admin's access?")) {
+    if (confirm("Are you sure you want to remove this user's access?")) {
       try {
         await deleteDoc(doc(db, "users", id));
+        toast.success("User access removed");
       } catch (error) {
         console.error("Error deleting user:", error);
+        toast.error("Failed to delete user");
       }
     }
   };
 
   const getRoleIcon = (role: string) => {
-    if (role === "Super Admin") return <Shield size={18} className="text-purple-500" />;
-    if (role === "Sub-Admin") return <ShieldAlert size={18} className="text-blue-500" />;
+    if (role === "admin") return <Shield size={18} className="text-purple-500" />;
+    if (role === "team_member") return <Users size={18} className="text-blue-500" />;
     return <Users size={18} className="text-teal-500" />;
   };
 
   return (
     <AdminLayout>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold font-heading">Role & Access Control</h1>
-          <p className="text-text-muted text-sm mt-1">Manage admin permissions and assigned roles</p>
+          <h1 className="text-2xl font-bold font-heading">Team & Roles</h1>
+          <p className="text-text-muted text-sm mt-1">Manage team members, influencers, and administrators</p>
         </div>
         <button 
           onClick={() => handleOpenModal()}
           className="bg-brand-accent text-brand-primary px-4 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-brand-accent-hover transition-colors"
         >
-          <Plus size={18} /> Assign Role
+          <Plus size={18} /> Add Team Member
         </button>
       </div>
 
@@ -134,22 +188,22 @@ export default function AdminRoles() {
         <div className="bg-brand-surface border border-brand-border rounded-xl p-4 flex items-center gap-4 shadow-sm">
           <div className="p-3 bg-purple-500/10 rounded-lg"><Shield size={24} className="text-purple-500"/></div>
           <div>
-            <h4 className="font-bold text-text-main text-sm">Super Admin</h4>
-            <p className="text-xs text-text-muted">Full access to all modules and settings.</p>
+            <h4 className="font-bold text-text-main text-sm">Administrator</h4>
+            <p className="text-xs text-text-muted">Full access to all system modules.</p>
           </div>
         </div>
         <div className="bg-brand-surface border border-brand-border rounded-xl p-4 flex items-center gap-4 shadow-sm">
-          <div className="p-3 bg-blue-500/10 rounded-lg"><ShieldAlert size={24} className="text-blue-500"/></div>
+          <div className="p-3 bg-blue-500/10 rounded-lg"><Users size={24} className="text-blue-500"/></div>
           <div>
-            <h4 className="font-bold text-text-main text-sm">Sub-Admin</h4>
-            <p className="text-xs text-text-muted">Can manage orders, services, and users.</p>
+            <h4 className="font-bold text-text-main text-sm">Team Member</h4>
+            <p className="text-xs text-text-muted">Earns commission. Has access to the Team Dashboard.</p>
           </div>
         </div>
         <div className="bg-brand-surface border border-brand-border rounded-xl p-4 flex items-center gap-4 shadow-sm">
           <div className="p-3 bg-teal-500/10 rounded-lg"><Users size={24} className="text-teal-500"/></div>
           <div>
-            <h4 className="font-bold text-text-main text-sm">Support</h4>
-            <p className="text-xs text-text-muted">Can only view and process orders.</p>
+            <h4 className="font-bold text-text-main text-sm">Influencer</h4>
+            <p className="text-xs text-text-muted">Marketing partners with custom metrics.</p>
           </div>
         </div>
       </div>
@@ -157,7 +211,7 @@ export default function AdminRoles() {
       {/* Users Table */}
       <div className="bg-brand-surface border border-brand-border rounded-xl overflow-hidden shadow-lg">
         <div className="p-5 border-b border-brand-border">
-          <h3 className="font-heading font-bold text-lg">System Administrators</h3>
+          <h3 className="font-heading font-bold text-lg">System Users</h3>
         </div>
         
         <div className="overflow-x-auto">
@@ -165,34 +219,36 @@ export default function AdminRoles() {
             <thead className="bg-brand-primary/50 text-text-muted text-xs uppercase font-semibold border-b border-brand-border">
               <tr>
                 <th className="px-6 py-4">Name</th>
-                <th className="px-6 py-4">Passwords</th>
+                <th className="px-6 py-4">Email</th>
                 <th className="px-6 py-4">Role</th>
+                <th className="px-6 py-4 text-right">Commission</th>
                 <th className="px-6 py-4 text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-brand-border">
               {loading ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-text-muted">
+                  <td colSpan={5} className="px-6 py-12 text-center text-text-muted">
                     <div className="flex justify-center"><div className="w-6 h-6 border-2 border-brand-accent border-t-transparent rounded-full animate-spin"></div></div>
                   </td>
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-text-muted">No administrators found.</td>
+                  <td colSpan={5} className="px-6 py-12 text-center text-text-muted">No team members found.</td>
                 </tr>
               ) : (
                 users.map(user => (
                   <tr key={user.id} className="hover:bg-brand-primary/30 transition-colors">
-                    <td className="px-6 py-4 font-medium text-text-main">{user.name || "N/A"}</td>
-                    <td className="px-6 py-4 text-text-muted">
-                      {user.passwordPart1 ? "*** *** ***" : "Not Set"}
-                    </td>
+                    <td className="px-6 py-4 font-medium text-text-main">{user.fullName || user.name || "N/A"}</td>
+                    <td className="px-6 py-4 text-text-muted">{user.email || "N/A"}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         {getRoleIcon(user.role)}
-                        <span className="font-medium text-text-main">{user.role}</span>
+                        <span className="font-medium text-text-main capitalize">{user.role?.replace('_', ' ')}</span>
                       </div>
+                    </td>
+                    <td className="px-6 py-4 text-right text-text-main font-bold">
+                      {user.commissionPercentage ? `${user.commissionPercentage}%` : "0%"}
                     </td>
                     <td className="px-6 py-4 text-center">
                       <div className="flex items-center justify-center gap-3">
@@ -224,64 +280,81 @@ export default function AdminRoles() {
           <div className="bg-brand-surface border border-brand-border rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
             <div className="p-5 border-b border-brand-border flex justify-between items-center bg-brand-primary/50">
               <h3 className="font-heading font-bold text-xl text-text-main">
-                {formData.id ? "Edit User Role" : "Assign New Role"}
+                {formData.id ? "Edit User" : "Add Team Member"}
               </h3>
               <button onClick={() => setIsModalOpen(false)} className="text-text-muted hover:text-white transition-colors">
                 <X size={20} />
               </button>
             </div>
             
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="text-sm font-medium text-text-muted mb-1 block">Full Name</label>
-                <input 
-                  type="text" 
-                  value={formData.name}
-                  onChange={e => setFormData({...formData, name: e.target.value})}
-                  className="w-full bg-brand-primary border border-brand-border rounded-lg px-4 py-2.5 text-text-main focus:outline-none focus:border-brand-accent/50" 
-                  placeholder="John Doe"
-                />
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium text-text-muted mb-1 block">Security Passwords</label>
-                <div className="space-y-3">
-                  <input 
-                    type="password" 
-                    value={formData.passwordPart1}
-                    onChange={e => setFormData({...formData, passwordPart1: e.target.value})}
-                    className="w-full bg-brand-primary border border-brand-border rounded-lg px-4 py-2.5 text-text-main focus:outline-none focus:border-brand-accent/50" 
-                    placeholder="Password 1 (e.g. HVRS)"
-                  />
-                  <input 
-                    type="password" 
-                    value={formData.passwordPart2}
-                    onChange={e => setFormData({...formData, passwordPart2: e.target.value})}
-                    className="w-full bg-brand-primary border border-brand-border rounded-lg px-4 py-2.5 text-text-main focus:outline-none focus:border-brand-accent/50" 
-                    placeholder="Password 2 (e.g. HVRS)"
-                  />
-                  <input 
-                    type="password" 
-                    value={formData.passwordPart3}
-                    onChange={e => setFormData({...formData, passwordPart3: e.target.value})}
-                    className="w-full bg-brand-primary border border-brand-border rounded-lg px-4 py-2.5 text-text-main focus:outline-none focus:border-brand-accent/50" 
-                    placeholder="Password 3 (e.g. HVRS)"
-                  />
-                </div>
-              </div>
-
+            <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
               <div>
                 <label className="text-sm font-medium text-text-muted mb-1 block">Role</label>
                 <select 
                   value={formData.role}
                   onChange={e => setFormData({...formData, role: e.target.value as any})}
-                  className="w-full bg-brand-primary border border-brand-border rounded-lg px-4 py-2.5 text-text-main focus:outline-none focus:border-brand-accent/50 appearance-none"
+                  className="w-full bg-brand-primary border border-brand-border rounded-lg px-4 py-2.5 text-text-main focus:outline-none focus:border-brand-accent/50 appearance-none capitalize"
                 >
                   {ROLE_OPTIONS.map(r => (
-                    <option key={r} value={r}>{r}</option>
+                    <option key={r} value={r}>{r.replace('_', ' ')}</option>
                   ))}
                 </select>
+                <p className="text-xs text-brand-accent mt-1">Select if they are team members or influencers</p>
               </div>
+
+              <div>
+                <label className="text-sm font-medium text-text-muted mb-1 block">Full Name</label>
+                <input 
+                  type="text" 
+                  value={formData.fullName}
+                  onChange={e => setFormData({...formData, fullName: e.target.value})}
+                  className="w-full bg-brand-primary border border-brand-border rounded-lg px-4 py-2.5 text-text-main focus:outline-none focus:border-brand-accent/50" 
+                  placeholder="John Doe"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-text-muted mb-1 block">Email (Login ID)</label>
+                <input 
+                  type="email" 
+                  value={formData.email}
+                  disabled={!!formData.id}
+                  onChange={e => setFormData({...formData, email: e.target.value})}
+                  className="w-full bg-brand-primary border border-brand-border rounded-lg px-4 py-2.5 text-text-main focus:outline-none focus:border-brand-accent/50 disabled:opacity-50" 
+                  placeholder="user@example.com"
+                />
+              </div>
+              
+              {!formData.id && (
+                <div>
+                  <label className="text-sm font-medium text-text-muted mb-1 block">Initial Password</label>
+                  <input 
+                    type="password" 
+                    value={formData.password}
+                    onChange={e => setFormData({...formData, password: e.target.value})}
+                    className="w-full bg-brand-primary border border-brand-border rounded-lg px-4 py-2.5 text-text-main focus:outline-none focus:border-brand-accent/50" 
+                    placeholder="Enter start password"
+                  />
+                </div>
+              )}
+
+              {(formData.role === "team_member" || formData.role === "influencer") && (
+                <div>
+                  <label className="text-sm font-medium text-text-muted mb-1 block">Commission Percentage</label>
+                  <div className="relative">
+                    <input 
+                      type="number" 
+                      min="0"
+                      max="100"
+                      value={formData.commissionPercentage}
+                      onChange={e => setFormData({...formData, commissionPercentage: parseFloat(e.target.value) || 0})}
+                      className="w-full bg-brand-primary border border-brand-border rounded-lg px-4 py-2.5 pl-10 text-text-main focus:outline-none focus:border-brand-accent/50" 
+                    />
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">%</span>
+                  </div>
+                  <p className="text-xs text-text-muted mt-1">Their cut of the net profit generated.</p>
+                </div>
+              )}
             </div>
 
             <div className="p-5 border-t border-brand-border bg-brand-primary/50 flex justify-end gap-3">
@@ -292,10 +365,12 @@ export default function AdminRoles() {
                  Cancel
                </button>
                <button 
+                 disabled={isCreating}
                  onClick={handleSaveUser}
-                 className="px-6 py-2.5 bg-brand-accent text-brand-primary hover:bg-brand-accent-hover rounded-xl font-bold transition-all"
+                 className="px-6 py-2.5 bg-brand-accent text-brand-primary hover:bg-brand-accent-hover rounded-xl font-bold transition-all disabled:opacity-50 flex items-center gap-2"
                >
-                 {formData.id ? "Update Role" : "Assign Role"}
+                 {isCreating && <div className="w-4 h-4 border-2 border-brand-primary/30 border-t-brand-primary rounded-full animate-spin"></div>}
+                 {formData.id ? "Update User" : "Create User"}
                </button>
             </div>
           </div>

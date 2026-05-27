@@ -12,7 +12,7 @@ interface Message {
 const AIChat: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'model', text: 'Hello! I am WorkPlex AI Support. How can I assist with your growth strategy today?' }
+    { role: 'model', text: 'Hello! I am Growplex AI Support. How can I assist with your growth strategy today?' }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -77,7 +77,7 @@ const AIChat: React.FC = () => {
                   <Bot size={22} className="text-brand-gold" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-black text-white italic uppercase tracking-wider">WorkPlex AI</h3>
+                  <h3 className="text-sm font-black text-white italic uppercase tracking-wider">Growplex AI</h3>
                   <div className="flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 bg-brand-teal rounded-full animate-pulse shadow-[0_0_10px_rgba(45,212,191,0.5)]"></span>
                     <span className="text-[9px] font-black text-brand-teal uppercase tracking-widest italic">Neural Network Active</span>

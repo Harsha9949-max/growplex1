@@ -39,7 +39,7 @@ const Landing: React.FC = () => {
             <div className="w-10 h-10 gold-gradient rounded-xl flex items-center justify-center shadow-lg shadow-brand-gold/20 group-hover:scale-110 transition-all duration-500">
               <Zap size={22} className="text-black fill-black" />
             </div>
-            <span className="text-2xl font-display font-black tracking-tighter text-white">WORKPLEX</span>
+            <span className="text-2xl font-display font-black tracking-tighter text-white">GROWPLEX</span>
           </div>
           
           <div className="hidden md:flex items-center gap-10">
@@ -82,7 +82,7 @@ const Landing: React.FC = () => {
                 ))}
                 <div className="h-px bg-brand-border my-2" />
                 <Link to="/login" className="text-lg font-bold text-white uppercase tracking-widest">Sign In</Link>
-                <Link to="/register" className="gold-gradient text-black px-6 py-4 rounded-2xl font-black text-center uppercase tracking-widest">Join WorkPlex</Link>
+                <Link to="/register" className="gold-gradient text-black px-6 py-4 rounded-2xl font-black text-center uppercase tracking-widest">Join Growplex</Link>
               </div>
             </motion.div>
           )}
@@ -320,7 +320,7 @@ const Landing: React.FC = () => {
               <div className="w-10 h-10 gold-gradient rounded-xl flex items-center justify-center">
                 <Zap size={22} className="text-black fill-black" />
               </div>
-              <span className="text-2xl font-display font-black tracking-tighter text-white">WORKPLEX</span>
+              <span className="text-2xl font-display font-black tracking-tighter text-white">GROWPLEX</span>
             </div>
             
             <div className="flex flex-wrap justify-center gap-8 md:gap-12">
@@ -332,7 +332,7 @@ const Landing: React.FC = () => {
           
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 pt-12 border-t border-brand-border/50">
             <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em]">
-              © 2026 WORKPLEX. A Division of HVRS Innovations Private Limited.
+              © 2026 GROWPLEX. A Division of HVRS Innovations Private Limited.
             </p>
             <div className="flex items-center gap-10">
               <span className="text-[10px] font-black text-slate-700 uppercase tracking-[0.3em]">Made for India</span>

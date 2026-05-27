@@ -13,7 +13,7 @@ export function Footer() {
               <h2 className="text-2xl font-bold font-heading text-brand-accent">Growplex</h2>
             </Link>
             <p className="text-text-muted mb-3 sm:mb-4 leading-relaxed text-xs sm:text-sm">
-              The cheapest SMM panel in the world. No login required. Instant delivery of Instagram followers, YouTube subscribers, Telegram members & more. A product of <strong className="text-text-main">HVRS Innovations</strong>.
+              The cheapest SMM panel in the world. Instant delivery of Instagram followers, YouTube subscribers, Telegram members & more. A product of <strong className="text-text-main">HVRS Innovations</strong>.
             </p>
             {/* Social Icons */}
             <div className="flex gap-3 mb-6">

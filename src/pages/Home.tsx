@@ -22,7 +22,7 @@ import { SocialProofTicker } from "../components/SocialProofTicker";
 import { useServices } from "../hooks/useServices";
 
 const TRUST_BADGES = [
-  { icon: Lock, title: "No Login Required", desc: "Order without creating an account or giving any password." },
+  { icon: Lock, title: "Fast Checkout", desc: "Easily order online and track your processing securely." },
   { icon: Zap, title: "Fastest Possible Delivery", desc: "Most orders start processing within seconds of payment." },
   { icon: RefreshCw, title: "30-Day Refill", desc: "Free refill guarantee if your count drops within 30 days." },
   { icon: Headphones, title: "24/7 Human Support", desc: "Real agents available around the clock via chat and email." }
@@ -40,11 +40,11 @@ const FALLBACK_TOP_SERVICES = [
 const HOW_IT_WORKS = [
   { step: "01", title: "Paste Your Link", desc: "Copy your profile URL or post link and paste it into the order form. We never ask for your password — only the public link.", icon: "🔗" },
   { step: "02", title: "Pay Securely", desc: "Choose your package and complete payment through our encrypted gateway. Multiple payment options available.", icon: "💳" },
-  { step: "03", title: "Watch It Grow", desc: "Your order starts processing instantly. Track progress with your unique order ID — no login needed.", icon: "🚀" }
+  { step: "03", title: "Watch It Grow", desc: "Your order starts processing instantly. Track progress with your unique order ID.", icon: "🚀" }
 ];
 
 const TESTIMONIALS = [
-  { name: "Rahul S.", location: "India", text: "Excellent service and fast delivery. Got 5K Instagram followers in under 12 hours. No login asked — very safe!", rating: 5 },
+  { name: "Rahul S.", location: "India", text: "Excellent service and fast delivery. Got 5K Instagram followers in under 12 hours. Very safe!", rating: 5 },
   { name: "Sarah J.", location: "USA", text: "I was skeptical about no-login panels, but Growplex delivered exactly as promised. Cheapest prices I've found anywhere.", rating: 5 },
   { name: "Priya M.", location: "India", text: "Got 1K YouTube subscribers in just 2 days. The quality is top-notch and the refill guarantee gives me confidence.", rating: 5 },
   { name: "Carlos R.", location: "Brazil", text: "Best SMM panel I've used. No password required and the prices are unbeatable. Already ordered 3 times!", rating: 5 },
@@ -102,7 +102,7 @@ export default function Home() {
     <div className="min-h-screen bg-brand-primary text-text-main font-sans selection:bg-brand-accent selection:text-brand-primary">
       <SEO 
         title="Cheapest SMM Panel Without Login | Instant Social Media Growth"
-        description="Growplex is the cheapest SMM panel with NO LOGIN required. Get instant Instagram followers, likes, YouTube views & more. Start in seconds without password. Best prices guaranteed!"
+        description="Growplex is the cheapest SMM panel with easy sign up. Get instant Instagram followers, likes, YouTube views & more. Start in seconds without password. Best prices guaranteed!"
         keywords="SMM panel India, cheap Instagram followers panel, resell SMM services, Growplex SMM panel, SMM panel UPI payment, Telugu SMM panel, best SMM panel"
         schema={JSON.stringify({
           "@context": "https://schema.org",
@@ -126,7 +126,7 @@ export default function Home() {
       <section className="relative pt-20 pb-16 md:pt-32 md:pb-32 px-4 overflow-hidden">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] md:w-[800px] h-[500px] md:h-[800px] bg-brand-accent/5 rounded-full blur-[100px] pointer-events-none" />
         <div className="max-w-4xl mx-auto text-center relative z-10">
-          {/* NO LOGIN Badge */}
+          {/* PREMIUM Badge */}
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -134,7 +134,7 @@ export default function Home() {
             className="inline-flex items-center gap-2 bg-brand-accent/10 text-brand-accent border border-brand-accent/30 px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold mb-6 md:mb-8"
           >
             <Lock size={14} />
-            NO LOGIN REQUIRED — 100% SAFE
+            PREMIUM REQUIRED — 100% SAFE
           </motion.div>
 
           <motion.h1 
@@ -144,7 +144,7 @@ export default function Home() {
             className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold mb-4 md:mb-6 tracking-tight leading-tight"
           >
             Super Growth At Affordable Prices<br className="hidden sm:block"/>
-            <span className="text-brand-accent">With No Login Required.</span>
+            <span className="text-brand-accent">With Fast Checkout.</span>
           </motion.h1>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
@@ -215,7 +215,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-10 md:mb-16">
             <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-bold mb-3 md:mb-4">Our Most Popular Services</h2>
-            <p className="text-text-muted max-w-2xl mx-auto text-sm md:text-base px-2">Top-rated social media growth services at the cheapest prices. No login, no password — just results.</p>
+            <p className="text-text-muted max-w-2xl mx-auto text-sm md:text-base px-2">Top-rated social media growth services at the cheapest prices.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {topServices.map((service, idx) => (
@@ -355,7 +355,7 @@ export default function Home() {
         
         <div className="max-w-4xl mx-auto text-center relative z-10 py-6 md:py-12">
           <div className="inline-flex items-center gap-2 bg-brand-accent/10 text-brand-accent border border-brand-accent/30 px-4 py-1.5 rounded-full text-xs font-bold mb-4 md:mb-6">
-            <Lock size={12} /> NO LOGIN EVER
+            <Lock size={12} /> SECURE DASHBOARD
           </div>
           <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6">Ready to Grow Your Social Media?</h2>
           <p className="text-base md:text-xl text-text-muted mb-8 md:mb-10 mx-auto max-w-2xl px-2">

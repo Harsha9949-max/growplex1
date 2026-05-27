@@ -12,7 +12,7 @@ const STEPS = [
     icon: LinkIcon,
     title: "Paste Your Profile or Post Link",
     desc: "Go to the service you want (Instagram Followers, YouTube Views, etc.) and paste the public URL of your profile or post into the order form. We never ask for your login credentials, password, or any private information. Just the public link — that's it.",
-    highlight: "No password. No login. Just a link."
+    highlight: "Just a link to get started."
   },
   {
     num: "02",
@@ -35,7 +35,7 @@ export default function HowItWorks() {
     <div className="min-h-screen bg-brand-primary text-text-main font-sans">
       <SEO 
         title="How Growplex Works – Order SMM Services in 60 Seconds Without Login"
-        description="Learn how Growplex works in 3 simple steps. Paste your link, pay securely, and get instant delivery. No login, no password, no account needed. The easiest SMM panel ever."
+        description="Learn how Growplex works in 3 simple steps. Paste your link, pay securely, and get instant delivery. The easiest SMM panel ever."
         keywords="how SMM panel works, buy Instagram followers easily, Indian SMM panel process"
         url="https://growplex.sbs/how-it-works"
       />
@@ -52,7 +52,7 @@ export default function HowItWorks() {
               <Lock size={12} /> ZERO ACCOUNT NEEDED
             </div>
             <h1 className="font-heading text-4xl md:text-5xl font-bold mb-6">
-              How It Works in <span className="text-brand-accent">3 Steps</span> (No Login)
+              How It Works in <span className="text-brand-accent">3 Steps</span>
             </h1>
             <p className="text-xl text-text-muted max-w-2xl mx-auto">
               Order any social media growth service in under 60 seconds. No account creation. No passwords. Just paste, pay, and grow.

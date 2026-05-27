@@ -18,7 +18,7 @@ export function FloatingBadge() {
           className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 z-50 bg-gradient-to-r from-brand-accent to-[#d4a03a] text-brand-primary px-5 py-3 rounded-full shadow-2xl shadow-brand-accent/20 flex items-center justify-center sm:justify-start gap-2.5 font-bold text-sm"
         >
           <Lock size={16} className="shrink-0" />
-          <span>No login. No password. 100% safe.</span>
+          <span>100% Safe & Secure.</span>
           <button
             onClick={() => setVisible(false)}
             className="ml-1 opacity-60 hover:opacity-100 transition-opacity shrink-0"
