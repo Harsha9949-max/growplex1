@@ -14,10 +14,7 @@ import {
   onSnapshot,
   setDoc,
   Timestamp,
-  updateDoc,
-  collection,
-  addDoc,
-  serverTimestamp
+  updateDoc
 } from 'firebase/firestore';
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { auth, db } from '../lib/firebase';
@@ -125,23 +122,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           createdAt: Timestamp.now(),
         };
         await setDoc(userDocRef, profile);
-
-        // Step 4: Add newly registered customer to growplex_customers
-        try {
-          await addDoc(collection(db, "growplex_customers"), {
-            customer_id: user.uid,
-            name: user.phoneNumber || 'User',
-            email: user.email || "",
-            phone: user.phoneNumber || "",
-            registered_at: serverTimestamp(),
-            total_orders: 0,
-            total_spent: 0,
-            status: "active",
-            source: "growplex_website"
-          });
-        } catch (err) {
-          console.error("Failed to write to growplex_customers:", err);
-        }
       }
     } catch (error) {
       console.error('Error verifying OTP:', error);
@@ -182,23 +162,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         createdAt: Timestamp.now(),
       };
       await setDoc(userDocRef, profile);
-
-      // Step 4: Add newly registered customer to growplex_customers
-      try {
-        await addDoc(collection(db, "growplex_customers"), {
-          customer_id: user.uid,
-          name: user.displayName || user.email!.split('@')[0],
-          email: user.email || "",
-          phone: user.phoneNumber || "",
-          registered_at: serverTimestamp(),
-          total_orders: 0,
-          total_spent: 0,
-          status: "active",
-          source: "growplex_website"
-        });
-      } catch (err) {
-        console.error("Failed to write to growplex_customers:", err);
-      }
     } else if (isAdminEmail && userDoc.data()?.role !== 'admin') {
       // Update role if user is the designated admin but profile says otherwise
       await updateDoc(userDocRef, { role: 'admin' });

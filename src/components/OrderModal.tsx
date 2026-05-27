@@ -8,7 +8,6 @@ import { useNavigate } from "react-router-dom";
 import { db, storage } from "../lib/firebase";
 import { generateOrderId } from "../lib/utils";
 import { Package, Service } from "../types";
-import { useAuth } from "../hooks/useAuth";
 
 interface OrderModalProps {
   service: Service;
@@ -113,7 +112,6 @@ async function sendTelegramNotification(order: {
 }
 
 export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon }: OrderModalProps) {
-  const { currentUser } = useAuth();
   const [step, setStep] = useState<"details" | "checkout" | "payment">("details");
   const [formData, setFormData] = useState({
     customerName: "",
@@ -356,54 +354,6 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
 
             await addDoc(collection(db, "orders"), dbOrderData);
 
-            // Step 2 & 5: Write order and payment to Firestore silently in background so MotherPanel can read
-            try {
-              const savedRef = localStorage.getItem('growplex_ref');
-              
-              const apiCost = (service.type === 'synced' && service.baseRateUsd !== undefined)
-                ? Math.round((service.baseRateUsd / 1000) * Number(finalQuantity) * 100) / 100
-                : 0;
-
-              // Write order
-              await addDoc(collection(db, "growplex_orders"), {
-                order_id: orderData.order_id,
-                customer_name: formData.customerName,
-                customer_email: currentUser?.email || "",
-                customer_phone: formData.phone || "",
-                service_name: service.name,
-                service_category: service.category,
-                quantity: Number(finalQuantity) || 1,
-                order_value: finalPrice,
-                growwsmmpanel_cost: apiCost,
-                net_profit: finalPrice - apiCost,
-                status: dbOrderData.orderStatus || "processing",
-                influencer_code: savedRef || null,
-                influencer_id: null,
-                commission_amount: null,
-                payment_id: response.razorpay_payment_id || orderData.order_id,
-                payment_method: "razorpay",
-                source: "growplex_website",
-                created_at: serverTimestamp(),
-                completed_at: null,
-                updated_at: serverTimestamp()
-              });
-
-              // Write payment
-              await addDoc(collection(db, "growplex_payments"), {
-                payment_id: response.razorpay_payment_id,
-                order_id: orderData.order_id,
-                customer_name: formData.customerName,
-                customer_phone: formData.phone || "",
-                amount: finalPrice,
-                currency: "INR",
-                status: "success",
-                payment_method: "razorpay",
-                created_at: serverTimestamp()
-              });
-            } catch (err) {
-              console.error("Failed to write order/payment to growplex collections:", err);
-            }
-
             // Send Telegram notification
             sendTelegramNotification({
               orderId: orderData.order_id,
@@ -504,40 +454,6 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
       };
 
       await addDoc(collection(db, "orders"), dbOrderData);
-
-      // Step 2: Write order to Firestore silently in background so MotherPanel can read
-      try {
-        const savedRef = localStorage.getItem('growplex_ref');
-        
-        const apiCost = (service.type === 'synced' && service.baseRateUsd !== undefined)
-          ? Math.round((service.baseRateUsd / 1000) * Number(finalQuantity) * 100) / 100
-          : 0;
-
-        await addDoc(collection(db, "growplex_orders"), {
-          order_id: orderId,
-          customer_name: formData.customerName.trim(),
-          customer_email: currentUser?.email || "",
-          customer_phone: formData.phone.trim() || "",
-          service_name: service.name,
-          service_category: service.category,
-          quantity: Number(finalQuantity) || 1,
-          order_value: finalPrice,
-          growwsmmpanel_cost: apiCost,
-          net_profit: finalPrice - apiCost,
-          status: "processing", // always start as "processing" according to step 2 description
-          influencer_code: savedRef || null,
-          influencer_id: null,
-          commission_amount: null,
-          payment_id: orderId, // use orderId for manual qr payment ID
-          payment_method: "upi_qr",
-          source: "growplex_website",
-          created_at: serverTimestamp(),
-          completed_at: null,
-          updated_at: serverTimestamp()
-        });
-      } catch (err) {
-        console.error("Failed to write manual order to growplex_orders:", err);
-      }
 
       setUploadProgress("Sending confirmation notification...");
       try {

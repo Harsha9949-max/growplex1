@@ -1,4 +1,4 @@
-import { collection, deleteField, doc, onSnapshot, orderBy, query, updateDoc, deleteDoc, where, getDocs, serverTimestamp } from "firebase/firestore";
+import { collection, deleteField, doc, onSnapshot, orderBy, query, updateDoc, deleteDoc } from "firebase/firestore";
 import { deleteObject, ref } from "firebase/storage";
 import {
   Camera,
@@ -71,23 +71,6 @@ export default function AdminOrders() {
       const order = orders.find(o => o.orderId === orderId);
       if (order?.id) {
         await updateDoc(doc(db, "orders", order.id), { orderStatus: newStatus });
-      }
-
-      // Step 3: Find the order in Firestore growplex_orders and update its status
-      try {
-        const ordersRef = collection(db, "growplex_orders");
-        const q = query(ordersRef, where("order_id", "==", orderId));
-        const querySnapshot = await getDocs(q);
-
-        for (const orderDoc of querySnapshot.docs) {
-          await updateDoc(doc(db, "growplex_orders", orderDoc.id), {
-            status: newStatus, // "completed" | "cancelled" | "refunded" | "failed"
-            completed_at: newStatus === "completed" ? serverTimestamp() : null,
-            updated_at: serverTimestamp()
-          });
-        }
-      } catch (err) {
-        console.error("Failed to sync order status to growplex_orders collection:", err);
       }
       
       if (selectedOrder && selectedOrder.orderId === orderId) {
