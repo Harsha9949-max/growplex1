@@ -116,7 +116,8 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
   const [formData, setFormData] = useState({
     customerName: "",
     phone: "",
-    serviceLink: ""
+    serviceLink: "",
+    influencerName: ""
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -324,6 +325,7 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
               serviceLink: formData.serviceLink,
               serviceName: service.name,
               serviceCategory: service.category,
+              influencerName: formData.influencerName.trim().toLowerCase().replace(/[^a-z0-9]/g, ""),
               packageQuantity: finalQuantity,
               price: finalPrice,
               paymentId: response.razorpay_payment_id,
@@ -444,6 +446,7 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
         serviceLink: formData.serviceLink.trim(),
         serviceName: service.name,
         serviceCategory: service.category,
+        influencerName: formData.influencerName.trim().toLowerCase().replace(/[^a-z0-9]/g, ""),
         packageQuantity: finalQuantity,
         price: finalPrice,
         paymentStatus: "pending_verification", // Admin will manual verify this screenshot
@@ -637,6 +640,18 @@ export function OrderModal({ service, selectedPackage, onClose, getCategoryIcon 
                     onChange={handleInputChange}
                     placeholder="e.g., https://instagram.com/yourprofile"
                     className="w-full bg-brand-primary border border-brand-border rounded-lg px-4 py-2 text-text-main focus:outline-none focus:border-brand-accent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-text-muted mb-1">Promo / Influencer Code (Optional)</label>
+                  <input 
+                    type="text" 
+                    name="influencerName"
+                    value={formData.influencerName}
+                    onChange={handleInputChange}
+                    placeholder="Enter promo or special partner name"
+                    className="w-full bg-brand-primary border border-brand-border rounded-lg px-4 py-2 text-text-main focus:outline-none focus:border-brand-accent uppercase font-mono tracking-wider text-xs placeholder:normal-case placeholder:font-sans placeholder:text-slate-600"
                   />
                 </div>
 

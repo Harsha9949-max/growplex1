@@ -13,6 +13,7 @@ interface AdminUser {
   email?: string;
   role: "admin" | "team_member" | "influencer" | string;
   commissionPercentage?: number;
+  influencerName?: string;
   createdAt?: any;
 }
 
@@ -31,7 +32,8 @@ export default function AdminRoles() {
     password: "",
     commissionPercentage: 10,
     role: "team_member" as "admin" | "team_member" | "influencer",
-    clonedPages: [] as string[]
+    clonedPages: [] as string[],
+    influencerName: ""
   });
 
   const availableAdminPages = [
@@ -70,7 +72,8 @@ export default function AdminRoles() {
         password: "", // do not show password edit
         commissionPercentage: user.commissionPercentage || 10,
         role: (user.role as any) || "team_member",
-        clonedPages: (user as any).clonedPages || []
+        clonedPages: (user as any).clonedPages || [],
+        influencerName: user.influencerName || ""
       });
     } else {
       setFormData({
@@ -80,7 +83,8 @@ export default function AdminRoles() {
         password: "",
         commissionPercentage: 10,
         role: "team_member",
-        clonedPages: []
+        clonedPages: [],
+        influencerName: ""
       });
     }
     setIsModalOpen(true);
@@ -89,6 +93,15 @@ export default function AdminRoles() {
   const handleSaveUser = async () => {
     if (!formData.fullName || !formData.email || !formData.role) return toast.error("Name, email and role are required");
     
+    const sanitizedName = formData.role === "influencer"
+      ? formData.influencerName.trim().toLowerCase().replace(/[^a-z0-9]/g, "")
+      : "";
+
+    if (formData.role === "influencer" && !sanitizedName) {
+      toast.error("A valid alphanumeric Special Name / Promo Code is required for influencers");
+      return;
+    }
+
     setIsCreating(true);
     try {
       let uid = formData.id;
@@ -145,6 +158,7 @@ export default function AdminRoles() {
         role: formData.role,
         commissionPercentage: formData.commissionPercentage,
         clonedPages: formData.clonedPages,
+        influencerName: sanitizedName,
         updatedAt: serverTimestamp(),
         ...(!formData.id && { 
             createdAt: serverTimestamp(),
@@ -256,7 +270,14 @@ export default function AdminRoles() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         {getRoleIcon(user.role)}
-                        <span className="font-medium text-text-main capitalize">{user.role?.replace('_', ' ')}</span>
+                        <span className="font-medium text-text-main capitalize">
+                          {user.role?.replace('_', ' ')}
+                          {user.role === "influencer" && user.influencerName && (
+                            <span className="text-xs bg-teal-500/10 text-teal-400 font-bold px-1.5 py-0.5 rounded ml-2 uppercase font-mono tracking-wider">
+                              {user.influencerName}
+                            </span>
+                          )}
+                        </span>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-right text-text-main font-bold">
@@ -365,6 +386,20 @@ export default function AdminRoles() {
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">%</span>
                   </div>
                   <p className="text-xs text-text-muted mt-1">Their cut of the net profit generated.</p>
+                </div>
+              )}
+
+              {formData.role === "influencer" && (
+                <div>
+                  <label className="text-sm font-medium text-text-muted mb-1 block">Special Influencer Name (Promo Code)</label>
+                  <input 
+                    type="text" 
+                    value={formData.influencerName}
+                    onChange={e => setFormData({...formData, influencerName: e.target.value})}
+                    className="w-full bg-brand-primary border border-brand-border rounded-lg px-4 py-2.5 text-text-main focus:outline-none focus:border-brand-accent/50 font-bold text-brand-accent placeholder:font-normal placeholder:text-slate-600" 
+                    placeholder="e.g. coolcreator (alphanumeric, no spaces)"
+                  />
+                  <p className="text-xs text-text-muted mt-1">Customers enter this Special Name at checkout to attribute sales to this influencer.</p>
                 </div>
               )}
 

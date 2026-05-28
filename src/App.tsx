@@ -1,8 +1,10 @@
 import { HelmetProvider } from "react-helmet-async";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import React, { Suspense } from "react";
-import { AdminProtectedRoute } from "./components/AdminProtectedRoute";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { TeamLayout } from "./components/TeamLayout";
+import { AdminProtectedRoute } from "./components/AdminProtectedRoute";
+import { AdminLayout } from "./components/AdminLayout";
 import { FloatingBadge } from "./components/FloatingBadge";
 
 import {
@@ -91,10 +93,17 @@ export default function App() {
             <Route path="/dashboard" element={<ProtectedRoute><UserOrders /></ProtectedRoute>} />
             <Route path="/orders" element={<ProtectedRoute><UserOrders /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-            <Route path="/team/dashboard" element={<ProtectedRoute allowedRoles={['team_member', 'influencer']}><TeamDashboard /></ProtectedRoute>} />
-            <Route path="/team/tasks" element={<ProtectedRoute allowedRoles={['team_member', 'influencer']}><TeamTasks /></ProtectedRoute>} />
-            <Route path="/team/chat" element={<ProtectedRoute allowedRoles={['team_member', 'influencer', 'admin', 'user']}><TeamChat /></ProtectedRoute>} />
-            <Route path="/admin/chat" element={<AdminProtectedRoute allowedRoles={["Super Admin", "Sub-Admin", "Support"]}><TeamChat /></AdminProtectedRoute>} />
+            <Route path="/team/dashboard" element={<ProtectedRoute allowedRoles={['team_member', 'influencer']}><TeamLayout><TeamDashboard /></TeamLayout></ProtectedRoute>} />
+            <Route path="/team/tasks" element={<ProtectedRoute allowedRoles={['team_member', 'influencer']}><TeamLayout><TeamTasks /></TeamLayout></ProtectedRoute>} />
+            <Route path="/team/chat" element={<ProtectedRoute allowedRoles={['team_member', 'influencer', 'admin', 'user']}><TeamLayout><TeamChat /></TeamLayout></ProtectedRoute>} />
+            
+            {/* Team Cloned Pages */}
+            <Route path="/team/orders" element={<ProtectedRoute allowedRoles={['team_member', 'influencer']}><AdminOrders /></ProtectedRoute>} />
+            <Route path="/team/services" element={<ProtectedRoute allowedRoles={['team_member', 'influencer']}><AdminServices /></ProtectedRoute>} />
+            <Route path="/team/payments" element={<ProtectedRoute allowedRoles={['team_member', 'influencer']}><AdminPayments /></ProtectedRoute>} />
+            <Route path="/team/customers" element={<ProtectedRoute allowedRoles={['team_member', 'influencer']}><AdminCustomers /></ProtectedRoute>} />
+            <Route path="/team/offers" element={<ProtectedRoute allowedRoles={['team_member', 'influencer']}><AdminOffers /></ProtectedRoute>} />
+            <Route path="/admin/chat" element={<AdminProtectedRoute allowedRoles={["Super Admin", "Sub-Admin", "Support"]}><AdminLayout><TeamChat /></AdminLayout></AdminProtectedRoute>} />
 
             {/* Admin Auth Route */}
             <Route path="/admin/login" element={<AdminLogin />} />

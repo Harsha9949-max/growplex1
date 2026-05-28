@@ -1,13 +1,24 @@
 import { Menu } from "lucide-react";
 import React, { useState } from "react";
 import { AdminSidebar } from "./AdminSidebar";
+import { useAuth } from "../hooks/useAuth";
+import { TeamLayout } from "./TeamLayout";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
 export function AdminLayout({ children }: AdminLayoutProps) {
+  const { userProfile } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const isTeamOrInfluencer = 
+    userProfile?.role === 'team_member' || 
+    userProfile?.role === 'influencer';
+
+  if (isTeamOrInfluencer) {
+    return <TeamLayout>{children}</TeamLayout>;
+  }
 
   return (
     <div className="min-h-screen bg-brand-primary text-text-main font-sans selection:bg-brand-accent selection:text-brand-primary flex">

@@ -43,7 +43,8 @@ const Sidebar: React.FC = () => {
          '/admin/customers': 'Customers',
          '/admin/offers': 'Offers'
        };
-       return { to: path, icon: ShieldCheck, label: pageNames[path] || 'Admin Page' };
+       const teamPath = path.replace('/admin/', '/team/');
+       return { to: teamPath, icon: ShieldCheck, label: pageNames[path] || 'Admin Page' };
     }) || []),
     { to: '/settings', icon: Settings, label: 'Settings' },
   ];
@@ -110,7 +111,7 @@ const Sidebar: React.FC = () => {
 
       {/* Sidebar Content */}
       <aside className={cn(
-        "fixed top-0 left-0 h-full w-72 bg-brand-card border-r border-brand-border z-[65] transition-transform duration-500 ease-[cubic-bezier(0.33,1,0.68,1)] md:translate-x-0",
+        "fixed top-0 left-0 h-full w-64 bg-brand-surface border-r border-brand-border z-[65] transition-transform duration-500 ease-[cubic-bezier(0.33,1,0.68,1)] md:translate-x-0",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="p-8 mb-4">

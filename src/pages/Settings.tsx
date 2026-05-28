@@ -12,6 +12,8 @@ import {
 import { motion } from 'motion/react';
 import React, { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { TeamLayout } from '../components/TeamLayout';
+import { Navbar } from '../components/Navbar';
 
 const Settings: React.FC = () => {
   const { userProfile, logout } = useAuth();
@@ -23,7 +25,9 @@ const Settings: React.FC = () => {
     { id: 'notifications', icon: Bell, label: 'Notifications' },
   ] as const;
 
-  return (
+  const isTeamMember = userProfile?.role === 'team_member' || userProfile?.role === 'influencer';
+
+  const innerContent = (
     <div className="max-w-6xl mx-auto space-y-12">
       <div className="flex items-center justify-between">
          <div>
@@ -203,6 +207,19 @@ const Settings: React.FC = () => {
             )}
           </div>
         </div>
+      </div>
+    </div>
+  );
+
+  if (isTeamMember) {
+    return <TeamLayout>{innerContent}</TeamLayout>;
+  }
+
+  return (
+    <div className="min-h-screen bg-brand-primary text-text-main font-sans pb-20">
+      <Navbar />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {innerContent}
       </div>
     </div>
   );

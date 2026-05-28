@@ -1,15 +1,17 @@
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs, query, where, doc, getDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
 import { ArrowRight, Loader2, ShieldCheck, ArrowLeft } from "lucide-react";
 import { motion } from "motion/react";
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { db } from "../lib/firebase";
+import { db, auth } from "../lib/firebase";
 
 export default function AdminLogin() {
   const [p1, setP1] = useState("");
   const [p2, setP2] = useState("");
   const [p3, setP3] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
@@ -66,6 +68,120 @@ export default function AdminLogin() {
       setError("An error occurred during login");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setError(null);
+    setGoogleLoading(true);
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+
+      if (!user.email) {
+        throw new Error("No email associated with Google Account");
+      }
+
+      const emailLower = user.email.trim().toLowerCase();
+      // Define authorized gmail
+      const authorizedAdminEmail = "marateyh@gmail.com";
+
+      if (emailLower === authorizedAdminEmail) {
+        // Set up / update their user document in Firestore to be Super Admin
+        const userDocRef = doc(db, "users", user.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        if (!userDoc.exists()) {
+          const profile = {
+            uid: user.uid,
+            email: user.email,
+            fullName: user.displayName || "Super Admin",
+            username: user.email.split('@')[0],
+            role: "Super Admin",
+            wallets: { earned: 0, pending: 0, bonus: 0, savings: 0 },
+            signingBonus: 0,
+            createdAt: serverTimestamp(),
+          };
+          await setDoc(userDocRef, profile);
+        } else if (userDoc.data()?.role !== "Super Admin" && userDoc.data()?.role !== "admin") {
+          await updateDoc(userDocRef, { role: "Super Admin" });
+        }
+
+        const superAdminUser = {
+          id: user.uid,
+          name: user.displayName || "Super Admin",
+          role: "Super Admin",
+          email: user.email,
+        };
+        localStorage.setItem("adminAuth", JSON.stringify(superAdminUser));
+        navigate("/admin/dashboard");
+        return;
+      }
+
+      // Check if they are configured as an admin in firestore
+      const userDocRef = doc(db, "users", user.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        const role = userData.role;
+        if (role === "Super Admin" || role === "Sub-Admin" || role === "Support" || role === "admin") {
+          const mappedRole = role === "admin" ? "Super Admin" : role;
+          const adminObj = {
+            id: user.uid,
+            name: userData.fullName || user.displayName || "Admin User",
+            role: mappedRole,
+            email: user.email,
+          };
+          localStorage.setItem("adminAuth", JSON.stringify(adminObj));
+          if (mappedRole === "Support") {
+            navigate("/admin/orders");
+          } else {
+            navigate("/admin/dashboard");
+          }
+          return;
+        }
+      }
+
+      // If they are not configured, see if they are in the database by email
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("email", "==", emailLower));
+      const querySnapshot = await getDocs(q);
+      
+      let matchedUser = null;
+      querySnapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        if (data.role === "Super Admin" || data.role === "Sub-Admin" || data.role === "Support" || data.role === "admin") {
+          matchedUser = { id: docSnap.id, ...data };
+        }
+      });
+
+      if (matchedUser) {
+        const mappedRole = (matchedUser as any).role === "admin" ? "Super Admin" : (matchedUser as any).role;
+        const adminObj = {
+          id: (matchedUser as any).id,
+          name: (matchedUser as any).fullName || "Admin User",
+          role: mappedRole,
+          email: user.email,
+        };
+        localStorage.setItem("adminAuth", JSON.stringify(adminObj));
+        if (mappedRole === "Support") {
+          navigate("/admin/orders");
+        } else {
+          navigate("/admin/dashboard");
+        }
+        return;
+      }
+
+      // Deny Google Login if email doesn't match
+      setError(`Unauthorized Admin: ${user.email} is not permitted to access this panel.`);
+      await signOut(auth);
+    } catch (err: any) {
+      console.error("Google Auth error:", err);
+      setError(err.message || "Failed to authenticate with Google");
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -146,7 +262,7 @@ export default function AdminLogin() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || googleLoading}
               className="w-full mt-6 relative group overflow-hidden"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-[#E8B84B] to-[#FFD700] transition-transform group-hover:scale-105" />
@@ -162,6 +278,33 @@ export default function AdminLogin() {
               </div>
             </button>
           </form>
+
+          <div className="relative py-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-white/5"></div>
+            </div>
+            <div className="relative flex justify-center text-[10px] font-bold uppercase tracking-[0.3em] text-slate-500">
+              <span className="bg-[#0A0A0A] px-4 backdrop-blur-md">Or continue with</span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleGoogleLogin}
+            disabled={loading || googleLoading}
+            className="w-full bg-white/[0.03] hover:bg-white/[0.06] border border-white/10 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-4 group active:scale-[0.98]"
+          >
+            {googleLoading ? (
+              <Loader2 className="animate-spin text-white" size={24} />
+            ) : (
+              <>
+                <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-4 h-4" alt="Google" />
+                </div>
+                <span>Sign in with Google</span>
+              </>
+            )}
+          </button>
         </div>
       </motion.div>
     </div>

@@ -10,7 +10,7 @@ interface ProtectedRouteProps {
 }
 
 export const AdminProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
-  const [authStatus, setAuthStatus] = useState<{ isAllowed: boolean; role: string | null } | null>(null);
+  const [authStatus, setAuthStatus] = useState<{ isAllowed: boolean; role: string | null; clonedPages?: string[] } | null>(null);
   const location = useLocation();
 
   useEffect(() => {
@@ -24,7 +24,7 @@ export const AdminProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, a
           if (cachedUser.id === "super-admin-bypass") {
             const role = cachedUser.role || "Super Admin";
             const allowed = !allowedRoles || allowedRoles.includes(role);
-            setAuthStatus({ isAllowed: allowed, role });
+            setAuthStatus({ isAllowed: allowed, role, clonedPages: cachedUser.clonedPages });
             return;
           }
 
@@ -32,18 +32,24 @@ export const AdminProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, a
           const unsubscribe = onSnapshot(doc(db, "users", cachedUser.id), (docSnap) => {
             if (docSnap.exists()) {
               const userData = docSnap.data();
-              const currentRole = userData.role;
+              let currentRole = userData.role;
+              
+              // Map legacy 'admin' value to 'Super Admin' or map custom google-login admin
+              if (currentRole === "admin") {
+                currentRole = "Super Admin";
+              }
+
               if (currentRole) {
-                const updatedUser = { ...cachedUser, ...userData, id: docSnap.id };
+                const updatedUser = { ...cachedUser, ...userData, role: currentRole, id: docSnap.id };
                 localStorage.setItem('adminAuth', JSON.stringify(updatedUser));
 
                 const isClonedPage = userData.clonedPages?.includes(location.pathname);
                 const isRoleAllowed = !allowedRoles || allowedRoles.includes(currentRole);
 
                 if (isRoleAllowed || isClonedPage) {
-                  setAuthStatus({ isAllowed: true, role: currentRole });
+                  setAuthStatus({ isAllowed: true, role: currentRole, clonedPages: userData.clonedPages });
                 } else {
-                  setAuthStatus({ isAllowed: false, role: currentRole });
+                  setAuthStatus({ isAllowed: false, role: currentRole, clonedPages: userData.clonedPages });
                 }
               } else {
                 localStorage.removeItem('adminAuth');
@@ -56,10 +62,13 @@ export const AdminProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, a
           }, (err) => {
             console.error("Error monitoring admin user doc:", err);
             // Fallback to cache
-            const role = cachedUser.role;
+            let role = cachedUser.role;
+            if (role === "admin") {
+              role = "Super Admin";
+            }
             const isClonedPage = cachedUser.clonedPages?.includes(location.pathname);
             const isRoleAllowed = !allowedRoles || allowedRoles.includes(role);
-            setAuthStatus({ isAllowed: isRoleAllowed || isClonedPage, role });
+            setAuthStatus({ isAllowed: isRoleAllowed || isClonedPage, role, clonedPages: cachedUser.clonedPages });
           });
 
           return () => unsubscribe();
@@ -84,9 +93,9 @@ export const AdminProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, a
             const data = docSnap.data();
             const isClonedPage = data.clonedPages?.includes(location.pathname);
             if (isClonedPage) {
-              setAuthStatus({ isAllowed: true, role: data.role });
+              setAuthStatus({ isAllowed: true, role: data.role, clonedPages: data.clonedPages });
             } else {
-              setAuthStatus({ isAllowed: false, role: data.role });
+              setAuthStatus({ isAllowed: false, role: data.role, clonedPages: data.clonedPages });
             }
           } else {
             setAuthStatus({ isAllowed: false, role: null });
@@ -115,6 +124,12 @@ export const AdminProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, a
       return <Navigate to="/admin/orders" replace />;
     } else if (authStatus.role === "Super Admin" || authStatus.role === "Sub-Admin") {
       return <Navigate to="/admin/dashboard" replace />;
+    } else if (authStatus.role === "team_member" || authStatus.role === "influencer") {
+      const firstCloned = authStatus.clonedPages?.[0];
+      if (firstCloned) {
+        return <Navigate to={firstCloned} replace />;
+      }
+      return <Navigate to="/team/dashboard" replace />;
     }
     return <Navigate to="/admin/login" state={{ from: location }} replace />;
   }
