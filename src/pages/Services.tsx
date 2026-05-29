@@ -19,6 +19,7 @@ import { Footer } from "../components/Footer";
 import { Navbar } from "../components/Navbar";
 import { OfferBanners } from "../components/OfferBanners";
 import { OrderModal } from "../components/OrderModal";
+import { useOffers } from "../hooks/useOffers";
 import { useServices } from "../hooks/useServices";
 import { db } from "../lib/firebase";
 import { Package, Service } from "../types";
@@ -229,6 +230,7 @@ function applyMargin(services: Service[], marginPercent: number): Service[] {
 
 export default function Services() {
   const { services: servicesWithMargin, loading } = useServices();
+  const { hasOffers: hasTopOffers } = useOffers('top');
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -340,26 +342,28 @@ export default function Services() {
       <OfferBanners />
 
       {/* Header */}
-      <header className="py-12 sm:py-20 md:py-28 px-4 text-center border-b border-brand-border bg-brand-surface/30 relative overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[400px] sm:w-[600px] h-[400px] sm:h-[600px] bg-brand-accent/5 rounded-full blur-[100px] pointer-events-none" />
-        <div className="max-w-3xl mx-auto relative z-10">
-          <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="font-heading text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-3 sm:mb-6 tracking-tight"
-          >
-            Buy Social Media <span className="text-brand-accent">Services</span>
-          </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-sm sm:text-lg md:text-xl text-text-muted px-2"
-          >
-            The cheapest SMM services online. Just paste your link, pay, and grow instantly.
-          </motion.p>
-        </div>
-      </header>
+      {!hasTopOffers && (
+        <header className="py-12 sm:py-20 md:py-28 px-4 text-center border-b border-brand-border bg-brand-surface/30 relative overflow-hidden">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[400px] sm:w-[600px] h-[400px] sm:h-[600px] bg-brand-accent/5 rounded-full blur-[100px] pointer-events-none" />
+          <div className="max-w-3xl mx-auto relative z-10">
+            <motion.h1 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="font-heading text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-3 sm:mb-6 tracking-tight"
+            >
+              Buy Social Media <span className="text-brand-accent">Services</span>
+            </motion.h1>
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="text-sm sm:text-lg md:text-xl text-text-muted px-2"
+            >
+              The cheapest SMM services online. Just paste your link, pay, and grow instantly.
+            </motion.p>
+          </div>
+        </header>
+      )}
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-16">
         

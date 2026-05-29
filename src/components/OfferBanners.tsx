@@ -1,38 +1,11 @@
 import { useEffect, useState } from "react";
-import { collection, onSnapshot, query, where, orderBy } from "firebase/firestore";
-import { db } from "../lib/firebase";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { OfferBanner } from "../pages/AdminOffers";
+import { useOffers } from "../hooks/useOffers";
 
 export function OfferBanners({ position = 'top' }: { position?: 'top' | 'bottom' }) {
-  const [offers, setOffers] = useState<OfferBanner[]>([]);
+  const { offers } = useOffers(position);
   const [currentIndex, setCurrentIndex] = useState(0);
-
-  useEffect(() => {
-    // Since Firebase requires index for where + orderBy on different fields, 
-    // we'll just fetch all active and sort in memory.
-    const unsub = onSnapshot(query(collection(db, "offers"), where("isActive", "==", true)), (snap) => {
-      const data: OfferBanner[] = [];
-      snap.forEach(d => {
-         const offer = { id: d.id, ...d.data() } as OfferBanner;
-         // Handle legacy offers that don't have a position (treat as 'top')
-         const offerPos = offer.position || 'top';
-         if (offerPos === position) {
-            data.push(offer);
-         }
-      });
-      // Sort by creation loosely
-      data.sort((a, b) => {
-        const tA = a.createdAt?.toMillis?.() || 0;
-        const tB = b.createdAt?.toMillis?.() || 0;
-        return tB - tA;
-      });
-      // Pick up to 3
-      setOffers(data.slice(0, 3));
-    });
-    return () => unsub();
-  }, []);
 
   useEffect(() => {
     if (offers.length <= 1) return;
@@ -62,13 +35,11 @@ export function OfferBanners({ position = 'top' }: { position?: 'top' | 'bottom'
   return (
     <div className="w-full relative overflow-hidden bg-brand-surface border-y border-brand-border">
       <div className="w-full max-w-7xl mx-auto relative group">
-        <div className="w-full aspect-[21/9] md:aspect-[21/4] relative overflow-hidden">
         <a 
           href={currentOffer.link && currentOffer.link.trim() !== '' ? currentOffer.link : undefined}
           target={currentOffer.link?.startsWith('http') ? '_blank' : '_self'}
-          className={`block w-full h-full relative ${currentOffer.link ? 'cursor-pointer' : 'cursor-default'}`}
+          className={`block w-full relative ${currentOffer.link ? 'cursor-pointer' : 'cursor-default'}`}
           onClick={(e) => {
-             // If there's no link, prevent default to stop page reload
              if (!currentOffer.link || currentOffer.link.trim() === '') {
                 e.preventDefault();
              }
@@ -81,24 +52,21 @@ export function OfferBanners({ position = 'top' }: { position?: 'top' | 'bottom'
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -50 }}
               transition={{ duration: 0.5, ease: "easeInOut" }}
-              className="absolute inset-0 w-full h-full"
+              className="w-full"
             >
-              {/* Desktop Image */}
               <img 
                 src={currentOffer.desktopImageUrl} 
                 alt="Offer Banner" 
-                className="hidden md:block w-full h-full object-cover"
+                className="hidden md:block w-full h-auto object-contain"
               />
-              {/* Mobile Image */}
               <img 
                 src={currentOffer.mobileImageUrl} 
                 alt="Offer Banner" 
-                className="block md:hidden w-full h-full object-cover"
+                className="block md:hidden w-full h-auto object-contain"
               />
             </motion.div>
           </AnimatePresence>
         </a>
-        </div>
 
         {/* Controls */}
         {offers.length > 1 && (
