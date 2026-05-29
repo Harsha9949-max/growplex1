@@ -1,3 +1,4 @@
+export { default as AdminAnnouncements } from './AdminAnnouncements';
 export { default as AdminBackup } from './AdminBackup';
 export { default as AdminContent } from './AdminContent';
 export { default as AdminCustomers } from './AdminCustomers';

@@ -4,6 +4,7 @@ import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../lib/firebase';
 import { useAuth } from '../hooks/useAuth';
 import { SEO } from '../components/SEO';
+import { TeamTaskAssigner } from '../components/TeamTaskAssigner';
 import { ClipboardList, Upload, Send, Image as ImageIcon, Link as LinkIcon, CheckCircle2, Clock } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -30,6 +31,16 @@ export default function TeamTasks() {
     
     const unsubscribe = onSnapshot(qTasks, (snapshot) => {
       const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
+      
+      // Auto mark unseen tasks
+      import('firebase/firestore').then(({ updateDoc, doc }) => {
+        tasksData.forEach(task => {
+          if (!task.seen && task.status === 'pending') {
+            updateDoc(doc(db, "tasks", task.id), { seen: true }).catch(e => console.error("Could not mark as seen:", e));
+          }
+        });
+      });
+
       // Sort manually to avoid needing a composite index immediately
       tasksData.sort((a: any, b: any) => {
         const timeA = a.createdAt?.toMillis() || 0;
@@ -57,17 +68,49 @@ export default function TeamTasks() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image must be smaller than 5MB");
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Image must be smaller than 10MB");
       return;
     }
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result as string;
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.src = objectUrl;
+    
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      
+      let width = img.width;
+      let height = img.height;
+      
+      const MAX_DIMENSION = 1200;
+      if (width > height) {
+        if (width > MAX_DIMENSION) {
+          height *= MAX_DIMENSION / width;
+          width = MAX_DIMENSION;
+        }
+      } else {
+        if (height > MAX_DIMENSION) {
+          width *= MAX_DIMENSION / height;
+          height = MAX_DIMENSION;
+        }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const base64String = canvas.toDataURL('image/jpeg', 0.6);
       handleProofChange(taskId, 'imageBase64', base64String);
     };
-    reader.readAsDataURL(file);
+    
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      toast.error("Failed to read image for compression.");
+    };
   };
 
   const submitProof = async (taskId: string, taskTitle: string) => {
@@ -102,8 +145,8 @@ export default function TeamTasks() {
         updatedAt: serverTimestamp()
       });
 
-      // 3. Send to Telegram
-      await sendTelegramNotification(taskTitle, proofData, userProfile?.fullName || userProfile?.username || "Unknown Team Member");
+      // 3. Send to Telegram in the background
+      sendTelegramNotification(taskTitle, proofData, userProfile?.fullName || userProfile?.username || "Unknown Team Member").catch(e => console.error("Telegram error in background:", e));
 
       toast.success("Proof submitted successfully!");
       // Clear local state
@@ -185,6 +228,8 @@ export default function TeamTasks() {
         </div>
       </div>
 
+      <TeamTaskAssigner />
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {loading ? (
            <div className="col-span-full p-12 text-center">
@@ -198,9 +243,20 @@ export default function TeamTasks() {
              <p className="text-slate-400 font-medium">You're all caught up! Admin hasn't assigned any new tasks.</p>
           </div>
         ) : (
-          tasks.map(task => (
-            <div key={task.id} className="bg-brand-surface border border-brand-border rounded-xl flex flex-col shadow-sm overflow-hidden">
-              <div className="p-5 border-b border-white/5">
+          tasks.map(task => {
+            let isExpired = false;
+            if (task.expiresAt && task.status === 'pending') {
+              const expireTime = new Date(task.expiresAt).getTime();
+              if (Date.now() > expireTime) {
+                isExpired = true;
+              }
+            }
+
+            if (isExpired) return null;
+
+            return (
+              <div key={task.id} className="bg-brand-surface border border-brand-border rounded-xl flex flex-col shadow-sm overflow-hidden">
+                <div className="p-5 border-b border-white/5">
                 <div className="flex justify-between items-start gap-4 mb-3">
                   <h3 className="font-bold text-white text-lg">{task.title}</h3>
                   <span className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
@@ -307,7 +363,7 @@ export default function TeamTasks() {
                 )}
               </div>
             </div>
-          ))
+          )})
         )}
       </div>
     </div>

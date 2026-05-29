@@ -33,7 +33,8 @@ export default function AdminRoles() {
     commissionPercentage: 10,
     role: "team_member" as "admin" | "team_member" | "influencer",
     clonedPages: [] as string[],
-    influencerName: ""
+    influencerName: "",
+    canAssignTasks: false
   });
 
   const availableAdminPages = [
@@ -73,7 +74,8 @@ export default function AdminRoles() {
         commissionPercentage: user.commissionPercentage || 10,
         role: (user.role as any) || "team_member",
         clonedPages: (user as any).clonedPages || [],
-        influencerName: user.influencerName || ""
+        influencerName: user.influencerName || "",
+        canAssignTasks: (user as any).canAssignTasks || false
       });
     } else {
       setFormData({
@@ -84,7 +86,8 @@ export default function AdminRoles() {
         commissionPercentage: 10,
         role: "team_member",
         clonedPages: [],
-        influencerName: ""
+        influencerName: "",
+        canAssignTasks: false
       });
     }
     setIsModalOpen(true);
@@ -159,6 +162,7 @@ export default function AdminRoles() {
         commissionPercentage: formData.commissionPercentage,
         clonedPages: formData.clonedPages,
         influencerName: sanitizedName,
+        canAssignTasks: formData.canAssignTasks,
         updatedAt: serverTimestamp(),
         ...(!formData.id && { 
             createdAt: serverTimestamp(),
@@ -368,6 +372,23 @@ export default function AdminRoles() {
                     className="w-full bg-brand-primary border border-brand-border rounded-lg px-4 py-2.5 text-text-main focus:outline-none focus:border-brand-accent/50" 
                     placeholder="Enter start password"
                   />
+                </div>
+              )}
+
+              {formData.role === "team_member" && (
+                <div>
+                   <label className="flex items-center gap-3 p-3 bg-brand-primary/50 border border-brand-border rounded-xl cursor-pointer hover:bg-brand-primary transition-colors">
+                     <input 
+                        type="checkbox"
+                        checked={formData.canAssignTasks}
+                        onChange={(e) => setFormData({...formData, canAssignTasks: e.target.checked})}
+                        className="w-5 h-5 rounded border-brand-border bg-brand-surface text-brand-accent focus:ring-brand-accent"
+                     />
+                     <div>
+                       <p className="text-sm font-bold text-white">Can Assign Tasks</p>
+                       <p className="text-xs text-slate-400">Allow this user to create and assign tasks to others.</p>
+                     </div>
+                   </label>
                 </div>
               )}
 

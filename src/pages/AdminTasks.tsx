@@ -18,7 +18,8 @@ export default function AdminTasks() {
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
-    selectedUsers: [] as string[]
+    selectedUsers: [] as string[],
+    expiresAt: ''
   });
 
   useEffect(() => {
@@ -34,7 +35,22 @@ export default function AdminTasks() {
     // Fetch tasks
     const qTasks = query(collection(db, "tasks"), orderBy("createdAt", "desc"));
     const unsubscribe = onSnapshot(qTasks, (snapshot) => {
-      const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
+      
+      // Purge proofs > 24h
+      tasksData.forEach(task => {
+        if (task.proofSubmittedAt) {
+          const submittedTime = task.proofSubmittedAt.toMillis ? task.proofSubmittedAt.toMillis() : Date.now();
+          const hrsPassed = (Date.now() - submittedTime) / (1000 * 60 * 60);
+          if (hrsPassed > 24 && (task.proof?.text || task.proof?.link || task.proof?.imageUrl)) {
+              updateDoc(doc(db, "tasks", task.id), {
+                proof: null,
+                proofPurged: true
+              }).catch(console.error);
+          }
+        }
+      });
+      
       setTasks(tasksData);
       setLoading(false);
     });
@@ -50,24 +66,37 @@ export default function AdminTasks() {
     }
     
     setIsCreating(true);
+    const batchId = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString() + Math.random().toString(36).substring(2);
+
     try {
       const promises = newTask.selectedUsers.map(userId => {
         const user = teamMembers.find(m => m.uid === userId || m.id === userId);
+        
+        let expirationDate = new Date();
+        expirationDate.setHours(23, 59, 59, 999); // default to end of today
+        if (newTask.expiresAt) {
+          expirationDate = new Date(newTask.expiresAt);
+        }
+
         return addDoc(collection(db, "tasks"), {
+          batchId,
           title: newTask.title,
           description: newTask.description,
           assignedToId: userId,
           assignedToName: user?.fullName || user?.username || "Unknown",
           assignedById: userProfile?.uid,
           assignedByName: userProfile?.fullName || "Admin",
+          assignedByRole: userProfile?.role || "admin",
           status: "pending",
+          seen: false,
           createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
+          updatedAt: serverTimestamp(),
+          expiresAt: expirationDate.toISOString()
         });
       });
       await Promise.all(promises);
       toast.success("Tasks assigned successfully");
-      setNewTask({ title: '', description: '', selectedUsers: [] });
+      setNewTask({ title: '', description: '', selectedUsers: [], expiresAt: '' });
     } catch (error) {
       console.error(error);
       toast.error("Failed to assign tasks");
@@ -138,6 +167,16 @@ export default function AdminTasks() {
                 ></textarea>
               </div>
               <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5 cursor-pointer">Expiration Time (Optional)</label>
+                <input
+                  type="datetime-local"
+                  value={newTask.expiresAt}
+                  onChange={e => setNewTask({...newTask, expiresAt: e.target.value})}
+                  className="w-full bg-brand-primary border border-brand-border rounded-lg px-4 py-2 text-white placeholder:text-slate-600 focus:outline-none focus:border-brand-accent/50 transition-colors"
+                />
+                <p className="text-[10px] text-slate-500 mt-1">If left blank, defaults to 11:59 PM today.</p>
+              </div>
+              <div>
                 <div className="flex justify-between items-center mb-1.5">
                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest">Assign To</label>
                   <button type="button" onClick={() => setNewTask(p => ({...p, selectedUsers: teamMembers.map(m => m.uid || m.id)}))} className="text-[10px] text-brand-accent hover:underline">Select All</button>
@@ -188,90 +227,131 @@ export default function AdminTasks() {
                  <p className="text-slate-400 font-medium">No tasks assigned yet.</p>
               </div>
             ) : (
-              tasks.map(task => (
-                <div key={task.id} className="bg-brand-surface border border-brand-border rounded-xl p-5 shadow-sm">
-                  <div className="flex flex-col sm:flex-row justify-between gap-4 mb-4">
-                    <div>
-                      <h3 className="font-bold text-white text-lg">{task.title}</h3>
-                      {task.description && <p className="text-sm text-slate-400 mt-1">{task.description}</p>}
-                      <div className="flex items-center gap-4 mt-3">
-                        <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 font-medium">
-                          <Users size={14} /> Assigned to: <span className="text-white">{task.assignedToName}</span>
+              Object.values(tasks.reduce((acc: any, task: any) => {
+                const key = task.batchId || task.id;
+                if (!acc[key]) acc[key] = [];
+                acc[key].push(task);
+                return acc;
+              }, {})).map((group: any) => {
+                const primary = group[0];
+                const total = group.length;
+                const seenCount = group.filter((t: any) => t.seen || t.status !== 'pending').length;
+                const completedCount = group.filter((t: any) => t.status !== 'pending').length;
+                const isExpired = primary.expiresAt && primary.status === 'pending' && Date.now() > new Date(primary.expiresAt).getTime();
+                
+                return (
+                  <div key={primary.batchId || primary.id} className="bg-brand-surface border border-brand-border rounded-xl p-5 shadow-sm">
+                    <div className="flex flex-col sm:flex-row justify-between gap-4 mb-4">
+                      <div>
+                        <h3 className="font-bold text-white text-lg">{primary.title}</h3>
+                        {primary.description && <p className="text-sm text-slate-400 mt-1">{primary.description}</p>}
+                        <div className="flex items-center gap-4 mt-3">
+                          <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 font-medium">
+                            <Users size={14} /> Assigned to {total} member{total > 1 ? 's' : ''}
+                          </span>
+                          <span className="inline-flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                            <Clock size={14} /> 
+                            {primary.createdAt?.toDate ? primary.createdAt.toDate().toLocaleDateString() : 'Just now'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider ${
+                           isExpired ? 'bg-slate-500/10 text-slate-400 border border-slate-500/20' :
+                           completedCount === total ? 'bg-green-500/10 text-green-400 border border-green-500/20' :
+                           'bg-brand-gold/10 text-brand-gold border border-brand-gold/20'
+                        }`}>
+                          {isExpired ? 'expired' : completedCount === total ? 'all completed' : 'in progress'}
                         </span>
-                        <span className="inline-flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-                          <Clock size={14} /> 
-                          {task.createdAt?.toDate ? task.createdAt.toDate().toLocaleDateString() : 'Just now'}
-                        </span>
+                        <div className="flex gap-4 items-center">
+                          <button 
+                            onClick={() => setNewTask({ title: primary.title, description: primary.description || '', selectedUsers: [], expiresAt: '' })}
+                            className="text-[10px] text-brand-accent hover:underline uppercase tracking-widest mt-1 opacity-70 hover:opacity-100"
+                          >
+                            Clone Task
+                          </button>
+                          <button
+                            onClick={async () => {
+                              if (!window.confirm("Delete this assigned task stream?")) return;
+                              try {
+                                const { deleteDoc, doc } = await import('firebase/firestore');
+                                await Promise.all(group.map((t: any) => deleteDoc(doc(db, "tasks", t.id))));
+                                toast.success("Task deleted");
+                              } catch (e) {
+                                toast.error("Failed to delete task");
+                              }
+                            }}
+                            className="text-[10px] text-red-500 hover:text-red-400 hover:underline uppercase tracking-widest mt-1 opacity-70 hover:opacity-100 flex items-center gap-1"
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider ${
-                        task.status === 'approved' ? 'bg-green-500/10 text-green-400 border border-green-500/20' :
-                        task.status === 'rejected' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
-                        task.status === 'submitted' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' :
-                        'bg-brand-gold/10 text-brand-gold border border-brand-gold/20'
-                      }`}>
-                        {task.status}
-                      </span>
-                      <button 
-                        onClick={() => setNewTask({ title: task.title, description: task.description || '', selectedUsers: [] })}
-                        className="text-[10px] text-brand-accent hover:underline uppercase tracking-widest mt-1 opacity-70 hover:opacity-100"
-                      >
-                        Clone Task
-                      </button>
+
+                    <div className="flex items-center gap-4 text-xs font-bold text-slate-500 uppercase tracking-widest mb-4 bg-brand-primary/50 p-3 rounded-lg border border-brand-border/30">
+                      <span>👁️ {seenCount}/{total} Seen</span>
+                      <span>✅ {completedCount}/{total} Done</span>
+                      {primary.assignedByName && <span className="ml-auto text-brand-accent/70 capitalize">Assigned by: {primary.assignedByName} ({primary.assignedByRole?.replace('_', ' ') || 'admin'})</span>}
                     </div>
+
+                    <div className="space-y-4">
+                      {group.map((task: any) => (
+                        <div key={task.id} className="pl-4 border-l-2 border-brand-border/50 relative">
+                           <div className="absolute top-1 -left-[9px] w-4 h-4 rounded-full bg-brand-surface border-2 border-brand-border"></div>
+                           <div className="flex justify-between items-center mb-2">
+                             <div className="flex items-center gap-3">
+                               <span className="font-bold text-white text-sm">{task.assignedToName}</span>
+                               <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded ${
+                                  (task.expiresAt && task.status === 'pending' && Date.now() > new Date(task.expiresAt).getTime()) ? 'bg-slate-500/10 text-slate-400' :
+                                  task.status === 'approved' ? 'bg-green-500/10 text-green-400' :
+                                  task.status === 'rejected' ? 'bg-red-500/10 text-red-400' :
+                                  task.status === 'submitted' ? 'bg-blue-500/10 text-blue-400' :
+                                  task.seen ? 'bg-brand-accent/10 text-brand-accent' :
+                                  'bg-brand-gold/10 text-brand-gold'
+                               }`}>
+                                  {(task.expiresAt && task.status === 'pending' && Date.now() > new Date(task.expiresAt).getTime()) ? 'expired' : 
+                                   task.status === 'pending' ? (task.seen ? 'seen' : 'not seen') : task.status}
+                               </span>
+                             </div>
+
+                             {task.status === 'submitted' && (
+                               <div className="flex gap-2">
+                                 <button
+                                   onClick={() => updateTaskStatus(task.id, 'approved')}
+                                   className="text-[10px] font-bold text-white bg-green-500 hover:bg-green-600 px-3 py-1.5 rounded uppercase tracking-widest transition-colors flex items-center gap-1.5"
+                                 >
+                                   <CheckCircle size={12} /> Approve
+                                 </button>
+                                 <button
+                                   onClick={() => updateTaskStatus(task.id, 'rejected')}
+                                   className="text-[10px] font-bold text-white bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded uppercase tracking-widest transition-colors flex items-center gap-1.5"
+                                 >
+                                   <XCircle size={12} /> Reject
+                                 </button>
+                               </div>
+                             )}
+                           </div>
+
+                           {/* Proof Section */}
+                           {task.proofPurged && (
+                              <div className="mt-2 text-xs bg-slate-800/50 text-slate-400 p-2 rounded w-max">Proof permanently deleted (24h).</div>
+                           )}
+
+                           {task.status !== 'pending' && task.proof && (userProfile?.role === 'admin' || task.assignedById === userProfile?.uid) && (
+                             <div className="mt-2 p-3 bg-brand-primary/50 rounded flex flex-col gap-2">
+                               {task.proof.text && <p className="text-sm text-slate-300 whitespace-pre-wrap">{task.proof.text}</p>}
+                               {task.proof.link && <a href={task.proof.link} target="_blank" rel="noopener noreferrer" className="text-sm text-brand-accent hover:underline">{task.proof.link}</a>}
+                               {task.proof.imageUrl && <img src={task.proof.imageUrl} alt="Proof" className="max-h-32 rounded object-cover border border-brand-border mt-1" />}
+                             </div>
+                           )}
+                        </div>
+                      ))}
+                    </div>
+
                   </div>
-
-                  {/* Proof Section */}
-                  {task.status !== 'pending' && task.proof && (
-                    <div className="mt-4 pt-4 border-t border-brand-border/50 bg-brand-primary/30 -mx-5 px-5 pb-2">
-                      <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Submitted Proof</h4>
-                      
-                      {task.proof.text && (
-                        <div className="mb-3">
-                          <p className="text-xs text-slate-500 mb-1">Response:</p>
-                          <p className="text-sm text-slate-300 bg-brand-primary p-3 rounded-lg border border-brand-border whitespace-pre-wrap">{task.proof.text}</p>
-                        </div>
-                      )}
-                      
-                      {task.proof.link && (
-                        <div className="mb-3">
-                          <p className="text-xs text-slate-500 mb-1">Link:</p>
-                          <a href={task.proof.link} target="_blank" rel="noopener noreferrer" className="text-sm text-brand-accent hover:underline break-all">
-                            {task.proof.link}
-                          </a>
-                        </div>
-                      )}
-                      
-                      {task.proof.imageUrl && (
-                        <div className="mb-4">
-                          <p className="text-xs text-slate-500 mb-1">Image Proof:</p>
-                          <div className="bg-brand-primary p-2 rounded-lg border border-brand-border max-w-xs">
-                            <img src={task.proof.imageUrl} alt="Proof" className="w-full h-auto rounded" />
-                          </div>
-                        </div>
-                      )}
-
-                      {task.status === 'submitted' && (
-                        <div className="flex items-center gap-2 mt-4">
-                          <button 
-                            onClick={() => updateTaskStatus(task.id, 'approved')}
-                            className="flex items-center gap-1.5 bg-green-500/10 text-green-500 hover:bg-green-500/20 px-3 py-1.5 rounded text-sm font-bold transition-colors"
-                          >
-                            <CheckCircle size={16} /> Approve
-                          </button>
-                          <button 
-                            onClick={() => updateTaskStatus(task.id, 'rejected')}
-                            className="flex items-center gap-1.5 bg-red-500/10 text-red-500 hover:bg-red-500/20 px-3 py-1.5 rounded text-sm font-bold transition-colors"
-                          >
-                            <XCircle size={16} /> Reject
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))
+                )
+              })
             )}
           </div>
         </div>

@@ -8,6 +8,7 @@ import { AdminLayout } from "./components/AdminLayout";
 import { FloatingBadge } from "./components/FloatingBadge";
 
 import {
+  AdminAnnouncements,
   AdminBackup,
   AdminContent,
   AdminCustomers,
@@ -48,6 +49,7 @@ const UserOrders = React.lazy(() => import("./pages/UserOrders"));
 
 const AdminTasks = React.lazy(() => import("./pages/AdminTasks"));
 const TeamTasks = React.lazy(() => import("./pages/TeamTasks"));
+const TeamAnnouncements = React.lazy(() => import("./pages/TeamAnnouncements"));
 const TeamChat = React.lazy(() => import("./pages/TeamChat"));
 const AdminLogin = React.lazy(() => import("./pages/AdminLogin"));
 const AdminDashboard = React.lazy(() => import("./pages/AdminDashboard"));
@@ -95,6 +97,7 @@ export default function App() {
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/team/dashboard" element={<ProtectedRoute allowedRoles={['team_member', 'influencer']}><TeamLayout><TeamDashboard /></TeamLayout></ProtectedRoute>} />
             <Route path="/team/tasks" element={<ProtectedRoute allowedRoles={['team_member', 'influencer']}><TeamLayout><TeamTasks /></TeamLayout></ProtectedRoute>} />
+            <Route path="/team/announcements" element={<ProtectedRoute allowedRoles={['team_member', 'influencer']}><TeamAnnouncements /></ProtectedRoute>} />
             <Route path="/team/chat" element={<ProtectedRoute allowedRoles={['team_member', 'influencer', 'admin', 'user']}><TeamLayout><TeamChat /></TeamLayout></ProtectedRoute>} />
             
             {/* Team Cloned Pages */}
@@ -120,6 +123,7 @@ export default function App() {
             <Route path="/admin/reports" element={<AdminProtectedRoute allowedRoles={["Super Admin"]}><AdminReports /></AdminProtectedRoute>} />
             <Route path="/admin/settings" element={<AdminProtectedRoute allowedRoles={["Super Admin"]}><AdminSettings /></AdminProtectedRoute>} />
             <Route path="/admin/roles" element={<AdminProtectedRoute allowedRoles={["Super Admin"]}><AdminRoles /></AdminProtectedRoute>} />
+            <Route path="/admin/announcements" element={<AdminProtectedRoute allowedRoles={["Super Admin", "Sub-Admin"]}><AdminAnnouncements /></AdminProtectedRoute>} />
             <Route path="/admin/tasks" element={<AdminProtectedRoute allowedRoles={["Super Admin", "Sub-Admin", "Support"]}><AdminTasks /></AdminProtectedRoute>} />
             <Route path="/admin/logs" element={<AdminProtectedRoute allowedRoles={["Super Admin"]}><AdminLogs /></AdminProtectedRoute>} />
             <Route path="/admin/content" element={<AdminProtectedRoute allowedRoles={["Super Admin", "Sub-Admin"]}><AdminContent /></AdminProtectedRoute>} />

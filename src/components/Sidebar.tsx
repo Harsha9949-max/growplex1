@@ -7,6 +7,7 @@ import {
   MessageSquare,
   Package,
   PlusCircle,
+  Megaphone,
   Settings,
   ShieldCheck,
   Users,
@@ -33,6 +34,7 @@ const Sidebar: React.FC = () => {
 
   const teamLinks = [
     { to: '/team/dashboard', icon: LayoutDashboard, label: 'Team Dashboard' },
+    { to: '/team/announcements', icon: Megaphone, label: 'Announcements' },
     { to: '/team/tasks', icon: ListOrdered, label: 'My Tasks' },
     { to: '/team/chat', icon: MessageSquare, label: 'Team Chat' },
     ...(userProfile?.clonedPages?.map((path: string) => {
