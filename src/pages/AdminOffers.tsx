@@ -1,9 +1,8 @@
 import { addDoc, collection, deleteDoc, doc, getDocs, setDoc, serverTimestamp, orderBy, query } from "firebase/firestore";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { Copy, Image as ImageIcon, Link as LinkIcon, Plus, Save, Trash2 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { AdminLayout } from "../components/AdminLayout";
-import { db, storage } from "../lib/firebase";
+import { db } from "../lib/firebase";
 
 export interface OfferBanner {
   id: string;
@@ -69,6 +68,41 @@ export default function AdminOffers() {
 
   const activeCount = offers.filter(o => o.isActive).length;
 
+  const compressImage = (file: File, maxWidth: number): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            // Compress to WebP format, quality 0.7
+            resolve(canvas.toDataURL('image/webp', 0.7));
+          } else {
+            reject(new Error("Canvas context is null"));
+          }
+        };
+        img.onerror = error => reject(error);
+      };
+      reader.onerror = error => reject(error);
+    });
+  };
+
   const handleCreateOffer = async () => {
     if (!desktopFile || !mobileFile) {
       alert("Both desktop and mobile banners are required.");
@@ -76,15 +110,9 @@ export default function AdminOffers() {
     }
     setSaving(true);
     try {
-      // Upload Desktop
-      const desktopStorageRef = ref(storage, `offer-banners/desktop_${Date.now()}_${desktopFile.name}`);
-      await uploadBytes(desktopStorageRef, desktopFile);
-      const desktopUrl = await getDownloadURL(desktopStorageRef);
-
-      // Upload Mobile
-      const mobileStorageRef = ref(storage, `offer-banners/mobile_${Date.now()}_${mobileFile.name}`);
-      await uploadBytes(mobileStorageRef, mobileFile);
-      const mobileUrl = await getDownloadURL(mobileStorageRef);
+      // Compress and convert to base64 WebP
+      const desktopUrl = await compressImage(desktopFile, 1920);
+      const mobileUrl = await compressImage(mobileFile, 800);
 
       const canBeActive = activeCount < 3;
 

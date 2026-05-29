@@ -58,11 +58,19 @@ export function OfferBanners() {
 
   return (
     <div className="w-full relative overflow-hidden bg-brand-surface border-y border-brand-border">
-      <div 
-        className={`w-full max-w-7xl mx-auto relative ${currentOffer.link ? 'cursor-pointer' : ''}`}
-        onClick={handleBannerClick}
-      >
+      <div className="w-full max-w-7xl mx-auto relative group">
         <div className="w-full aspect-[21/9] md:aspect-[21/4] relative overflow-hidden">
+        <a 
+          href={currentOffer.link && currentOffer.link.trim() !== '' ? currentOffer.link : undefined}
+          target={currentOffer.link?.startsWith('http') ? '_blank' : '_self'}
+          className={`block w-full h-full relative ${currentOffer.link ? 'cursor-pointer' : 'cursor-default'}`}
+          onClick={(e) => {
+             // If there's no link, prevent default to stop page reload
+             if (!currentOffer.link || currentOffer.link.trim() === '') {
+                e.preventDefault();
+             }
+          }}
+        >
           <AnimatePresence mode="wait">
             <motion.div
               key={currentOffer.id}
@@ -86,6 +94,7 @@ export function OfferBanners() {
               />
             </motion.div>
           </AnimatePresence>
+        </a>
         </div>
 
         {/* Controls */}
