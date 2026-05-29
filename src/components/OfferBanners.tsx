@@ -5,20 +5,23 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { OfferBanner } from "../pages/AdminOffers";
 
-export function OfferBanners() {
+export function OfferBanners({ position = 'top' }: { position?: 'top' | 'bottom' }) {
   const [offers, setOffers] = useState<OfferBanner[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
-    const q = query(
-      collection(db, "offers"),
-      where("isActive", "==", true)
-    );
     // Since Firebase requires index for where + orderBy on different fields, 
     // we'll just fetch all active and sort in memory.
-    const unsub = onSnapshot(q, (snap) => {
+    const unsub = onSnapshot(query(collection(db, "offers"), where("isActive", "==", true)), (snap) => {
       const data: OfferBanner[] = [];
-      snap.forEach(d => data.push({ id: d.id, ...d.data() } as OfferBanner));
+      snap.forEach(d => {
+         const offer = { id: d.id, ...d.data() } as OfferBanner;
+         // Handle legacy offers that don't have a position (treat as 'top')
+         const offerPos = offer.position || 'top';
+         if (offerPos === position) {
+            data.push(offer);
+         }
+      });
       // Sort by creation loosely
       data.sort((a, b) => {
         const tA = a.createdAt?.toMillis?.() || 0;

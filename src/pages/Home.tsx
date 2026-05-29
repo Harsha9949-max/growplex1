@@ -370,6 +370,7 @@ export default function Home() {
         </div>
       </section>
 
+      <OfferBanners position="bottom" />
       <Footer />
       <SocialProofTicker />
     </div>

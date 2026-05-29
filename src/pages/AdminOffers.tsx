@@ -10,6 +10,7 @@ export interface OfferBanner {
   mobileImageUrl: string;
   link: string;
   isActive: boolean;
+  position?: 'top' | 'bottom';
   createdAt?: any;
 }
 
@@ -24,6 +25,7 @@ export default function AdminOffers() {
   const [desktopPreview, setDesktopPreview] = useState<string | null>(null);
   const [mobilePreview, setMobilePreview] = useState<string | null>(null);
   const [offerLink, setOfferLink] = useState<string>("");
+  const [offerPosition, setOfferPosition] = useState<'top' | 'bottom'>('top');
   const [isAdding, setIsAdding] = useState(false);
 
   const desktopRef = useRef<HTMLInputElement>(null);
@@ -120,6 +122,7 @@ export default function AdminOffers() {
         desktopImageUrl: desktopUrl,
         mobileImageUrl: mobileUrl,
         link: offerLink,
+        position: offerPosition,
         isActive: canBeActive, // Auto activate if slots are open
         createdAt: serverTimestamp()
       });
@@ -131,6 +134,7 @@ export default function AdminOffers() {
       setDesktopPreview(null);
       setMobilePreview(null);
       setOfferLink("");
+      setOfferPosition('top');
       if (desktopRef.current) desktopRef.current.value = "";
       if (mobileRef.current) mobileRef.current.value = "";
       
@@ -227,17 +231,30 @@ export default function AdminOffers() {
             </div>
           </div>
           
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-text-muted mb-2">Target Link (Optional)</label>
-            <div className="relative">
-              <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" size={18} />
-              <input 
-                type="text" 
-                value={offerLink}
-                onChange={e => setOfferLink(e.target.value)}
-                placeholder="/services or https://example.com"
-                className="w-full bg-brand-primary border border-brand-border rounded-lg pl-12 pr-4 py-3 text-text-main focus:outline-none focus:border-brand-accent/50"
-              />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <label className="block text-sm font-medium text-text-muted mb-2">Target Link (Optional)</label>
+              <div className="relative">
+                <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" size={18} />
+                <input 
+                  type="text" 
+                  value={offerLink}
+                  onChange={e => setOfferLink(e.target.value)}
+                  placeholder="/services or https://example.com"
+                  className="w-full bg-brand-primary border border-brand-border rounded-lg pl-12 pr-4 py-3 text-text-main focus:outline-none focus:border-brand-accent/50"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-text-muted mb-2">Banner Position</label>
+              <select
+                value={offerPosition}
+                onChange={e => setOfferPosition(e.target.value as 'top' | 'bottom')}
+                className="w-full bg-brand-primary border border-brand-border rounded-lg px-4 py-3 text-text-main focus:outline-none focus:border-brand-accent/50 appearance-none"
+              >
+                 <option value="top">Top Banner (Below Navbar)</option>
+                 <option value="bottom">Bottom Banner (Above Footer)</option>
+              </select>
             </div>
           </div>
 
@@ -273,6 +290,9 @@ export default function AdminOffers() {
                         Status: 
                         <span className={`px-2 py-0.5 rounded text-xs ${offer.isActive ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
                           {offer.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                        <span className="px-2 py-0.5 rounded text-xs bg-brand-surface border border-brand-border text-text-muted capitalize">
+                           {offer.position || 'top'}
                         </span>
                       </p>
                       {offer.link && (

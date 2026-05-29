@@ -464,6 +464,7 @@ export default function Services() {
 
       </main>
 
+      <OfferBanners position="bottom" />
       <Footer />
 
       {/* Service Details Modal */}
