@@ -1,13 +1,32 @@
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from './firebase';
+
 const MARKUP = Number((import.meta as any).env.VITE_MARKUP_PERCENT || '40') / 100;
 
+async function getProviderConfig() {
+  try {
+    const snap = await getDoc(doc(db, "system", "settings"));
+    if (snap.exists()) {
+      const data = snap.data();
+      return {
+        apiKey: data.providerApiKey || undefined,
+        apiUrl: data.providerApiUrl || undefined
+      };
+    }
+  } catch (e) {
+    // Fallback to default
+  }
+  return {};
+}
 
 async function callAPI(params: Record<string, any>) {
   console.log('GrowwSMM callAPI request:', params);
   try {
+    const config = await getProviderConfig();
     const res = await fetch('/api/growwsmm', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(params)
+      body: JSON.stringify({ ...config, ...params })
     });
     
     // Check for non-OK response right away if it's not JSON

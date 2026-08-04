@@ -100,17 +100,20 @@ async function startServer() {
   // GrowwSMM API Access endpoint
   app.post('/api/growwsmm', async (req, res) => {
     try {
-      const { action, ...params } = req.body;
+      const { action, apiKey, apiUrl, ...params } = req.body;
       
+      const effectiveApiKey = apiKey || process.env.GROWWSMM_API_KEY || 'eb4551c8deb17e197d30508da488abd3';
+      const effectiveApiUrl = apiUrl || process.env.GROWWSMM_API_URL || 'https://growwsmmpanel.com/api/v2';
+
       const body = new URLSearchParams();
-      body.append('key', process.env.GROWWSMM_API_KEY || 'eb4551c8deb17e197d30508da488abd3');
+      body.append('key', effectiveApiKey);
       body.append('action', action);
       Object.entries(params).forEach(([k, v]) => 
         body.append(k, String(v))
       );
 
       const response = await fetch(
-        process.env.GROWWSMM_API_URL || 'https://growwsmmpanel.com/api/v2',
+        effectiveApiUrl,
         {
           method: 'POST',
           headers: { 

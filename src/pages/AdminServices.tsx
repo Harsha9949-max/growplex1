@@ -23,7 +23,13 @@ import {
   CreditCard,
   Check,
   PowerOff,
-  Shield
+  Shield,
+  Copy,
+  Eye,
+  EyeOff,
+  ExternalLink,
+  Key,
+  Server
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
@@ -88,6 +94,12 @@ export default function AdminServices() {
   const [syncSelectedId, setSyncSelectedId] = useState<string>("all");
   const [syncMargin, setSyncMargin] = useState<string>("40");
   const [globalMargin, setGlobalMargin] = useState<number>(40);
+  const [providerSettings, setProviderSettings] = useState({
+    providerApiKey: "",
+    providerApiUrl: "https://growwsmmpanel.com/api/v2"
+  });
+  const [showApiKeyInSync, setShowApiKeyInSync] = useState(false);
+  const [copiedApiKey, setCopiedApiKey] = useState(false);
 
   useEffect(() => {
     const unsubMargin = onSnapshot(doc(db, "system", "settings"), (docSnap) => {
@@ -96,6 +108,15 @@ export default function AdminServices() {
         if (typeof data.defaultMarkupMargin === "number") {
           setGlobalMargin(data.defaultMarkupMargin);
         }
+        setProviderSettings({
+          providerApiKey: data.providerApiKey || "eb4551c8deb17e197d30508da488abd3",
+          providerApiUrl: data.providerApiUrl || "https://growwsmmpanel.com/api/v2"
+        });
+      } else {
+        setProviderSettings({
+          providerApiKey: "eb4551c8deb17e197d30508da488abd3",
+          providerApiUrl: "https://growwsmmpanel.com/api/v2"
+        });
       }
     });
 
@@ -1027,6 +1048,69 @@ export default function AdminServices() {
               </div>
               
               <div className="p-6 overflow-y-auto custom-scrollbar flex-grow space-y-5">
+                 {/* Active Provider API Info Card */}
+                 <div className="p-4 bg-brand-primary/80 border border-[#3b82f6]/30 rounded-xl space-y-3">
+                    <div className="flex items-center justify-between">
+                       <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#3b82f6]">
+                          <Key size={14} /> Active Provider API Config
+                       </div>
+                       <a 
+                         href="/admin/settings" 
+                         className="text-[11px] text-brand-accent hover:underline flex items-center gap-1 font-medium"
+                       >
+                          <ExternalLink size={12} /> Edit Settings
+                       </a>
+                    </div>
+
+                    {/* Endpoint URL */}
+                    <div className="space-y-1">
+                       <div className="text-[11px] text-text-muted flex items-center gap-1 font-medium">
+                          <Server size={12} /> Provider Endpoint URL
+                       </div>
+                       <div className="text-xs font-mono bg-brand-surface px-3 py-1.5 rounded-lg border border-brand-border text-slate-300 truncate">
+                          {providerSettings.providerApiUrl || "https://growwsmmpanel.com/api/v2"}
+                       </div>
+                    </div>
+
+                    {/* API Key */}
+                    <div className="space-y-1">
+                       <div className="text-[11px] text-text-muted flex items-center gap-1 font-medium">
+                          <Key size={12} /> SMM API Key
+                       </div>
+                       <div className="flex items-center gap-2">
+                          <div className="flex-1 font-mono text-xs bg-brand-surface px-3 py-1.5 rounded-lg border border-brand-border text-white tracking-wider truncate select-all">
+                             {showApiKeyInSync 
+                               ? (providerSettings.providerApiKey || "eb4551c8deb17e197d30508da488abd3")
+                               : (providerSettings.providerApiKey 
+                                   ? providerSettings.providerApiKey.replace(/./g, '•') 
+                                   : "••••••••••••••••••••••••")}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setShowApiKeyInSync(!showApiKeyInSync)}
+                            title={showApiKeyInSync ? "Hide API key" : "Show API key"}
+                            className="p-1.5 text-slate-400 hover:text-white bg-brand-surface hover:bg-brand-border/50 border border-brand-border rounded-lg transition-colors shrink-0"
+                          >
+                             {showApiKeyInSync ? <EyeOff size={14} /> : <Eye size={14} />}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const keyToCopy = providerSettings.providerApiKey || "eb4551c8deb17e197d30508da488abd3";
+                              navigator.clipboard.writeText(keyToCopy);
+                              setCopiedApiKey(true);
+                              toast.success("API key copied!");
+                              setTimeout(() => setCopiedApiKey(false), 2000);
+                            }}
+                            title="Copy API key"
+                            className="p-1.5 text-slate-400 hover:text-white bg-brand-surface hover:bg-brand-border/50 border border-brand-border rounded-lg transition-colors shrink-0"
+                          >
+                             {copiedApiKey ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
+                          </button>
+                       </div>
+                    </div>
+                 </div>
+
                  {syncLoading ? (
                     <div className="flex flex-col items-center justify-center py-10">
                        <div className="w-8 h-8 border-2 border-[#3b82f6] border-t-transparent rounded-full animate-spin mb-4" />
